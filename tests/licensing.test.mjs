@@ -15,7 +15,7 @@ test('license, attribution and package metadata match Apache-2.0', () => {
   assert.equal(pkg.license, 'Apache-2.0');
   assert.equal(lock.packages[''].license, 'Apache-2.0');
   assert.equal(pkg.private, true, 'npm registry publishing must remain disabled');
-  assert.match(license, /^Apache License\nVersion 2\.0, January 2004/);
+  assert.match(license, /^Apache License\r?\nVersion 2\.0, January 2004/);
   assert.match(license, /9\. Accepting Warranty or Additional Liability\./);
   assert.match(notice, /Copyright 2026 Thugney/);
   assert.match(notice, /vendor\/lean-kit/);
