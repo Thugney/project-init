@@ -17,7 +17,7 @@
     "test:all": "npm run check && npm run test:lean",
     "smoke": "node ./bin/project-init.mjs help && node ./bin/project-init.mjs version"
   },
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Thugney/project-init.git"

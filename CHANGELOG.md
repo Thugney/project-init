@@ -2,6 +2,13 @@
 
 All notable changes to the public Project Init package are documented here. There are **no verified earlier public releases**; the numbers reflect the local development lineage.
 
+## Unreleased — licensing and GitHub preview distribution
+
+### Changed
+- Added the unmodified Apache License 2.0 and an attribution/provenance NOTICE covering original Project Init, legacy v1, and bundled Lean Kit code with maintainer authorization.
+- Updated package and lockfile SPDX metadata; the package stays `private: true` to explicitly prevent accidental npm publication while supporting reviewed GitHub release tarballs.
+- Updated release checks, documentation, and contributor terms. GitHub releases still require an explicitly created version tag; production acceptance remains pending.
+
 ## [2.1.0-preview.2] — 2026-10-19 (public-source candidate)
 
 ### Fixed
@@ -14,7 +21,7 @@ All notable changes to the public Project Init package are documented here. Ther
 
 ### Publication status
 - Preview source is proposed through [PR #1](https://github.com/Thugney/project-init/pull/1). No release tag or GitHub Release has been created.
-- No OSI redistribution license has been chosen; the preview remains `UNLICENSED`.
+- This preview was initially published without an OSI license; Apache-2.0 was adopted in a later untagged change on `main`.
 
 ## [2.1.0-preview.1] — 2026-10-19 (public-source candidate)
 

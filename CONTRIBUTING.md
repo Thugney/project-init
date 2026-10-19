@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for considering improving Project Init. This project welcomes rigorous engineering feedback and reproducible evidence. Its source is currently a **preview pending an explicit open-source license**, so the legal terms for accepting external code contributions must be finalized before contribution merges.
+Thanks for considering improving Project Init. This project welcomes rigorous engineering feedback and reproducible evidence. Its source is published under the [Apache License 2.0](LICENSE). Contributions should be original or properly attributed and compatible with that license; by submitting a contribution you agree it is licensed under Apache-2.0 unless explicitly agreed otherwise with the maintainer. Preview status still means there are unverified integration and acceptance requirements.
 
 ## Ways to help now
 

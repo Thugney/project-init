@@ -17,6 +17,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -29,12 +30,18 @@ jobs:
             echo "Tag $GITHUB_REF_NAME does not match package version $expected" >&2
             exit 1
           fi
-      - name: Require approved open-source licensing
+      - name: Require approved Apache-2.0 licensing and GitHub-only distribution
         shell: bash
         run: |
           set -euo pipefail
-          test -f LICENSE || { echo "Missing LICENSE: release blocked until maintainer selects a license." >&2; exit 1; }
-          node -e 'const p=require("./package.json"); if (p.private === true || !p.license || p.license === "UNLICENSED") { console.error("License/package metadata not ready for redistribution"); process.exit(1) }'
+          test -s LICENSE && test -s NOTICE.md || { echo "LICENSE or NOTICE.md is missing" >&2; exit 1; }
+          node -e 'const fs=require("node:fs"); const p=require("./package.json"); const l=require("./package-lock.json"); const license=fs.readFileSync("LICENSE","utf8"); if(p.license!=="Apache-2.0" || l.packages[""].license!=="Apache-2.0" || p.private!==true || !license.startsWith("Apache License\nVersion 2.0, January 2004")){console.error("Apache-2.0 metadata or npm publication protection is missing"); process.exit(1)}'
+      - name: Require tag commit to be present on main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "Release tag must point to a commit reachable from main" >&2; exit 1; }
       - name: Test checked-out tag
         run: |
           npm ci --ignore-scripts
