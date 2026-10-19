@@ -4,6 +4,7 @@
 
 [![CI](https://github.com/Thugney/project-init/actions/workflows/ci.yml/badge.svg)](https://github.com/Thugney/project-init/actions/workflows/ci.yml)
 [![Preview](https://img.shields.io/badge/channel-preview-9b59b6)](docs/RELEASES.md)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 [![Node 20.19%2B](https://img.shields.io/badge/Node-%3E%3D20.19-339933)](package.json)
 
 Project Init is a **local-first development workflow orchestrator** for engineers using **Codex** and **Claude Code**. It inspects a new or existing repository, recommends an appropriate planning framework, records approved designs and specifications, and requires test and review evidence before a change is treated as a release candidate.
@@ -12,7 +13,7 @@ It does **not** replace your coding agent or run an autonomous developer in the 
 
 > **Status: `2.1.0-preview.2` — functional preview, not production-accepted.** The local suites pass, but live framework installs, real Codex/Claude command discovery, native Claude unattended execution, and Windows browser capture have not completed acceptance testing. A passing guard is not proof of full semantic correctness or release approval. See [verification limits](docs/VERIFICATION.md) and the [acceptance report](docs/ACCEPTANCE-REPORT.md).
 >
-> **Licensing:** Public source preview; a redistribution license has **not yet been selected**. This repository is **not** described as OSI-licensed until the maintainer chooses and publishes an appropriate license, including an assessment of bundled Lean Kit rights. See [NOTICE](NOTICE.md). Do not assume a license grant from the repository being public.
+> **Licensing:** Project Init, the bundled Codex Lean Kit, and the preserved v1 sources are released under the [Apache License 2.0](LICENSE), as authorized by their maintainer. See [NOTICE](NOTICE.md) for provenance and attribution. GitHub preview source is licensed; **production readiness remains unverified**. npm publishing remains disabled intentionally.
 
 ## The problem this solves
 
@@ -141,4 +142,4 @@ Before migrating from an older personal skill, read [the skill installation and 
 
 Maintained by **[Thugney](https://github.com/Thugney)**. Practical Microsoft cloud/security writing: **[Eriteach blog](https://blog.eriteach.com/)**. Professional updates: **[LinkedIn](https://www.linkedin.com/in/eriteach/)**. Contributions and technical criticism are welcome—especially reproducible bug reports, adversarial security tests, and Windows/Claude CLI acceptance evidence.
 
-Project Init is an independent community project, **not affiliated with OpenAI, Anthropic, GitHub, OpenSpec, or BMAD**. Respective names belong to their owners. See [NOTICE](NOTICE.md) for bundled code provenance and the pending license decision.
+Project Init is an independent community project, **not affiliated with OpenAI, Anthropic, GitHub, OpenSpec, or BMAD**. Respective names belong to their owners. See [NOTICE](NOTICE.md) for bundled code provenance and the Apache-2.0 attribution.

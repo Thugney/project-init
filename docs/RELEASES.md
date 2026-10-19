@@ -11,7 +11,7 @@ Project Init follows **Semantic Versioning** once accepted, including standard `
 
 ## Promotion gates
 
-**License gate:** The release workflow requires a committed `LICENSE` file, a non-`UNLICENSED` SPDX identifier, and `private: false` in `package.json`. Until the maintainer selects a license and confirms rights for the bundled Lean Kit, no release tag should be created. The preview source on `main` is not yet a licensed open-source distribution.
+**License gate:** Apache-2.0 is now the maintainer-approved redistribution license for Project Init, bundled Lean Kit and preserved v1 components. The release workflow requires the committed `LICENSE`, `NOTICE.md`, and matching `Apache-2.0` metadata in `package.json` and `package-lock.json`. `private: true` stays enabled to block accidental npm registry publication; the workflow creates **GitHub** artifacts using `npm pack` only. Licensing does **not** imply production acceptance.
 
 
 1. Merge via reviewed PR after CI on Windows, Linux and macOS (Node 22/24). No force-push or bypass of protected branches.
@@ -25,7 +25,7 @@ Project Init follows **Semantic Versioning** once accepted, including standard `
 
 `.github/workflows/release.yml` runs on an **explicit matching `v*` tag**, checks the version matches `package.json`, runs both test suites, checks the npm package output, and creates a GitHub Release with the npm tarball plus automatically generated notes. Tags containing a hyphen (`-preview`, `-beta`, `-rc`) are marked **pre-release**. It does **not** publish to npm, merge branches, or silently approve a stable release.
 
-There is currently **no GitHub release/tag published by this work** unless a separate GitHub confirmation exists. A prepared workflow is not proof that GitHub Actions ran.
+There is currently **no GitHub release/tag published by this work** unless a separate GitHub confirmation exists. The workflow runs only after a maintainer deliberately pushes a tag for a commit reachable from `main`; CI success alone never creates a release.
 
 ## Recovery
 
