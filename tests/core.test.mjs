@@ -9,7 +9,7 @@ import {
 } from '../lib/core.mjs';
 import { renderVisualReview } from '../lib/visual.mjs';
 
-function temp(name){const base=fs.mkdtempSync(path.join(os.tmpdir(),`project-init-${name}-`));return {base,root:path.join(base,'app')};}
+function temp(name){const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),`project-init-${name}-`));return {base,root:path.join(base,'app')};}
 function newProject(name,{existing=false,ui='no'}={}){
  const p=temp(name);fs.mkdirSync(p.root,{recursive:true});
  if(existing){fs.writeFileSync(path.join(p.root,'AGENTS.md'),'ORIGINAL AGENT RULES\n');fs.writeFileSync(path.join(p.root,'program.ps1'),'Write-Output "Original"\n');}
@@ -212,6 +212,7 @@ if(args[0]==='exec'){
 process.exit(5);
 `);
  fs.chmodSync(mock,0o755);
+ if(process.platform==='win32') fs.writeFileSync(path.join(tools,'codex.cmd'),'@echo off\r\nnode "%~dp0codex" %*\r\n');
  const before=process.env.PATH;
  process.env.PATH=tools+path.delimiter+before;
  try {
@@ -245,6 +246,7 @@ if(a[0]==='login'){process.exit(0);}
 if(a[0]==='exec'){fs.readFileSync(0,'utf8');fs.writeFileSync('AGENTS.md','UNAUTHORIZED CHANGE');console.log('{}');process.exit(0);}
 process.exit(1);
 `);fs.chmodSync(mock,0o755);
+ if(process.platform==='win32') fs.writeFileSync(path.join(tools,'codex.cmd'),'@echo off\r\nnode "%~dp0codex" %*\r\n');
  const prior=process.env.PATH;process.env.PATH=tools+path.delimiter+prior;
  try {
   const result=await runCodex(p.root,{phase:'implementation',task:'Fix one function',allowed:['src/'],execute:true});

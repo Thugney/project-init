@@ -11,7 +11,7 @@ import {visualPlan,compareVisual,captureVisual} from '../lib/visual-gate.mjs';
 import {semanticPlan,importSemanticReview,verifyGuard} from '../lib/guard.mjs';
 import {renderVisualReview} from '../lib/visual.mjs';
 function fixture(label,ui='no'){
- const base=fs.mkdtempSync(path.join(os.tmpdir(),`pinit-v21-${label}-`)),root=path.join(base,'repo');
+ const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),`pinit-v21-${label}-`)),root=path.join(base,'repo');
  initProject(root,{mode:'New',ui,intent:'automation'});selectFramework(root,'none');fs.mkdirSync(path.join(root,'specs'));fs.writeFileSync(path.join(root,'specs','feature.md'),'# Requirement\nMake a working feature.\n');return {base,root};
 }
 function pngColor(file,width,height,color=[22,45,90,255]){fs.mkdirSync(path.dirname(file),{recursive:true});const rgba=Buffer.alloc(width*height*4);for(let p=0;p<rgba.length;p+=4)rgba.set(color,p);writePng(file,{width,height,rgba});}
@@ -101,6 +101,7 @@ test('full synthetic evidence lifecycle can pass candidate gate, but never self-
  reconcileSource(root,{actor:'Fixture reviewer',evidence:'Synthetic Git baseline reviewed'});
  const bin=path.join(base,'bin');fs.mkdirSync(bin,{recursive:true});const mock=path.join(bin,'codex');
  fs.writeFileSync(mock,`#!/usr/bin/env node\nconst fs=require('fs');const args=process.argv.slice(2);\nif(args[0]==='login'&&args[1]==='status')process.exit(0);\nif(args[0]==='exec'){fs.readFileSync(0,'utf8');fs.writeFileSync('src/feature.js','export const feature = 42;\\n');console.log(JSON.stringify({type:'turn.completed'}));process.exit(0);}\nprocess.exit(1);\n`);fs.chmodSync(mock,0o755);
+ if(process.platform==='win32') fs.writeFileSync(path.join(bin,'codex.cmd'),'@echo off\r\nnode "%~dp0codex" %*\r\n');
  const prior=process.env.PATH;process.env.PATH=bin+path.delimiter+prior;
  try{
   const run=await runCodex(root,{phase:'implementation',task:'Implement approved bounded feature',allowed:['src/'],execute:true});
