@@ -1,0 +1,23 @@
+name: Feature request
+description: Propose a scoped improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and user impact
+      description: Describe the manual task this should remove.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior and acceptance criteria
+    validations:
+      required: true
+  - type: textarea
+    id: safety
+    attributes:
+      label: Security, compatibility and migration considerations
+    validations:
+      required: false

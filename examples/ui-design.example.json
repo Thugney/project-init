@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "project": "Endpoint Security",
+  "status": "draft",
+  "theme": {
+    "primary": "#2868bb",
+    "sidebar": "#16253e",
+    "font": "system-ui"
+  },
+  "screens": [
+    {
+      "id": "overview",
+      "title": "Endpoint overview",
+      "subtitle": "Device security posture, recent activity, and work requiring attention.",
+      "navigation": [
+        {"label": "Overview", "active": true},
+        {"label": "Devices"},
+        {"label": "Security"},
+        {"label": "Reports"},
+        {"label": "Settings"}
+      ],
+      "metrics": [
+        {"label": "Compliant devices", "value": "96%", "tone": "good", "detail": "Synthetic design value"},
+        {"label": "Needs attention", "value": "12", "tone": "warn", "detail": "Synthetic design value"},
+        {"label": "Active endpoints", "value": "1,824", "tone": "info", "detail": "Synthetic design value"}
+      ],
+      "sections": [
+        {
+          "title": "Devices requiring review",
+          "columns": ["Device", "Status", "Last checked"],
+          "rows": [
+            ["HP EliteBook 840", "Needs attention", "09:42"],
+            ["HP ProBook 450", "Healthy", "09:38"],
+            ["HP EliteBook 860", "Under investigation", "09:31"]
+          ]
+        }
+      ],
+      "actions": [
+        {"label": "Review selected device", "kind": "primary"},
+        {"label": "Export report", "kind": "secondary"}
+      ],
+      "states": ["Loading", "Empty results", "Permission denied", "API unavailable"]
+    },
+    {
+      "id": "devices",
+      "title": "Managed devices",
+      "subtitle": "Search and inspect Windows endpoints. Displayed data is illustrative only.",
+      "navigation": [
+        {"label": "Overview"},
+        {"label": "Devices", "active": true},
+        {"label": "Security"},
+        {"label": "Reports"},
+        {"label": "Settings"}
+      ],
+      "metrics": [
+        {"label": "Devices in scope", "value": "1,824", "tone": "info"},
+        {"label": "Encrypted", "value": "99%", "tone": "good"}
+      ],
+      "sections": [
+        {
+          "title": "Endpoint inventory",
+          "columns": ["Hostname", "Compliance", "Encryption"],
+          "rows": [
+            ["DEV-0142", "Compliant", "Encrypted"],
+            ["DEV-0163", "Attention required", "Encrypted"]
+          ]
+        }
+      ],
+      "actions": [
+        {"label": "Open device", "kind": "primary"},
+        {"label": "Refresh", "kind": "secondary"}
+      ],
+      "states": ["No results", "Loading details", "Data stale"]
+    }
+  ]
+}

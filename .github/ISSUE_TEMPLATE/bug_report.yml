@@ -1,0 +1,33 @@
+name: Bug report
+description: A reproducible defect in Project Init
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: 'Please redact user/customer data, secrets, keys and tokens. For vulnerabilities use SECURITY.md.'
+  - type: input
+    id: version
+    attributes:
+      label: Project Init version
+      placeholder: 2.1.0-preview.1
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: OS / Node / Codex or Claude version
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include redacted command lines and the expected/actual behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Redacted evidence and tests
+    validations:
+      required: false
