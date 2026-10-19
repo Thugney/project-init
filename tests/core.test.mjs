@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import {
-  discover,recommendation,initProject,readState,selectFramework,installPlan,establishBaseline,
+  discover,recommendation,initProject,readState,selectFramework,installPlan,establishBaseline,gitInfo,
   checkBaseline,recordReview,approve,status,runChecks,runCodex,statePath,projectFile,validUIDesign,frameworkCheck
 } from '../lib/core.mjs';
 import { renderVisualReview } from '../lib/visual.mjs';
@@ -27,6 +27,14 @@ function selectAndSpec(root,{ui=false}={}) {
  return establishBaseline(root,['specs/feature.md']);
 }
 function reviewer(root){recordReview(root,{actor:'TEST_REVIEWER',evidence:'Synthetic test audit event only',verdict:'pass'});approve(root,{actor:'TEST_OWNER',evidence:'Synthetic fixture approval only'});}
+test('Git root validation trusts Git prefix, not OS-specific path formatting',async()=>{
+ const p=temp('git-root');fs.mkdirSync(p.root,{recursive:true});
+ const {spawnSync}=await import('node:child_process');
+ const result=spawnSync('git',['init'],{cwd:p.root,encoding:'utf8'});assert.equal(result.status,0,result.stderr);
+ assert.equal(gitInfo(p.root).atRepoRoot,true);
+ const nested=path.join(p.root,'nested');fs.mkdirSync(nested);
+ assert.equal(gitInfo(nested).atRepoRoot,false);
+});
 test('read-only discovery does not create state and detects existing sources',()=>{
  const p=temp('discover');fs.mkdirSync(p.root);fs.writeFileSync(path.join(p.root,'README.md'),'original\n');
  assert.equal(discover(p.root).mode,'Existing');

@@ -24,7 +24,7 @@ Version: `2.1.0-preview.2`
 
 ## Local test results
 
-- `npm run check`: **29/29 Project Init Node regression tests passed**; JavaScript syntax checks passed.
+- `npm run check`: **30/30 Project Init Node regression tests passed**; JavaScript syntax checks passed.
 - `node --test vendor/lean-kit/tests/render.test.mjs`: **8/8 Lean Kit tests passed**.
 - Synthetic positive whole lifecycle reached `readyForHumanReleaseReview: true` and `releaseApproved: false`, then failed correctly after modified source.
 - Screenshot drift after a green cached gate correctly made `status.releaseCandidateReady: false`.
