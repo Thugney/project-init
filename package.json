@@ -1,0 +1,54 @@
+{
+  "name": "@thugney/project-init",
+  "version": "2.1.0-preview.2",
+  "private": true,
+  "description": "Local-first project workflow orchestrator for Codex and Claude Code, with optional native spec frameworks, visual review, and evidence-based drift gates.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "bin": {
+    "project-init": "./bin/project-init.mjs"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check": "node --check bin/project-init.mjs && node --check lib/core.mjs && node --check lib/visual.mjs && node --check lib/png.mjs && node --check lib/visual-gate.mjs && node --check lib/guard.mjs && node --check lib/skills.mjs && node --check lib/lean.mjs && npm test",
+    "test:lean": "node --test vendor/lean-kit/tests/render.test.mjs",
+    "test:all": "npm run check && npm run test:lean",
+    "smoke": "node ./bin/project-init.mjs help && node ./bin/project-init.mjs version"
+  },
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Thugney/project-init.git"
+  },
+  "homepage": "https://github.com/Thugney/project-init#readme",
+  "bugs": {
+    "url": "https://github.com/Thugney/project-init/issues"
+  },
+  "keywords": [
+    "project-init",
+    "codex",
+    "claude-code",
+    "openspec",
+    "spec-kit",
+    "bmad",
+    "spec-driven-development",
+    "visual-regression",
+    "ai-drift",
+    "workflow"
+  ],
+  "files": [
+    "assets/",
+    "bin/",
+    "lib/",
+    "vendor/lean-kit/",
+    "legacy/v1/",
+    "docs/",
+    "examples/",
+    "SKILL.md",
+    "README.md",
+    "CHANGELOG.md",
+    "NOTICE.md"
+  ]
+}

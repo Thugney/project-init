@@ -1,0 +1,15 @@
+{
+  "kind": "board",
+  "boardId": "security-triage",
+  "title": "Endpoint security triage",
+  "columns": [
+    { "id": "new", "title": "New" },
+    { "id": "investigating", "title": "Investigating" },
+    { "id": "done", "title": "Done" }
+  ],
+  "tickets": [
+    { "id": "DEF-101", "title": "Review suspicious PowerShell activity", "column": "new", "priority": "High", "owner": "Security", "notes": "Validate device evidence before taking action." },
+    { "id": "INT-102", "title": "Confirm feature update pilot", "column": "investigating", "priority": "Medium", "owner": "Endpoint", "notes": "Compare device eligibility and deployment assignments." },
+    { "id": "ASR-103", "title": "Archive ASR audit results", "column": "done", "priority": "Low", "owner": "Endpoint" }
+  ]
+}

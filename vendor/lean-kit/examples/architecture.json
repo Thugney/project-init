@@ -1,0 +1,17 @@
+{
+  "kind": "diagram",
+  "title": "Endpoint security signal flow",
+  "nodes": [
+    { "id": "endpoint", "label": "Entra joined Windows device", "layer": 0 },
+    { "id": "intune", "label": "Microsoft Intune", "layer": 1 },
+    { "id": "mde", "label": "Defender for Endpoint", "layer": 1 },
+    { "id": "xdr", "label": "Defender XDR", "layer": 2 },
+    { "id": "analyst", "label": "Security analyst", "layer": 3 }
+  ],
+  "edges": [
+    { "from": "endpoint", "to": "intune" },
+    { "from": "endpoint", "to": "mde" },
+    { "from": "mde", "to": "xdr" },
+    { "from": "xdr", "to": "analyst" }
+  ]
+}

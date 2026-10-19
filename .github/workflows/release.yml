@@ -1,0 +1,58 @@
+name: Publish GitHub release from approved tag
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check tag/version alignment
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="v$(node -p 'require("./package.json").version')"
+          if [ "$GITHUB_REF_NAME" != "$expected" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package version $expected" >&2
+            exit 1
+          fi
+      - name: Require approved open-source licensing
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f LICENSE || { echo "Missing LICENSE: release blocked until maintainer selects a license." >&2; exit 1; }
+          node -e 'const p=require("./package.json"); if (p.private === true || !p.license || p.license === "UNLICENSED") { console.error("License/package metadata not ready for redistribution"); process.exit(1) }'
+      - name: Test checked-out tag
+        run: |
+          npm ci --ignore-scripts
+          npm run test:all
+          npm run smoke
+      - name: Build local install artifact (no npm publishing)
+        shell: bash
+        run: |
+          mkdir -p release-artifacts
+          npm pack --pack-destination release-artifacts --ignore-scripts
+      - name: Create GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+            gh release create "$GITHUB_REF_NAME" release-artifacts/*.tgz --prerelease --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
+          else
+            gh release create "$GITHUB_REF_NAME" release-artifacts/*.tgz --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
+          fi
