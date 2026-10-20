@@ -4,6 +4,10 @@ All notable changes to the public Project Init package are documented here. Ther
 
 ## Unreleased — licensing and GitHub preview distribution
 
+### Fixed
+- Windows command discovery supports native executables such as `codex.exe` without requiring a `.cmd` shim. Batch dispatch preserves the selected absolute `.cmd`/`.bat` path, quotes ordinary arguments, and rejects unsafe shell expansion/control characters.
+- Added Windows regressions for executable discovery, PATH precedence, batch paths and arguments containing spaces, conflicting working-directory shims, and unsafe argument rejection. Command windows stay hidden during execution.
+
 ### Changed
 - Added the unmodified Apache License 2.0 and an attribution/provenance NOTICE covering original Project Init, legacy v1, and bundled Lean Kit code with maintainer authorization.
 - Updated package and lockfile SPDX metadata; the package stays `private: true` to explicitly prevent accidental npm publication while supporting reviewed GitHub release tarballs.
