@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-10-20T17:07:38.191Z",
+  "passed": false,
+  "baselineHash": null,
+  "sourceHash": "36cb5a5e853f7564216c169ca1b699e1d3ff5617c8a049cc9b83d29fcced4a98",
+  "testsCurrent": false,
+  "semanticCurrent": false,
+  "visualCurrent": false,
+  "executionValid": false,
+  "missing": [
+    "current approved specification and UI design required",
+    "source changed since approved baseline; reconcile independent source review",
+    "current deterministic build/test evidence required",
+    "requirement-to-check coverage missing",
+    "complete, current semantic review and per-requirement test evidence required",
+    "approved screenshot comparisons for every required screen, viewport, theme and state are missing or failed",
+    "actual bounded implementation run and recorded source change required"
+  ],
+  "readyForHumanReleaseReview": false,
+  "releaseApproved": false,
+  "limitation": "Evidence readiness is not a human release authorization. Neither screenshot pixels nor reviewer assertions prove all behavior."
+}

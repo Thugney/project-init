@@ -1,5 +1,13 @@
 # Evidence and acceptance semantics — 2.1 preview
 
+## Source-backed review workspace
+
+The design skill can create `.project-init/review-context.json` to summarize the selected framework's authoritative specifications for the review tabs. This is a presentation projection, not another PRD. It requires `schemaVersion: 1` and nonempty `specPaths`; every referenced file must exist inside the project and be included in `baseline --spec`. Optional arrays are `journeys` (`label`, `nodes` with `label`, `failurePaths`), `components` (`id`, `label`, `responsibility`, `evidenceStatus`), `edges` (`from`, `to`, `label`), `permissions` (`role`, `scope`, `enforcedAt`) and `questions` (`question`, `status`). Summaries must state only what those sources support. The renderer displays source paths and embeds their current SHA-256 values. Changing the context or registered source invalidates the baseline. Existing legacy architecture remains a fallback; unavailable sections are labeled Not linked rather than implying a completed review.
+
+Journeys and security boundaries use connected flow nodes; system edges use labeled, directional handoffs and component names. Components require unique nonempty IDs and labels. Edges require existing component IDs and nonempty handoff labels. Diagrams summarize the declared model; they do not discover or verify application architecture automatically.
+
+An optional `referenceMockup` in `ui-design.json` may point to a standalone HTML file inside `.project-init/`, distinct from the review output. The review workspace previews that authored design in a sandboxed frame instead of forcing a generic dashboard layout. The file is hashed into the UI approval baseline. Keep it offline and use the root `data-screen`, `data-theme="light|dark"` and `data-state` presentation attributes for variants. A `project-init-preview` event with those values in `detail` fires after initialization; authored scripts can listen for it when they need to update screen content. Frame scripts cannot access the parent document or make network requests; rendering a mockup does not establish application behavior.
+
 ## Deterministic local coverage
 
 The package includes Node regression tests for: source discovery and preservation; version-pinned vendor installer dry-run; approved spec/UI baseline hashing; review and approval invalidation; local filesystem safety; synthetic Codex/Git bounded execution; configured tests with actual process exit status; bundled Lean Kit rendering and audited output; Codex/Claude skill descriptions and no-overwrite behavior; strict PNG CRC/dimension/pixel diff checking; visual screen/theme/viewport/state coverage; stale screenshot invalidation; per-requirement semantic evidence; and positive/negative synthetic release-candidate readiness. A successful synthetic Codex is *not* real authenticated Codex acceptance.
@@ -26,8 +34,8 @@ A passing `guard` returns `readyForHumanReleaseReview:true` and **`releaseApprov
 ## Gaps requiring acceptance on user workstation
 
 - Native live OpenSpec/Spec Kit/BMAD installation and native task workflows with the chosen exact upstream releases.
-- Real signed-in Codex invocation on Windows; Claude Code command discovery and actual interactive behavior (the static skill generation is regression-tested).
-- Native Chrome/Edge CLI capture and end-to-end app/browser screenshot capture on Windows.
+- Claude Code command discovery and actual interactive behavior (the static skill generation is regression-tested). Native Windows Codex acceptance has scoped live evidence: [non-UI lifecycle](WINDOWS-ACCEPTANCE-2026-10-20.md) and [seven-skill/UI test with blocked acceptance](WINDOWS-SEVEN-SKILLS-2026-10-20.md).
+- Native CLI capture across integrations and platforms. Local Windows Edge app tests and an isolated renderer browser test passed; this does not establish full graphical lifecycle acceptance.
 - Real project behavior verification by project-specific unit/integration/e2e tests; visual pixel match is not enough.
 - v1 PowerShell/Pester regression on Windows; the build container has no PowerShell.
 - Remote CI branch protection, authenticated approvers, externally immutable audit storage, long-running unattended process supervision and cross-agent execution parity.

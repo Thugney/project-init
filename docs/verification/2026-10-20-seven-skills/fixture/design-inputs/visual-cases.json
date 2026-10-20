@@ -1,0 +1,75 @@
+{
+  "cases": [
+    {
+      "viewport": "desktop",
+      "state": "Default",
+      "theme": "light",
+      "screen": "counter",
+      "height": 900,
+      "reference": ".project-init/visual/baselines/counter-desktop-light-default.png",
+      "pixelThreshold": 12,
+      "actual": ".project-init/visual/actual/counter-desktop-light-default.png",
+      "maxDiffRatio": 0.01,
+      "id": "counter-desktop-light-default",
+      "referenceUrl": ".project-init/counter-reference.html?theme=light&state=Default&capture=Default",
+      "width": 1440
+    },
+    {
+      "viewport": "desktop",
+      "state": "Default",
+      "theme": "dark",
+      "screen": "counter",
+      "height": 900,
+      "reference": ".project-init/visual/baselines/counter-desktop-dark-default.png",
+      "pixelThreshold": 12,
+      "actual": ".project-init/visual/actual/counter-desktop-dark-default.png",
+      "maxDiffRatio": 0.01,
+      "id": "counter-desktop-dark-default",
+      "referenceUrl": ".project-init/counter-reference.html?theme=dark&state=Default&capture=Default",
+      "width": 1440
+    },
+    {
+      "viewport": "mobile",
+      "state": "Default",
+      "theme": "light",
+      "screen": "counter",
+      "height": 812,
+      "reference": ".project-init/visual/baselines/counter-mobile-light-default.png",
+      "pixelThreshold": 12,
+      "actual": ".project-init/visual/actual/counter-mobile-light-default.png",
+      "maxDiffRatio": 0.01,
+      "id": "counter-mobile-light-default",
+      "referenceUrl": ".project-init/counter-reference.html?theme=light&state=Default&capture=Default",
+      "width": 375
+    },
+    {
+      "viewport": "mobile",
+      "state": "Default",
+      "theme": "dark",
+      "screen": "counter",
+      "height": 812,
+      "reference": ".project-init/visual/baselines/counter-mobile-dark-default.png",
+      "pixelThreshold": 12,
+      "actual": ".project-init/visual/actual/counter-mobile-dark-default.png",
+      "maxDiffRatio": 0.01,
+      "id": "counter-mobile-dark-default",
+      "referenceUrl": ".project-init/counter-reference.html?theme=dark&state=Default&capture=Default",
+      "width": 375
+    },
+    {
+      "viewport": "desktop",
+      "state": "Empty",
+      "theme": "light",
+      "screen": "counter",
+      "height": 900,
+      "reference": ".project-init/visual/baselines/counter-desktop-light-empty.png",
+      "pixelThreshold": 12,
+      "actual": ".project-init/visual/actual/counter-desktop-light-empty.png",
+      "maxDiffRatio": 0.01,
+      "id": "counter-desktop-light-empty",
+      "referenceUrl": ".project-init/counter-reference.html?theme=light&state=Empty&capture=Empty",
+      "width": 1440
+    }
+  ],
+  "schemaVersion": 1
+}

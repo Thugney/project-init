@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "fixture": "isolated synthetic review workspace; not the user file page",
+  "browserVersion": "155.0.4283.62",
+  "checks": [
+    "unlinked tabs explicit",
+    "dark state preview",
+    "authored design shown",
+    "sandbox denies parent access",
+    "CSP denies external request before dispatch",
+    "theme/state/viewport controls update authored frame",
+    "all five panes navigate at 375/768/1024/1440 without horizontal overflow",
+    "user/system/security diagrams include directed connectors",
+    "decision status stays unapproved",
+    "keyboard navigation activation",
+    "full viewport screenshot frame",
+    "authored HTML drift invalidates baseline"
+  ],
+  "runtimeErrors": []
+}

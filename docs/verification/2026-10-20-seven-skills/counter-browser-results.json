@@ -1,0 +1,57 @@
+{
+  "browserVersion": "155.0.4283.62",
+  "reference": false,
+  "results": [
+    {
+      "id": "counter-desktop-light-default",
+      "width": 1440,
+      "height": 900,
+      "state": "Default",
+      "behaviorChecked": true,
+      "noOverflow": true,
+      "noRuntimeErrors": true,
+      "noExternalRequests": true
+    },
+    {
+      "id": "counter-desktop-dark-default",
+      "width": 1440,
+      "height": 900,
+      "state": "Default",
+      "behaviorChecked": true,
+      "noOverflow": true,
+      "noRuntimeErrors": true,
+      "noExternalRequests": true
+    },
+    {
+      "id": "counter-mobile-light-default",
+      "width": 375,
+      "height": 812,
+      "state": "Default",
+      "behaviorChecked": true,
+      "noOverflow": true,
+      "noRuntimeErrors": true,
+      "noExternalRequests": true
+    },
+    {
+      "id": "counter-mobile-dark-default",
+      "width": 375,
+      "height": 812,
+      "state": "Default",
+      "behaviorChecked": true,
+      "noOverflow": true,
+      "noRuntimeErrors": true,
+      "noExternalRequests": true
+    },
+    {
+      "id": "counter-desktop-light-empty",
+      "width": 1440,
+      "height": 900,
+      "state": "Empty",
+      "behaviorChecked": false,
+      "noOverflow": true,
+      "noRuntimeErrors": true,
+      "noExternalRequests": true
+    }
+  ],
+  "passed": true
+}

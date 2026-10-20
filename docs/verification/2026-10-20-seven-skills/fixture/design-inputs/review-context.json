@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "specPaths": [
+    "specs/counter.md"
+  ],
+  "journeys": [
+    {
+      "label": "Increment — specified flow",
+      "nodes": [
+        {
+          "label": "Fresh local page load: Count 0 and explicit Empty explanation; Increment available."
+        },
+        {
+          "label": "Activate Increment by pointer, or Tab to its native button and use Enter or Space."
+        },
+        {
+          "label": "Each activation adds exactly 1: three activations show 1, 2, 3; politely announce count and leave Empty state."
+        }
+      ],
+      "failurePaths": [
+        "A skipped, repeated or double-triggered increment fails REQ-COUNT; fixed tests must check single actions.",
+        "Missing focus, announcement, clipped controls, console errors or external requests fail REQ-UI; verification follows implementation."
+      ]
+    },
+    {
+      "label": "Reset/reload — specified flow",
+      "nodes": [
+        {
+          "label": "After incrementing, activate Reset by pointer or native keyboard activation."
+        },
+        {
+          "label": "Count becomes 0 and Empty explanation returns; Reset at 0 keeps 0; the next Increment shows 1."
+        },
+        {
+          "label": "Reload the local page: Count starts at 0 because state exists only in page memory."
+        }
+      ],
+      "failurePaths": [
+        "Retained count after reload or Reset fails REQ-COUNT; do not add storage or persistence.",
+        "A hidden Empty explanation, inaccessible Reset or duplicate keyboard action fails acceptance; correct implementation and rerun the unchanged parent tests during verification."
+      ]
+    }
+  ],
+  "components": [
+    {
+      "id": "html",
+      "label": "Semantic HTML — src/index.html",
+      "responsibility": "Proposed/specification: one Counter screen with title, labeled Count metric, instructions, native Increment and Reset buttons, Empty explanation and polite count announcement.",
+      "evidenceStatus": "Specification projection; prototype exists. See independent source review; human acceptance pending."
+    },
+    {
+      "id": "css",
+      "label": "Responsive CSS — src/styles.css",
+      "responsibility": "Proposed/specification: layout and light/dark system styling, visible focus, mobile/desktop and 200% zoom reflow; visual details require human mockup approval.",
+      "evidenceStatus": "Specification projection; prototype exists. See independent source review; human acceptance pending."
+    },
+    {
+      "id": "js",
+      "label": "In-memory JavaScript — src/app.js",
+      "responsibility": "Proposed/specification: numeric count starts at 0; native click handlers increment/reset; one render function updates metric, announcement and Empty state together.",
+      "evidenceStatus": "Specification projection; prototype exists. See independent source review; human acceptance pending."
+    },
+    {
+      "id": "browser",
+      "label": "Local browser",
+      "responsibility": "Proposed/specification: load local document/assets, provide native pointer and keyboard activation, viewport and system color preference; no runtime libraries or build pipeline.",
+      "evidenceStatus": "Specification projection; prototype exists. See independent source review; human acceptance pending."
+    },
+    {
+      "id": "tests",
+      "label": "Parent-owned fixed browser test harness",
+      "responsibility": "Specification: immutable tests are required before Build and run during Verify for functional, accessibility, console, network and viewport/theme evidence. Preserve tests unchanged.",
+      "evidenceStatus": "Specification projection; prototype exists. See independent source review; human acceptance pending."
+    }
+  ],
+  "edges": [
+    {
+      "from": "browser",
+      "to": "html",
+      "label": "Proposed: load local semantic document and activate native controls."
+    },
+    {
+      "from": "html",
+      "to": "css",
+      "label": "Proposed: local relative stylesheet controls layout and themes."
+    },
+    {
+      "from": "html",
+      "to": "js",
+      "label": "Proposed: local script handles native button clicks."
+    },
+    {
+      "from": "js",
+      "to": "html",
+      "label": "Proposed: render count, polite announcement and Empty state together."
+    },
+    {
+      "from": "browser",
+      "to": "css",
+      "label": "Proposed: viewport/system color preferences select CSS media queries."
+    },
+    {
+      "from": "tests",
+      "to": "browser",
+      "label": "Specified verification: exercise counter behavior, accessibility, console, network and viewport/theme cases after implementation."
+    }
+  ],
+  "permissions": [
+    {
+      "role": "Local user",
+      "scope": "Specification: Increment and Reset through pointer or native keyboard controls; no accounts or authentication roles.",
+      "enforcedAt": "Proposed local browser native controls; not implemented or verified."
+    },
+    {
+      "role": "Local user",
+      "scope": "Specification: count in page memory only; fresh load/reload starts at 0. No persistence, accounts, database or API.",
+      "enforcedAt": "Proposed src/app.js memory and render function; no storage. This is a specification boundary, not a verified security control."
+    },
+    {
+      "role": "Local user",
+      "scope": "Specification: offline local document/assets only; no external requests, remote fonts/assets, vendor integrations or dependencies.",
+      "enforcedAt": "Proposed local relative assets with no fetches; later fixed browser tests must verify network behavior."
+    }
+  ],
+  "questions": [
+    {
+      "question": "Does the human accept the authored Counter layout, typography, colors, native controls, focus treatment and Empty explanation in mobile/desktop and light/dark variants?",
+      "status": "Pending human design acceptance in parent session; no approval recorded."
+    },
+    {
+      "question": "Does the human accept the proposed positive-count presentation using the same metric and controls with Empty text hidden, and Reset restoring the zero/Empty presentation?",
+      "status": "Pending human design acceptance; static reference is not working application behavior."
+    }
+  ]
+}

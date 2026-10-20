@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "method": "Node vm unit execution of authored preview interaction script with minimal DOM doubles; not browser inspection of the file page",
+  "checks": [
+    "increment twice",
+    "reset restores zero and Empty",
+    "presentation variant resets preview"
+  ],
+  "sha256": "2074d8f0b35678575dfec02753b2d0fb1468acb7a8d3234f59e554e51d85812b"
+}

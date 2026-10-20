@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Counter</title>
+<script src="app.js" defer></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main id="counter">
+<nav aria-label="Main navigation"><a href="#counter" aria-current="page">Counter</a></nav>
+<section aria-labelledby="title">
+<h1 id="title">Counter</h1>
+<p class="instructions">Select Increment to add one. Select Reset to return to zero.</p>
+<div class="metric"><span class="label" id="count-label">Count</span><span class="count" data-testid="count" aria-labelledby="count-label" aria-live="polite" aria-atomic="true">0</span></div>
+<p class="empty-state">No increments yet.</p>
+<div class="actions"><button type="button" class="primary" id="increment">Increment</button><button type="button" id="reset">Reset</button></div>
+</section>
+</main>
+</body>
+</html>
+
