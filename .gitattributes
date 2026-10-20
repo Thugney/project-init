@@ -1,0 +1,2 @@
+# Archived receipts and fixture inputs retain the exact bytes used for SHA-256 evidence.
+docs/verification/2026-10-20-seven-skills/** -text -whitespace
