@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "project": "Counter",
+  "status": "draft",
+  "theme": {
+    "primary": "#2459a9",
+    "sidebar": "#edf2f8",
+    "font": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
+  },
+  "tokens": {
+    "light": {
+      "background": "#f5f6f8",
+      "surface": "#ffffff",
+      "text": "#182230",
+      "muted": "#4b596b",
+      "border": "#7b8797",
+      "primary": "#2459a9",
+      "primaryText": "#ffffff",
+      "hover": "#194581",
+      "focus": "#2459a9",
+      "soft": "#edf2f8"
+    },
+    "dark": {
+      "background": "#111820",
+      "surface": "#1b2531",
+      "text": "#f3f6fa",
+      "muted": "#bac6d5",
+      "border": "#7c8da3",
+      "primary": "#a8caff",
+      "primaryText": "#10233f",
+      "hover": "#c4dbff",
+      "focus": "#a8caff",
+      "soft": "#263447"
+    },
+    "font": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+    "type": {
+      "body": 16,
+      "navigation": 14,
+      "label": 14,
+      "heading": 32,
+      "count": 80
+    },
+    "spacing": [
+      4,
+      12,
+      16,
+      24,
+      32,
+      64
+    ],
+    "cardRadius": 16,
+    "controlRadius": 8,
+    "borderWidth": 1,
+    "focusWidth": 3,
+    "focusOffset": 4,
+    "controlHeight": 48
+  },
+  "referenceMockup": ".project-init/counter-reference.html",
+  "referenceContract": "Static authored visual specification, not implemented counter behavior. The rendered workspace previews this reference in a sandbox frame. Query theme=light|dark overrides system preference; state=Default|Empty presents zero with the Empty explanation. Human design acceptance remains pending.",
+  "screens": [
+    {
+      "id": "counter",
+      "title": "Counter",
+      "subtitle": "Select Increment to add one. Select Reset to return to zero.",
+      "navigation": [
+        {
+          "label": "Counter",
+          "active": true,
+          "href": "#counter"
+        }
+      ],
+      "metrics": [
+        {
+          "label": "Count",
+          "value": "0",
+          "detail": "No increments yet."
+        }
+      ],
+      "sections": [
+        {
+          "title": "Instructions",
+          "description": "Select Increment to add one. Select Reset to return to zero."
+        }
+      ],
+      "actions": [
+        {
+          "label": "Increment",
+          "kind": "primary"
+        },
+        {
+          "label": "Reset",
+          "kind": "secondary"
+        }
+      ],
+      "states": [
+        "Empty"
+      ],
+      "stateDetails": {
+        "Default": {
+          "count": 0,
+          "emptyText": "No increments yet.",
+          "controlsVisible": true
+        },
+        "Empty": {
+          "count": 0,
+          "emptyText": "No increments yet.",
+          "controlsVisible": true
+        }
+      },
+      "positiveStateSpecification": "Implementation only: positive count uses the same metric typography and controls; hide .empty-state. Reset restores count 0 and empty text. Positive state is outside this five-case static matrix.",
+      "layout": {
+        "desktop": {
+          "viewport": "1440x900",
+          "mainMaxWidth": 528,
+          "mainPadding": "64px 24px",
+          "cardPadding": 32
+        },
+        "mobile": {
+          "viewport": "375x812",
+          "breakpoint": 480,
+          "mainPadding": "24px 16px",
+          "cardPadding": 24,
+          "buttons": "equal flexible widths"
+        },
+        "common": "Centered main; navigation above bordered card. Metric top margin 32px; empty text top margin 16px; actions top margin 32px and gap 12px. Natural document flow permits zoom reflow and vertical scrolling; buttons stack below 300px."
+      },
+      "accessibility": {
+        "countTestId": "count",
+        "countLive": "polite",
+        "countAtomic": true,
+        "nativeButtons": true,
+        "minimumTarget": 44,
+        "focus": "3px solid focus token with 4px offset",
+        "navigation": "Single Counter anchor with aria-current page",
+        "motion": "none"
+      },
+      "controlStates": {
+        "hover": "Primary uses hover token; secondary uses soft token; no geometry change",
+        "active": "Inset 2px text-color shadow",
+        "focus": "Visible keyboard outline",
+        "disabled": "Not applicable; both controls remain enabled at zero",
+        "loading": "Not applicable: offline in-memory counter",
+        "error": "Not applicable: no external operations"
+      }
+    }
+  ]
+}

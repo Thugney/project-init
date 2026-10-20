@@ -1,0 +1,255 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-10-20T17:00:01.3255942Z",
+  "status": "blocked",
+  "implementation": "Directly authorized functional prototype in src; not a guarded approved build",
+  "verify": {
+    "command": "project-init verify --project . --execute",
+    "output": "Project Init: Cannot verify with changed/missing approved spec/design baseline.",
+    "exitCode": 1,
+    "configuredChecksExecuted": false
+  },
+  "browser": {
+    "nativeBrowserMenuZoomTested": false,
+    "execution": "Direct execution of exact configured check after guarded verify refused",
+    "zoomCoverage": "200% CSS zoom proxy only",
+    "exitCode": 0,
+    "receipt": {
+      "browserVersion": "155.0.4283.62",
+      "reference": false,
+      "results": [
+        {
+          "id": "counter-desktop-light-default",
+          "width": 1440,
+          "height": 900,
+          "state": "Default",
+          "behaviorChecked": true,
+          "noOverflow": true,
+          "noRuntimeErrors": true,
+          "noExternalRequests": true
+        },
+        {
+          "id": "counter-desktop-dark-default",
+          "width": 1440,
+          "height": 900,
+          "state": "Default",
+          "behaviorChecked": true,
+          "noOverflow": true,
+          "noRuntimeErrors": true,
+          "noExternalRequests": true
+        },
+        {
+          "id": "counter-mobile-light-default",
+          "width": 375,
+          "height": 812,
+          "state": "Default",
+          "behaviorChecked": true,
+          "noOverflow": true,
+          "noRuntimeErrors": true,
+          "noExternalRequests": true
+        },
+        {
+          "id": "counter-mobile-dark-default",
+          "width": 375,
+          "height": 812,
+          "state": "Default",
+          "behaviorChecked": true,
+          "noOverflow": true,
+          "noRuntimeErrors": true,
+          "noExternalRequests": true
+        },
+        {
+          "id": "counter-desktop-light-empty",
+          "width": 1440,
+          "height": 900,
+          "state": "Empty",
+          "behaviorChecked": false,
+          "noOverflow": true,
+          "noRuntimeErrors": true,
+          "noExternalRequests": true
+        }
+      ],
+      "passed": true
+    },
+    "command": "node tests/browser.cjs"
+  },
+  "visual": {
+    "command": "project-init visual compare --project .",
+    "exitCode": 1,
+    "inspection": "Inspected all five fresh actual screenshots; title, instructions, count zero, Empty text and both controls visible at desktop/mobile in light/dark; no visible clipping. Existing reference files are not human-approved baselines.",
+    "result": {
+      "schemaVersion": 1,
+      "at": "2026-10-20T17:00:00.798Z",
+      "baselineHash": null,
+      "sourceHash": "85f690b6977fc01addc9960eeb91af9a65cb336f4845ef49cc7eadd1497b7171",
+      "manifestHash": "574de7cb774ed9851d5f0e9d274e1acee42b18b6f16a2614389f94c1deb54a51",
+      "coverageComplete": true,
+      "missingCoverage": [],
+      "approved": false,
+      "passed": false,
+      "results": [
+        {
+          "id": "counter-desktop-light-default",
+          "passed": true,
+          "changedPixels": 0,
+          "totalPixels": 1296000,
+          "diffRatio": 0,
+          "maxDiffRatio": 0.01,
+          "pixelThreshold": 12,
+          "width": 1440,
+          "height": 900,
+          "referenceHash": "f027968b74c45fd39ef2025d1352bf5cced02c3711b07d73ac3625182111dd80",
+          "actualHash": "f027968b74c45fd39ef2025d1352bf5cced02c3711b07d73ac3625182111dd80",
+          "diff": "visual/diffs/counter-desktop-light-default.png"
+        },
+        {
+          "id": "counter-desktop-dark-default",
+          "passed": true,
+          "changedPixels": 0,
+          "totalPixels": 1296000,
+          "diffRatio": 0,
+          "maxDiffRatio": 0.01,
+          "pixelThreshold": 12,
+          "width": 1440,
+          "height": 900,
+          "referenceHash": "0920298c0706765ef0707af6a17bc85f69e097dfc3a6c2bd688576ccecfc5cc3",
+          "actualHash": "0920298c0706765ef0707af6a17bc85f69e097dfc3a6c2bd688576ccecfc5cc3",
+          "diff": "visual/diffs/counter-desktop-dark-default.png"
+        },
+        {
+          "id": "counter-mobile-light-default",
+          "passed": true,
+          "changedPixels": 0,
+          "totalPixels": 304500,
+          "diffRatio": 0,
+          "maxDiffRatio": 0.01,
+          "pixelThreshold": 12,
+          "width": 375,
+          "height": 812,
+          "referenceHash": "38ff582e6bac211937902398831ae5389d41ebc8c3da1458447f6b4860590d96",
+          "actualHash": "38ff582e6bac211937902398831ae5389d41ebc8c3da1458447f6b4860590d96",
+          "diff": "visual/diffs/counter-mobile-light-default.png"
+        },
+        {
+          "id": "counter-mobile-dark-default",
+          "passed": true,
+          "changedPixels": 0,
+          "totalPixels": 304500,
+          "diffRatio": 0,
+          "maxDiffRatio": 0.01,
+          "pixelThreshold": 12,
+          "width": 375,
+          "height": 812,
+          "referenceHash": "304eaacbc2c6b9660812becb5fb7a36a1c00457f9f8fc8f7fbc1aadc257c3920",
+          "actualHash": "304eaacbc2c6b9660812becb5fb7a36a1c00457f9f8fc8f7fbc1aadc257c3920",
+          "diff": "visual/diffs/counter-mobile-dark-default.png"
+        },
+        {
+          "id": "counter-desktop-light-empty",
+          "passed": true,
+          "changedPixels": 0,
+          "totalPixels": 1296000,
+          "diffRatio": 0,
+          "maxDiffRatio": 0.01,
+          "pixelThreshold": 12,
+          "width": 1440,
+          "height": 900,
+          "referenceHash": "f027968b74c45fd39ef2025d1352bf5cced02c3711b07d73ac3625182111dd80",
+          "actualHash": "f027968b74c45fd39ef2025d1352bf5cced02c3711b07d73ac3625182111dd80",
+          "diff": "visual/diffs/counter-desktop-light-empty.png"
+        }
+      ],
+      "limitation": "Pixel comparison tests screenshot regression only. Browser actions, accessibility and complete semantic behavior require additional tests and review.",
+      "reviewPage": "D:\\CodexHome\\visualizations\\2026\\10\\20\\01a15a05-0f26-7c23-a631-3094b5e5ece3\\seven-skills-counter\\.project-init\\evidence\\visual-review.html"
+    }
+  },
+  "semantic": {
+    "command": "project-init semantic plan --project .",
+    "exitCode": 0,
+    "independentReview": "Absent; no delegation permitted and no review fabricated or imported",
+    "result": {
+      "complete": false,
+      "requirements": 2,
+      "missing": [
+        {
+          "id": "REQ-COUNT",
+          "reason": "spec path not in approved native spec baseline"
+        },
+        {
+          "id": "REQ-UI",
+          "reason": "spec path not in approved native spec baseline"
+        }
+      ],
+      "items": [
+        {
+          "id": "REQ-COUNT",
+          "specPath": "specs/counter.md",
+          "checks": [
+            "browser"
+          ],
+          "visualCases": []
+        },
+        {
+          "id": "REQ-UI",
+          "specPath": "specs/counter.md",
+          "checks": [
+            "browser"
+          ],
+          "visualCases": [
+            "counter-desktop-light-default",
+            "counter-desktop-dark-default",
+            "counter-mobile-light-default",
+            "counter-mobile-dark-default",
+            "counter-desktop-light-empty"
+          ]
+        }
+      ]
+    }
+  },
+  "guard": {
+    "command": "project-init guard --project .",
+    "exitCode": 1,
+    "result": {
+      "schemaVersion": 1,
+      "at": "2026-10-20T17:00:01.31Z",
+      "passed": false,
+      "baselineHash": null,
+      "sourceHash": "85f690b6977fc01addc9960eeb91af9a65cb336f4845ef49cc7eadd1497b7171",
+      "testsCurrent": false,
+      "semanticCurrent": false,
+      "visualCurrent": false,
+      "executionValid": false,
+      "missing": [
+        "current approved specification and UI design required",
+        "source changed since approved baseline; reconcile independent source review",
+        "current deterministic build/test evidence required",
+        "requirement-to-check coverage missing",
+        "complete, current semantic review and per-requirement test evidence required",
+        "approved screenshot comparisons for every required screen, viewport, theme and state are missing or failed",
+        "actual bounded implementation run and recorded source change required"
+      ],
+      "readyForHumanReleaseReview": false,
+      "releaseApproved": false,
+      "limitation": "Evidence readiness is not a human release authorization. Neither screenshot pixels nor reviewer assertions prove all behavior."
+    }
+  },
+  "blockers": [
+    "No human design acceptance or approved specification/design baseline",
+    "No current guarded deterministic build/test receipt; direct browser results do not satisfy this gate",
+    "No independent per-requirement semantic source review",
+    "No approved screenshot comparison evidence despite zero pixel differences",
+    "No actual bounded implementation run receipt; prototype is not relabeled as approved build"
+  ],
+  "limitations": [
+    "Native browser-menu zoom untested; CSS zoom is a proxy",
+    "Theme emulation changes retain explicit query theme, so automatic OS theme switching is not proved",
+    "REQ-REPORT is outside the two requirements mapped by semantic plan; report stage not executed here"
+  ],
+  "preservation": {
+    "installed": false,
+    "sourceSpecificationsTestsEdited": false,
+    "delegated": false,
+    "approvalsReviewsBaselinesRunReceiptsCreated": false,
+    "committed": false
+  }
+}

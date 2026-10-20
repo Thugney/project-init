@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-20T17:06:17.2678643Z",
+  "command": "project-init lean --project . --input .project-init/seven-skill-report.md --out .project-init/lean/seven-skill-report.html --execute",
+  "exitCode": 0,
+  "executed": true,
+  "passed": true,
+  "bundled": true,
+  "source": ".project-init/seven-skill-report.md",
+  "output": ".project-init/lean/seven-skill-report.html",
+  "bytes": 11840,
+  "sha256": "ef379ab5a6f4b5ddb1b84e979bcb5a40b9c5f6766edb959874890394c8b2323e",
+  "sourceSha256": "a30708faed2b319b0285ec2289890799fc56f19569cef5b400d06417f0e1ef5f",
+  "inspection": "Read actual generated HTML; checked seven skill rows, completion evidence, 47 regressions, blockers, synthetic-browser separation, limitations, document structure and CLI hash match. No browser visual inspection or fresh application/regression tests in this stage.",
+  "checks": {
+    "htmlDocument": true,
+    "sevenSkillRows": true,
+    "nativeCompletionPresent": true,
+    "regression47Present": true,
+    "blockersPresent": true,
+    "syntheticSeparationPresent": true,
+    "limitationsPresent": true,
+    "closingHtml": true,
+    "commandHashMatches": true
+  },
+  "independentReportReviewPerformed": false,
+  "humanApproved": false,
+  "releaseApproved": false
+}
