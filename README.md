@@ -11,7 +11,7 @@ Project Init is a **local-first development workflow orchestrator** for engineer
 
 It does **not** replace your coding agent or run an autonomous developer in the background. The selected framework owns its **native specifications and tasks**; Codex or Claude writes the code. Project Init coordinates and checks the handoffs.
 
-> **Status: `2.1.0-preview.2` — functional preview, not production-accepted.** The local suites pass, but live framework installs, real Codex/Claude command discovery, native Claude unattended execution, and Windows browser capture have not completed acceptance testing. A passing guard is not proof of full semantic correctness or release approval. See [verification limits](docs/VERIFICATION.md) and the [acceptance report](docs/ACCEPTANCE-REPORT.md).
+> **Status: `2.1.0-preview.2` — functional preview, not production-accepted.** On 2026-10-20, PR #8 passed 43 automated tests and a live authenticated **native Windows Codex, non-UI, framework `none`** lifecycle through implementation, tests, independent review and the candidate guard; changed source correctly invalidated acceptance. The older npm Codex installation failed its live attempt. Native framework installs, client skill menus, Claude execution and Windows browser capture remain unverified. See the [exact Windows environment, commands, failures and receipts](docs/WINDOWS-ACCEPTANCE-2026-10-20.md), [verification limits](docs/VERIFICATION.md) and [original acceptance report](docs/ACCEPTANCE-REPORT.md).
 >
 > **Licensing:** Project Init, the bundled Codex Lean Kit, and the preserved v1 sources are released under the [Apache License 2.0](LICENSE), as authorized by their maintainer. See [NOTICE](NOTICE.md) for provenance and attribution. GitHub preview source is licensed; **production readiness remains unverified**. npm publishing remains disabled intentionally.
 
@@ -56,6 +56,8 @@ The preview below is rendered from demonstration data, **not a real tenant or ve
 UI projects can define navigation, typography, colors, buttons, tables, component states and responsive variants. The PNG gate compares actual screenshots to approved images at matching dimensions; it **cannot** prove that buttons work, that accessibility is correct, or that a design is semantically correct. Use browser interaction tests for those claims.
 
 ## Quick start
+
+**Verified Windows configuration (2026-10-20):** build **26200.9168**, display version **25H2**, x64; PowerShell **7.6.5**, Node **24.12.0**, npm **11.12.1**, Git **2.55.0.windows.5**, native Codex **0.163.0-alpha.10.2**, existing ChatGPT login. `npm run test:all`: **35/35 Project Init + 8/8 Lean Kit**, zero skips; `npm run smoke`: passed. The live disposable addition project passed **3/3 functional tests**, then `guard` returned `readyForHumanReleaseReview: true`, `releaseApproved: false`. This validates that bounded non-UI workflow only; it is not blanket acceptance of every integration. [Reproduction and evidence](docs/WINDOWS-ACCEPTANCE-2026-10-20.md).
 
 **Prerequisites:** Node.js **20.19+**, Git, and an already configured Codex or Claude Code environment for any coding work. Project Init itself has no runtime npm package dependencies. External frameworks are **not** silently installed.
 

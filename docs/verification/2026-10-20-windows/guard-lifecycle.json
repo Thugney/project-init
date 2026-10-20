@@ -1,0 +1,54 @@
+{
+  "guard": {
+    "schemaVersion": 1,
+    "at": "2026-10-20T16:03:09.238Z",
+    "passed": true,
+    "baselineHash": "c335ff48c78f65789aa0b4a875cfac8c945687b972424f57cf671be2df39f381",
+    "sourceHash": "300280f98d2115440fd393de90df8020b542a1d3a067fba041f6b06ef79b1ce3",
+    "testsCurrent": true,
+    "semanticCurrent": true,
+    "visualCurrent": true,
+    "executionValid": true,
+    "missing": [],
+    "readyForHumanReleaseReview": true,
+    "releaseApproved": false,
+    "limitation": "Evidence readiness is not a human release authorization. Neither screenshot pixels nor reviewer assertions prove all behavior."
+  },
+  "stale": {
+    "schemaVersion": 1,
+    "at": "2026-10-20T16:03:09.866Z",
+    "passed": false,
+    "baselineHash": "c335ff48c78f65789aa0b4a875cfac8c945687b972424f57cf671be2df39f381",
+    "sourceHash": "d0c21134f47d67c3abb60e6f45ad3bcd73819f07cb301924ee5c69456414c91c",
+    "testsCurrent": false,
+    "semanticCurrent": false,
+    "visualCurrent": true,
+    "executionValid": false,
+    "missing": [
+      "source changed since approved baseline; reconcile independent source review",
+      "current deterministic build/test evidence required",
+      "complete, current semantic review and per-requirement test evidence required",
+      "actual bounded implementation run and recorded source change required"
+    ],
+    "readyForHumanReleaseReview": false,
+    "releaseApproved": false,
+    "limitation": "Evidence readiness is not a human release authorization. Neither screenshot pixels nor reviewer assertions prove all behavior."
+  },
+  "restored": {
+    "schemaVersion": 1,
+    "at": "2026-10-20T16:03:10.103Z",
+    "passed": true,
+    "baselineHash": "c335ff48c78f65789aa0b4a875cfac8c945687b972424f57cf671be2df39f381",
+    "sourceHash": "300280f98d2115440fd393de90df8020b542a1d3a067fba041f6b06ef79b1ce3",
+    "testsCurrent": true,
+    "semanticCurrent": true,
+    "visualCurrent": true,
+    "executionValid": true,
+    "missing": [],
+    "readyForHumanReleaseReview": true,
+    "releaseApproved": false,
+    "limitation": "Evidence readiness is not a human release authorization. Neither screenshot pixels nor reviewer assertions prove all behavior."
+  },
+  "reviewer": "Codex independent verifier verify_evidence",
+  "evidence": "Independent parent-session review: source, immutable tests/spec, Git diff and initial failing tests inspected; REQ-ADD passed."
+}

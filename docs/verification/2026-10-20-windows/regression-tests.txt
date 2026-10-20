@@ -1,0 +1,77 @@
+
+> @thugney/project-init@2.1.0-preview.2 test:all
+> npm run check && npm run test:lean
+
+
+> @thugney/project-init@2.1.0-preview.2 check
+> node --check bin/project-init.mjs && node --check lib/core.mjs && node --check lib/visual.mjs && node --check lib/png.mjs && node --check lib/visual-gate.mjs && node --check lib/guard.mjs && node --check lib/skills.mjs && node --check lib/lean.mjs && npm test
+
+
+> @thugney/project-init@2.1.0-preview.2 test
+> node --test tests/*.test.mjs
+
+✔ Git root validation trusts Git prefix, not OS-specific path formatting (592.9015ms)
+✔ read-only discovery does not create state and detects existing sources (69.9121ms)
+✔ new/existing init is non-destructive, resumable only through status (290.5384ms)
+✔ recommendation considers intent, complexity, existing footprints (333.0191ms)
+✔ framework pin is idempotent and refuses silent methodology switching (183.7448ms)
+✔ native framework directories alone are not treated as working CLI integrations (462.6962ms)
+✔ install preview never executes package managers or vendor scaffolding (368.3125ms)
+✔ approval requires current spec, review and actual actor/evidence (670.5504ms)
+✔ UI mockup file is part of approval hash; missing UI cannot pass (566.2401ms)
+✔ UI approval rejects missing non-default component states (183.5099ms)
+✔ rendered review is standalone, escaping labels and never invents missing screens (282.7142ms)
+✔ cannot use traversal or link to escape configured project artifacts (175.9628ms)
+✔ verification is dry-run until execute; real success/failure captured (1295.0065ms)
+✔ no Codex implementation without approved baseline and allowed-file scope (641.914ms)
+✔ wire creates a Codex skill only when explicitly applied; never changes existing AGENTS (123.2238ms)
+✔ visual output cannot overwrite application source (290.2655ms)
+✔ existing review workspace remains unchanged and separately discoverable (92.8236ms)
+✔ real Codex receipt requires Git, preserves scoped changes and never marks release ready (3442.3156ms)
+✔ unapproved Codex source changes are blocked rather than reported complete (2009.4163ms)
+✔ license, attribution and package metadata match Apache-2.0 (9.8439ms)
+✔ bundled Lean Kit renders real report; no separate installation or global skill needed (306.9502ms)
+✔ agent skills install in Codex and Claude with descriptions and Claude plugin namespace (417.7616ms)
+✔ strict PNG comparator catches changed pixels, mismatched dimensions, and CRC corruption (99.6228ms)
+✔ visual screenshots and critical states are enforced and approval hashes references (2814.1372ms)
+✔ visual capture refuses remote URLs and does not overwrite references (502.6747ms)
+v24.12.0
+✔ semantic mapping checks authoritative specs and requires test evidence and grounded reviews (2358.1868ms)
+✔ missing screenshot/state matrix blocks visual acceptance even if one screenshot passes (757.3356ms)
+✔ visual HTML supports deterministic capture routes for screen, theme, viewport and state (657.6171ms)
+v24.12.0
+✔ full synthetic evidence lifecycle can pass candidate gate, but never self-approves release (5374.7143ms)
+✔ user-wide skills use Codex ~/.agents/skills and Claude ~/.claude/skills (312.7729ms)
+✔ explicit conflict backups preserve old skills and do not touch unrelated ones (335.41ms)
+✔ Windows native-only Codex install resolves its executable without requiring a cmd shim (2.704ms)
+✔ Windows resolution respects the first PATH directory and preserves npm-style cmd shims (5.6063ms)
+✔ Windows executes the selected cmd path despite a conflicting working-directory shim (69.325ms)
+✔ Windows executes the selected bat path despite a conflicting working-directory shim (59.545ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 35
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14064.9123
+
+> @thugney/project-init@2.1.0-preview.2 test:lean
+> node --test vendor/lean-kit/tests/render.test.mjs
+
+✔ Markdown reports render a safe table and checklists, and repeat idempotently (149.3317ms)
+✔ Diagrams render geometry from layer data, not authored SVG (72.4305ms)
+✔ Interactive boards contain prebuilt JS, no external dependencies and valid data (89.374ms)
+✔ Source is escaped and script-injection text remains non-executable (145.4829ms)
+✔ Validation fails closed with structured failure audit (70.5019ms)
+✔ Diagram rejects dangling references (69.6873ms)
+✔ Codex JSONL usage summary distinguishes cached input and output (60.8815ms)
+✔ Board storage key follows source hash to avoid overriding newer source data (145.7633ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 894.3027

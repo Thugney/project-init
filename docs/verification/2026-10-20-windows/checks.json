@@ -1,0 +1,23 @@
+{
+  "executed": true,
+  "passed": true,
+  "baselineHash": "c335ff48c78f65789aa0b4a875cfac8c945687b972424f57cf671be2df39f381",
+  "sourceHash": "300280f98d2115440fd393de90df8020b542a1d3a067fba041f6b06ef79b1ce3",
+  "checks": [
+    {
+      "name": "addition",
+      "argv": [
+        "node",
+        "--test",
+        "tests/add.test.mjs"
+      ],
+      "startedAt": "2026-10-20T16:03:08.600Z",
+      "finishedAt": "2026-10-20T16:03:08.764Z",
+      "exitCode": 0,
+      "timedOut": false,
+      "log": "runs/check-1792512188600-addition.log"
+    }
+  ],
+  "at": "2026-10-20T16:03:08.777Z",
+  "limitation": "Passing checks do not themselves prove semantic requirements, complete UI fidelity, or release readiness."
+}
