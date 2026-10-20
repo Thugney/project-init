@@ -11,7 +11,7 @@ Project Init is a **local-first development workflow orchestrator** for engineer
 
 It does **not** replace your coding agent or run an autonomous developer in the background. The selected framework owns its **native specifications and tasks**; Codex or Claude writes the code. Project Init coordinates and checks the handoffs.
 
-> **Status: `2.1.0-preview.2` — verified end to end with native Codex on Windows.** The tested workflow covers a non-UI project using framework `none`: implementation, functional tests, independent review, candidate acceptance and rejection of stale evidence. All 43 automated tests passed locally. **Claude and live Codex workflows on Linux/macOS have not been tested**; automated CI tests passed on all three operating systems. External framework workflows and UI/browser capture still require live verification. The older npm-installed Codex failed its live attempt; the native Windows executable passed. See the [tested versions, commands and evidence](docs/WINDOWS-ACCEPTANCE-2026-10-20.md). This preview is not yet accepted for production across all supported integrations.
+> **Status: `2.1.0-preview.2` — verified end to end with native Codex on Windows, including installation and skill discovery.** The tested workflow covers a non-UI project using framework `none`: implementation, functional tests, independent review, candidate acceptance and rejection of stale evidence. All 43 automated tests passed locally. Global CLI installation and backup of an older Project Init skill passed; all seven Codex skills were discovered as enabled by a fresh native Codex process and appeared in the user's running client without a restart. **Claude and live Codex workflows on Linux/macOS have not been tested**; automated CI tests passed on all three operating systems. External framework workflows and UI/browser capture still require live verification. The older npm-installed Codex failed its live attempt; the native Windows executable passed. See the [tested versions, commands and evidence](docs/WINDOWS-ACCEPTANCE-2026-10-20.md). This preview is not yet accepted for production across all supported integrations.
 >
 > **Licensing:** Project Init, the bundled Codex Lean Kit, and the preserved v1 sources are released under the [Apache License 2.0](LICENSE), as authorized by their maintainer. See [NOTICE](NOTICE.md) for provenance and attribution. GitHub preview source is licensed; **production readiness remains unverified**. npm publishing remains disabled intentionally.
 
@@ -71,7 +71,7 @@ npm install --global .
 project-init help
 ```
 
-Use it on a disposable repository first; do not replace an older Project Init installation without consulting the [migration guide](docs/MIGRATION.md).
+For an existing Project Init installation, see the optional [upgrade and migration guide](docs/MIGRATION.md).
 
 ```powershell
 $project = 'C:\Work\ExampleRepo'
@@ -85,6 +85,8 @@ project-init handoff --project $project --phase planning
 `recommend` offers alternatives. The user decides; for small projects `none` is valid. Framework selection does **not** automatically download or execute a vendor installer. Use `project-init install` first as a preview, then `--apply` with an explicit version only after checking the proposed steps.
 
 ## Discoverable skills in Codex and Claude Code
+
+**Installation adds Project Init; it does not replace your other skills or coding-agent configuration.** The npm step installs the CLI. The separate `wire` step adds seven skills for each selected agent; `--agent codex` installs skills only for Codex. Unrelated skills and existing project `AGENTS.md`/`CLAUDE.md` files are preserved. Matching Project Init skills are left unchanged; conflicting skills with the same names block installation by default. Explicit `--backup-conflicts --apply` backs up those conflicting folders before installing the new versions. Native framework installation remains a separate opt-in action.
 
 ```powershell
 # For personal skills visible across your local projects (recommended):

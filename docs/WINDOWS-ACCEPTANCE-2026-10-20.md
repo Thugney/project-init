@@ -20,7 +20,7 @@ Tested PR [#8](https://github.com/Thugney/project-init/pull/8), exact head `3f95
 | Process permissions | Parent test command required access outside the desktop session sandbox for existing Codex session files and network. The spawned coding agent still received `--sandbox workspace-write`. |
 | Framework / UI | `none` / `no`; no vendor installer or browser involved |
 
-No dependencies were added or installed, no global CLI/skill migration was performed, and user-wide Codex configuration was not modified. PATH was prepended with the native executable directory only in the successful test's PowerShell process.
+During the initial disposable lifecycle test, no dependencies were added or installed and no global CLI/skill migration was performed. PATH was prepended with the native executable directory only in the successful test's PowerShell process. The subsequent authorized installation and skill-discovery acceptance is recorded below. User-wide Codex configuration was not modified.
 
 ## What passed and how
 
@@ -80,4 +80,19 @@ All files below are in [verification/2026-10-20-windows](verification/2026-10-20
 - [Passing, stale and restored guard receipts](verification/2026-10-20-windows/guard-lifecycle.json)
 - [Implemented source](verification/2026-10-20-windows/add.mjs), [immutable functional tests](verification/2026-10-20-windows/add.test.mjs)
 
-Not covered: live OpenSpec/Spec Kit/BMAD installation or workflows, Claude, skill menu discovery in either client, Windows browser capture, UI interactions/accessibility, legacy Pester, global installation/migration, Linux/macOS live execution, deployment or production release. The regression suite contains synthetic visual/approval/agent fixtures; those are distinct from this authenticated non-UI live test. Existing cross-platform CI is additional evidence only once its runs actually pass.
+## Installed CLI and Codex skill discovery — follow-up acceptance
+
+On 2026-10-20, after explicit user authorization:
+
+- Copied the existing personal `project-init` skill folder to a separate pre-install backup. Its original and backup `SKILL.md` SHA-256 both matched `340F63747CCEEC1D9E1220C421EA52FDE12BFC6E2C3DEAC2487B2A2258200BF6`; a separate verifier confirmed it.
+- Installed the tested checkout with `npm install --global --install-links --ignore-scripts --offline .`. This installed one local package, with no dependency downloads or install scripts. No previous global Project Init package was present.
+- Ran `project-init wire --project . --agent codex --scope user --backup-conflicts --apply --json`: seven skills created, one old conflicting Project Init folder backed up by the installer; Claude was not selected.
+- `project-init help` and `project-init version` passed; the installed version reported `2.1.0-preview.2`. Installed entry point and reviewed runtime modules matched the tested source after normalizing CRLF/LF (npm normalized the executable's line endings).
+- A subsequent wiring preview reported all seven skills `unchanged`; a separate verifier confirmed their exact contents. No unrelated skill was included in the wiring plan.
+- Started a fresh native Codex app-server process and requested `skills/list` with `forceReload: true`, without a model conversation. It returned all seven Project Init skills at the expected personal skill paths with `enabled: true`.
+- The user confirmed the skills appeared in the running Codex client immediately, without restarting. This closes the Codex client-discovery check for this machine.
+- The installed CLI's `status` on the passed disposable fixture still reported approval, aligned source, current test evidence and `releaseCandidateReady: true`.
+
+These installation/discovery observations were checked after the committed lifecycle receipts above; they are not represented as outputs from the earlier live run. Personal wiring adds only the selected Project Init skill folders. Same-name conflicts require explicit backup authorization; unrelated skills and existing project instruction files are preserved.
+
+Not covered: live OpenSpec/Spec Kit/BMAD installation or workflows, Claude execution or client menus, Windows browser capture, UI interactions/accessibility, legacy Pester, Linux/macOS live execution, deployment or production release. The regression suite contains synthetic visual/approval/agent fixtures; those are distinct from this authenticated non-UI live test. GitHub CI for commit `570e0b9` passed all six Node 22/24 jobs on Windows, Linux and macOS; that validates automated checks, not live agent execution on those other systems.
