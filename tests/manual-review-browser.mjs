@@ -4,7 +4,7 @@ import {initProject,selectFramework,statePath,establishBaseline,checkBaseline} f
 const require=createRequire(import.meta.url),{chromium}=require(process.env.PROJECT_INIT_PLAYWRIGHT_MODULE||'C:/Users/Editor/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const evidenceDir=process.env.PROJECT_INIT_REVIEW_EVIDENCE;if(evidenceDir)fs.mkdirSync(evidenceDir,{recursive:true});
 const browser=await chromium.launch({executablePath:process.env.PROJECT_INIT_BROWSER||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});
-const root=fs.mkdtempSync(path.join(os.tmpdir(),'pinit-review-browser-'));
+const root=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'pinit-review-browser-'));
 // Isolated synthetic fixture; never exposes an existing user's project or files.
 const server=http.createServer((req,res)=>{if(req.url==='/favicon.ico'){res.writeHead(204).end();return;}if(new URL(req.url,'http://local').pathname!=='/'){res.writeHead(404).end();return;}res.setHeader('Content-Type','text/html; charset=utf-8');res.end(fs.readFileSync(statePath(root,'review.html')));});
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const reviewUrl=`http://127.0.0.1:${server.address().port}/`;

@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {initProject,selectFramework,establishBaseline,checkBaseline,statePath,hashFile} from '../lib/core.mjs';
 import {renderVisualReview} from '../lib/visual.mjs';
-function fixture(){const root=fs.mkdtempSync(path.join(os.tmpdir(),'pinit-review-context-'));initProject(root,{mode:'New',ui:'no'});selectFramework(root,'none');fs.mkdirSync(path.join(root,'specs'));fs.writeFileSync(path.join(root,'specs','counter.md'),'# Counter\nIn-memory count; no network or accounts.\n');return root;}
+function fixture(){const root=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'pinit-review-context-'));initProject(root,{mode:'New',ui:'no'});selectFramework(root,'none');fs.mkdirSync(path.join(root,'specs'));fs.writeFileSync(path.join(root,'specs','counter.md'),'# Counter\nIn-memory count; no network or accounts.\n');return root;}
 test('modern review context carries source provenance and its edits invalidate acceptance baseline',()=>{
  const root=fixture();
  try{
