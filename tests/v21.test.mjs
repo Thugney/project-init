@@ -163,7 +163,7 @@ test('explicit conflict backups preserve old skills and do not touch unrelated o
 
 test('Spec Kit plan uses pinned GitHub release and installs Codex plus Claude integrations on an existing repo',async()=>{
  const {spawnSync}=await import('node:child_process');
- const base=fs.mkdtempSync(path.join(os.tmpdir(),'pinit-speckit-')),root=path.join(base,'repo');fs.mkdirSync(root);
+ const tempRoot=fs.realpathSync(os.tmpdir()); const base=fs.mkdtempSync(path.join(tempRoot,'pinit-speckit-')),root=path.join(base,'repo');fs.mkdirSync(root);
  const git=(...args)=>{const r=spawnSync('git',args,{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr);};
  git('init');git('config','user.name','Fixture');git('config','user.email','fixture@example.invalid');fs.writeFileSync(path.join(root,'README.md'),'existing\n');git('add','.');git('commit','-m','baseline');
  initProject(root,{mode:'Existing',intent:'feature',ui:'no'});selectFramework(root,'spec-kit');
@@ -182,7 +182,7 @@ test('ECC plan is pinned, dual-harness, and dry-run by default',()=>{
 
 test('Codex factory skills match the supplied backend bridge contract and install repo-locally',async()=>{
  const {spawnSync}=await import('node:child_process');
- const base=fs.mkdtempSync(path.join(os.tmpdir(),'pinit-factory-')),root=path.join(base,'repo');fs.mkdirSync(root);
+ const tempRoot=fs.realpathSync(os.tmpdir()); const base=fs.mkdtempSync(path.join(tempRoot,'pinit-factory-')),root=path.join(base,'repo');fs.mkdirSync(root);
  const git=(...args)=>{const r=spawnSync('git',args,{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr);};
  git('init');git('config','user.name','Fixture');git('config','user.email','fixture@example.invalid');fs.writeFileSync(path.join(root,'README.md'),'factory\n');git('add','.');git('commit','-m','baseline');
  initProject(root,{mode:'Existing',intent:'feature',ui:'no'});
