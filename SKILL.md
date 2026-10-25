@@ -1,6 +1,6 @@
 ---
 name: project-init
-version: 2.1.0-preview.7
+version: 2.1.0-preview.8
 description: Local development orchestrator with native spec-framework selection, high-fidelity review, bundled Lean Kit and independent evidence-based drift gates for Codex and Claude Code.
 ---
 
@@ -9,7 +9,7 @@ description: Local development orchestrator with native spec-framework selection
 Read `README.md` and `docs/INVARIANTS.md`. This skill orchestrates the process; the chosen framework owns its own PRD, specifications, architecture decisions and implementation tasks. Never regenerate a competing PRD or silently switch methodologies.
 
 1. For the normal software-factory workflow, start or resume with `project-init init --project .`. It inspects the real repository, preserves existing `AGENTS.md`, `CLAUDE.md`, source and unrelated dirty work, and returns one combined Factory bootstrap plan. Re-run the same command with `--apply` only after reviewing that plan.
-2. The Factory profile uses Spec Kit as the single planning/spec owner, ECC as the shared engineering/security/testing toolbox, and the bundled Factory as the execution/review loop. The lower-level `recommend`, `select`, `install`, `ecc`, `factory`, and `wire` commands are advanced controls, not required setup steps. If an existing repository already has another methodology, stop rather than creating a competing Spec Kit source of truth.
+2. The Factory profile uses Spec Kit as the single planning/spec owner, ECC as the shared engineering/security/testing toolbox, and the bundled Factory as a parallel isolated-worktree execution/review loop for Codex and Claude. The lower-level `recommend`, `select`, `install`, `ecc`, `factory`, and `wire` commands are advanced controls, not required setup steps. If an existing repository already has another methodology, stop rather than creating a competing Spec Kit source of truth.
 3. Use Spec Kit to produce project specifications and task lists. `project-init handoff` is an instruction handoff, not proof a worker ran.
 4. For UI projects, produce explicit high-fidelity `ui-design.json` screens with real navigation, labels, typography, colors, interactions, states and responsive variants; render `review.html` for human review. Use actual mockup PNGs as immutable-by-approval reference evidence.
 5. Register authoritative native spec files with `baseline`, obtain independent review and **actual** user design approval. Never fabricate reviewers, acceptance or self-approve production.
