@@ -13,7 +13,7 @@ import {renderVisualReview} from '../lib/visual.mjs';
 import {factoryPlan,applyFactory} from '../lib/factory.mjs';
 import {bootstrapProject} from '../lib/bootstrap.mjs';
 import {compareVersions,updateDecision,updateProjectInit} from '../lib/update.mjs';
-import {prerequisitePlan,authenticateCodexCli,authenticateClaudeCodeCli} from '../lib/prerequisites.mjs';
+import {prerequisitePlan,prepareVendorRuntimeEnvironment,authenticateCodexCli,authenticateClaudeCodeCli} from '../lib/prerequisites.mjs';
 test('self-update version comparison handles preview releases',()=>{
  assert.equal(compareVersions('2.1.0-preview.6','2.1.0-preview.7')<0,true);
  assert.equal(compareVersions('2.1.0-preview.7','2.1.0-preview.7'),0);
@@ -61,6 +61,26 @@ test('Factory prerequisites require Codex and Claude CLIs plus authentication, n
   assert.equal(plan.checks.find(x=>x.id==='claude-auth').ready,false);
   assert.ok(plan.missing.includes('codex-auth'));assert.ok(plan.missing.includes('claude-auth'));assert.equal(plan.checks.find(x=>x.id==='codex-ecc-capability').ready,true);assert.equal(plan.checks.find(x=>x.id==='claude-ecc-capability').ready,true);if(process.platform==='win32')assert.equal(plan.checks.find(x=>x.id==='codex-native-runtime').ready,true);
  }finally{process.env.PATH=prior;if(priorNative===undefined)delete process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE;else process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE=priorNative;}
+});
+
+test('Windows vendor runtime exposes a native codex.exe to shell-less child processes',async()=>{
+ if(process.platform!=='win32') return;
+ const {spawnSync}=await import('node:child_process');
+ const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'pinit-native-codex-')),nativeDir=path.join(base,'native');fs.mkdirSync(nativeDir);
+ const native=path.join(nativeDir,'codex.exe');fs.copyFileSync(process.execPath,native);
+ const priorPath=process.env.PATH,priorNative=process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE;
+ process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE=native;
+ try{
+  const runtime=prepareVendorRuntimeEnvironment();
+  assert.equal(path.resolve(runtime.codexNative),path.resolve(native));
+  assert.equal(path.resolve(runtime.env.PATH.split(path.delimiter)[0]),path.resolve(nativeDir));
+  const direct=spawnSync('codex',['--version'],{env:runtime.env,encoding:'utf8',windowsHide:true,shell:false});
+  assert.equal(direct.status,0,direct.stderr||direct.error?.message);
+  assert.match(direct.stdout,/^v?\d+\./);
+ }finally{
+  process.env.PATH=priorPath;
+  if(priorNative===undefined)delete process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE;else process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE=priorNative;
+ }
 });
 
 test('agent authentication helpers use current Codex and Claude CLI subcommands',()=>{
@@ -439,6 +459,8 @@ test('Factory installs generic Codex and Claude parallel-worktree stack and pres
  assert.match(fs.readFileSync(path.join(root,'.claude/skills/factory/SKILL.md'),'utf8'),/One worker = one isolated worktree/);
  assert.match(fs.readFileSync(path.join(root,'.agents/skills/factory-worker/SKILL.md'),'utf8'),/Neither worker owns frontend or backend/);
  assert.match(fs.readFileSync(path.join(root,'.agents/skills/factory-worker/SKILL.md'),'utf8'),/\[CODEX\].*worker assignment/is);
+ const workerBridge=fs.readFileSync(path.join(root,'.claude/skills/factory/scripts/codex_worker.py'),'utf8');
+ assert.match(workerBridge,/codex-win32-x64/);assert.match(workerBridge,/npm_global_root/);assert.match(workerBridge,/resolve_codex/);
  git('add','.');git('commit','-m','factory install');
 
  // Simulate a legacy config with a user customization, then verify migration keeps the customization.
