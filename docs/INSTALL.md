@@ -47,7 +47,7 @@ project-init ecc --project $project --version 2.2.3 --agent both --scope local
 project-init factory --project $project
 ```
 
-Apply only after reviewing the plans and starting from a clean Git worktree:
+Apply after reviewing the plans. Existing repositories may contain unrelated uncommitted work; Project Init no longer requires a blanket clean worktree:
 
 ```powershell
 project-init install --project $project --version 1.2.3 --agent both --apply
@@ -56,6 +56,16 @@ project-init factory --project $project --apply
 ```
 
 The factory command uses Project Init's bundled Factory by default, validates the bundled and installed `codex_backend.sh` contract, preserves an existing Factory config/backlog, and installs both Claude and Codex sides. `--kit PATH` is only an advanced developer override for testing another Claude Factory source. See [Factory stack](FACTORY-STACK.md).
+
+### Existing repositories with local work
+
+`project-init init --mode Existing` is intentionally non-destructive and may run on a dirty working tree. For the default Factory profile:
+
+- Spec Kit is initialized without `--force`; Project Init supplies the explicit non-empty-directory confirmation so Spec Kit uses its preserve-merge behavior and skips existing files.
+- ECC uses its guided installer, which preflights collisions/ownership before writes.
+- Factory writes only its managed `.claude/skills/factory`, factory-prefixed agents, Codex Factory skills and runtime files; existing Factory config/backlog are preserved.
+
+Unrelated modified/untracked files are not a reason to block setup. A real target-file conflict must still fail closed.
 
 ## First verification loop
 
