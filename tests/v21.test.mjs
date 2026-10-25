@@ -23,7 +23,7 @@ test('self-update version comparison handles preview releases',()=>{
 
 test('self-update check never invokes npm when current',async()=>{
  const sha='a'.repeat(40);
- const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.7'}});
+ const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.9'}});
  let calls=0;
  const result=await updateProjectInit({check:true,fetcher,runner:()=>{calls++;throw new Error('runner should not execute');}});
  assert.equal(result.status,'current');assert.equal(result.updated,false);assert.equal(calls,0);assert.equal(result.remoteCommit,sha);
@@ -31,11 +31,11 @@ test('self-update check never invokes npm when current',async()=>{
 
 test('self-update installs pinned GitHub source and verifies replacement CLI',async()=>{
  const sha='b'.repeat(40);
- const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.8'}});
+ const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.9'}});
  const calls=[];
- const runner=(command,args)=>{calls.push([command,...args]);if(command==='npm')return {status:0,stdout:'updated',stderr:''};return {status:0,stdout:'2.1.0-preview.8\n',stderr:''};};
+ const runner=(command,args)=>{calls.push([command,...args]);if(command==='npm')return {status:0,stdout:'updated',stderr:''};return {status:0,stdout:'2.1.0-preview.9\n',stderr:''};};
  const result=await updateProjectInit({fetcher,runner});
- assert.equal(result.status,'updated');assert.equal(result.installedVersion,'2.1.0-preview.8');
+ assert.equal(result.status,'updated');assert.equal(result.installedVersion,'2.1.0-preview.9');
  assert.deepEqual(calls[0],['npm','install','--global','--force',`git+https://github.com/Thugney/project-init.git#${sha}`]);
  assert.deepEqual(calls[1],['project-init','version']);
 });
@@ -234,7 +234,7 @@ const fs=require('fs');fs.mkdirSync('.claude/ecc-fixture',{recursive:true});fs.w
   assert.ok(fs.existsSync(path.join(root,'.specify/fixture.txt')));
   assert.ok(fs.existsSync(path.join(root,'.claude/ecc-fixture/installed')));
   assert.ok(fs.existsSync(path.join(root,'.claude/skills/factory/SKILL.md')));
-  assert.ok(fs.existsSync(path.join(root,'.agents/skills/backend-factory/SKILL.md')));
+  assert.ok(fs.existsSync(path.join(root,'.agents/skills/factory-worker/SKILL.md')));
   assert.equal(fs.readFileSync(path.join(root,'README.md'),'utf8'),'local dirty work\n');assert.equal(fs.readFileSync(path.join(root,'LOCAL.txt'),'utf8'),'keep me\n');
   const state=JSON.parse(fs.readFileSync(statePath(root,'bootstrap.json'),'utf8'));assert.equal(state.steps.specKit.status,'completed');assert.equal(state.steps.ecc.status,'completed');assert.equal(state.steps.factory.status,'completed');
   const resumed=await bootstrapProject(root,{mode:'Existing',apply:true});assert.equal(resumed.status,'ready');assert.equal(resumed.execution.ecc.skipped,true);
