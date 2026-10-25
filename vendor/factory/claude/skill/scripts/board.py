@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
-"""Factory state helper. The orchestrator is the ONLY caller and board.json's ONLY writer.
+"""Factory state helper. The orchestrator is the only board.json writer.
 
-Every command prints one short line so the orchestrator's context stays small.
-
-  board.py init <title> [--source idea|speckit:<dir>]   -> prints slug
-  board.py stage <slug> <stage>                           spec|backend|frontend|review|fixing|decision|merged|needs-human|failed
-  board.py round <slug>                                   start next review round, prints round dir
-  board.py collect <slug>                                 read round verdicts -> one-line summary
-  board.py risk <slug>                                    deterministic risk tier from the diff
-  board.py decision <slug>                                read decision.md first line
-  board.py note <slug> <key> <value>                      store a small fact (codex_session, pr_url, ...)
+Commands print compact lines:
+  board.py init <title> [--source idea|speckit:<dir>]
+  board.py stage <slug> <stage>
+  board.py round <slug>
+  board.py collect <slug>
+  board.py risk <slug>
+  board.py decision <slug>
+  board.py note <slug> <key> <value>
   board.py get <slug> <key>
-  board.py status                                         compact table of all jobs
-  board.py next                                           first unchecked backlog item
-  board.py check <slug>                                   tick the backlog item that created this job
+  board.py status
+  board.py next
+  board.py check <slug>
 """
 import fnmatch
 import json
@@ -30,7 +29,7 @@ BOARD = os.path.join(FACTORY, "board.json")
 BACKLOG = os.path.join(FACTORY, "backlog.md")
 CONFIG = os.path.join(ROOT, ".claude", "skills", "factory", "config.json")
 
-STAGES = ["spec", "backend", "frontend", "review", "fixing", "decision", "merged", "needs-human", "failed"]
+STAGES = ["spec", "building", "integrating", "review", "fixing", "decision", "merged", "needs-human", "failed"]
 
 
 def now():
@@ -87,6 +86,8 @@ def first_line(path):
 
 
 def cmd_init(args):
+    if not args:
+        die("init requires title")
     title = args[0]
     source = "idea"
     if "--source" in args:
@@ -94,14 +95,24 @@ def cmd_init(args):
     board = load()
     n = max([int(j["id"].split("-")[0]) for j in board["jobs"]] + [0]) + 1
     slug = f"{n:03d}-{slugify(title)}"
-    cfg = load_config()
     os.makedirs(os.path.join(JOBS, slug), exist_ok=True)
     board["jobs"].append({
-        "id": slug, "title": title, "source": source,
-        "branch": cfg["branch_prefix"] + slug, "stage": "spec", "round": 0,
-        "risk": None, "risk_files": [], "reviews": {}, "rounds": [],
-        "backend_engine": cfg.get("backend_engine", "codex"),
-        "notes": {}, "created": now(), "updated": now(),
+        "id": slug,
+        "title": title,
+        "source": source,
+        "stage": "spec",
+        "round": 0,
+        "risk": None,
+        "risk_files": [],
+        "reviews": {},
+        "rounds": [],
+        "workers": {
+            "codex": {"state": "pending"},
+            "claude": {"state": "pending"}
+        },
+        "notes": {},
+        "created": now(),
+        "updated": now(),
     })
     save(board)
     print(slug)
@@ -125,7 +136,7 @@ def cmd_round(args):
     cfg = load_config()
     j["round"] += 1
     reviewers = list(cfg["reviewers"])
-    if cfg.get("skip_ui_reviewers_when_no_frontend") and j["notes"].get("has_frontend") == "false":
+    if cfg.get("skip_ui_reviewers_when_no_ui") and j["notes"].get("has_ui") == "false":
         reviewers = [r for r in reviewers if r not in ("ux", "ui")]
     j["reviews"] = {r: "pending" for r in reviewers}
     j["stage"], j["updated"] = "review", now()
@@ -140,7 +151,8 @@ def cmd_collect(args):
     board = load()
     j = job(board, slug)
     rdir = os.path.join(JOBS, slug, f"round-{j['round']}")
-    missing, parts, fixes = [], [], {"BACKEND": 0, "FRONTEND": 0}
+    missing, parts = [], []
+    fixes = {"CODEX": 0, "CLAUDE": 0, "INTEGRATION": 0}
     for r in j["reviews"]:
         p = os.path.join(rdir, f"review-{r}.md")
         fl = first_line(p)
@@ -153,7 +165,7 @@ def cmd_collect(args):
         parts.append(f"{r}={m.group(1)}")
         with open(p, encoding="utf-8") as f:
             for line in f:
-                t = re.match(r"^\s*-\s*\[(BACKEND|FRONTEND)\]", line)
+                t = re.match(r"^\s*-\s*\[(CODEX|CLAUDE|INTEGRATION)\]", line)
                 if t:
                     fixes[t.group(1)] += 1
     complete = not missing
@@ -165,11 +177,15 @@ def cmd_collect(args):
     all_pass = complete and all(v == "PASS" for v in j["reviews"].values())
     state = "ALL_PASS" if all_pass else ("CHANGES" if complete else "INCOMPLETE")
     extra = f" missing={','.join(missing)}" if missing else ""
-    print(f"{state} round={j['round']} {' '.join(parts)} backend_fixes={fixes['BACKEND']} frontend_fixes={fixes['FRONTEND']}{extra}")
+    print(
+        f"{state} round={j['round']} {' '.join(parts)} "
+        f"codex_fixes={fixes['CODEX']} claude_fixes={fixes['CLAUDE']} "
+        f"integration_fixes={fixes['INTEGRATION']}{extra}"
+    )
 
 
-def git(*a):
-    return subprocess.run(["git", *a], capture_output=True, text=True, cwd=ROOT)
+def git(*a, cwd=ROOT):
+    return subprocess.run(["git", *a], capture_output=True, text=True, cwd=cwd)
 
 
 def match_any(path, globs):
@@ -179,12 +195,20 @@ def match_any(path, globs):
     return False
 
 
+def integration_branch(slug):
+    return f"factory/{slug}/integration"
+
+
 def cmd_risk(args):
     slug = args[0]
     board = load()
     j = job(board, slug)
     cfg = load_config()
-    res = git("diff", "--name-only", f"{cfg['base_branch']}...{j['branch']}")
+    base = j["notes"].get("base_commit")
+    if not base:
+        die("missing base_commit note; worktrees were not initialized")
+    branch = integration_branch(slug)
+    res = git("diff", "--name-only", f"{base}...{branch}")
     if res.returncode != 0:
         die(f"git diff failed: {res.stderr.strip()[:200]}")
     files = [f for f in res.stdout.splitlines() if f.strip() and not f.startswith("factory/")]
@@ -198,8 +222,10 @@ def cmd_risk(args):
     tier = "HIGH" if hits or spec_tier == "HIGH" else "LOW"
     j["risk"], j["risk_files"], j["updated"] = tier, hits[:50], now()
     save(board)
-    print(f"RISK={tier} changed={len(files)} high_risk_files={len(hits)} spec_tier={spec_tier or 'none'}"
-          + (f" e.g.={','.join(hits[:3])}" if hits else ""))
+    print(
+        f"RISK={tier} changed={len(files)} high_risk_files={len(hits)} spec_tier={spec_tier or 'none'}"
+        + (f" e.g.={','.join(hits[:3])}" if hits else "")
+    )
 
 
 def cmd_decision(args):
@@ -267,9 +293,17 @@ def cmd_check(args):
 
 
 COMMANDS = {
-    "init": cmd_init, "stage": cmd_stage, "round": cmd_round, "collect": cmd_collect,
-    "risk": cmd_risk, "decision": cmd_decision, "note": cmd_note, "get": cmd_get,
-    "status": cmd_status, "next": cmd_next, "check": cmd_check,
+    "init": cmd_init,
+    "stage": cmd_stage,
+    "round": cmd_round,
+    "collect": cmd_collect,
+    "risk": cmd_risk,
+    "decision": cmd_decision,
+    "note": cmd_note,
+    "get": cmd_get,
+    "status": cmd_status,
+    "next": cmd_next,
+    "check": cmd_check,
 }
 
 if __name__ == "__main__":
