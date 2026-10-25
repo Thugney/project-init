@@ -1,6 +1,6 @@
 # Project Init Factory Stack — Cheat Sheet
 
-Use this page when you forget which tool owns what.
+Use this page when you forget which tool owns what. For step-by-step setup of a new or existing project, see [Getting started](GETTING-STARTED.md).
 
 ## The rule
 
@@ -126,10 +126,10 @@ The Factory job is authoritative during execution:
 factory/jobs/<slug>/spec.md
 ```
 
-- `[BACKEND]` = Codex backend worker.
-- `[FRONTEND]` = Claude frontend worker.
+- `[CODEX]` = task assigned to the Codex worker (any layer).
+- `[CLAUDE]` = task assigned to the Claude worker (any layer).
 - `API Contract` = binding. Workers do not rewrite it.
-- Review findings tagged `[BACKEND]` go back to Codex.
+- Review findings tagged `[CODEX]` / `[CLAUDE]` go back to that worker; `[INTEGRATION]` findings stop for a resolution plan.
 - Job/report files are execution evidence, not a second product spec.
 
 ## Which command do I use?
@@ -143,9 +143,9 @@ factory/jobs/<slug>/spec.md
 | Advanced: manage Factory directly | `project-init factory ...` |
 | See Project Init skills | `project-init wire ...` |
 | Check evidence/status | `project-init status` / `project-init verify` workflow |
-| Build a backend Factory task | Codex `backend-factory` skill |
-| Audit backend changes | Codex `backend-audit` skill |
-| Build frontend Factory task | Claude Factory frontend worker |
+| Build a `[CODEX]` Factory task | Codex `factory-worker` skill (run by `/factory` via `codex_worker.py`) |
+| Build a `[CLAUDE]` Factory task | Claude `factory-builder` agent (run by `/factory`) |
+| Audit the integrated result | Codex `factory-audit` skill (manual, read-only) |
 
 ## Spec Kit vs BMAD
 

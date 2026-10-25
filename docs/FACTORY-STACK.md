@@ -1,5 +1,7 @@
 # Project Init factory stack
 
+![Factory flow: parallel Codex and Claude in isolated worktrees](factory-flow.svg)
+
 This is the recommended factory profile for projects that use both Claude Code and Codex.
 
 ## Ownership
