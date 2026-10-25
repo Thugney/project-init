@@ -13,6 +13,22 @@ All notable changes to the public Project Init package are documented here. Ther
 - Updated package and lockfile SPDX metadata; the package stays `private: true` to explicitly prevent accidental npm publication while supporting reviewed GitHub release tarballs.
 - Updated release checks, documentation, and contributor terms. GitHub releases still require an explicitly created version tag; production acceptance remains pending.
 
+## [2.1.0-preview.4] — 2026-10-25 (self-contained Factory candidate)
+
+### Fixed
+- Factory no longer requires users to maintain or know an external `C:\\Tools\\factory-kit` path.
+- The normal `project-init factory --project . --apply` flow now installs/updates the complete bundled Claude + Codex Factory.
+- Claude Factory preflight now points missing installations back to Project Init rather than a separate kit README.
+
+### Changed
+- Unified Factory source under `vendor/factory/`; existing `config.json` and `factory/backlog.md` remain preserved on updates.
+- `--kit PATH` is retained only as an explicit developer override.
+- Preview version advanced to `2.1.0-preview.4`.
+
+### Compatibility
+- Codex `backend-factory` and `backend-audit` skill behavior is unchanged.
+- Factory routing remains backend→Codex (Claude fallback) and frontend→Claude.
+
 ## [2.1.0-preview.3] — 2026-10-25 (factory-stack candidate)
 
 ### Added

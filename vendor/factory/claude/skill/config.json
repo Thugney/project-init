@@ -1,0 +1,40 @@
+{
+  "base_branch": "main",
+  "branch_prefix": "factory/",
+  "max_fix_rounds": 2,
+
+  "claude_model": "opus",
+
+  "backend_engine": "codex",
+  "codex": {
+    "model": "",
+    "args": ["--full-auto"],
+    "timeout_minutes": 45,
+    "fallback_to_claude_after_failures": 2
+  },
+
+  "reviewers": ["security", "code", "ux", "ui"],
+  "skip_ui_reviewers_when_no_frontend": true,
+
+  "merge_mode": "pr",
+  "auto_merge_low_risk": false,
+
+  "high_risk_paths": [
+    "**/auth/**", "**/*auth*", "**/login*", "**/session*",
+    "**/migrations/**", "**/*.sql", "**/schema.prisma",
+    "**/billing/**", "**/*stripe*", "**/payments/**", "**/webhooks/**",
+    "**/permissions/**", "**/*rbac*", "**/*policy*", "**/rls/**",
+    "**/.env*", "**/secrets/**", "**/*secret*", "**/*.pem", "**/*.key",
+    ".github/workflows/**", "**/Dockerfile", "**/infra/**", "**/*.tf", "**/*.bicep",
+    "package.json", "package-lock.json", "pnpm-lock.yaml", "requirements*.txt", "pyproject.toml"
+  ],
+
+  "backend_paths": [
+    "api/**", "server/**", "backend/**", "src/server/**", "src/api/**", "app/api/**",
+    "supabase/**", "prisma/**", "db/**", "migrations/**", "functions/**"
+  ],
+
+  "test_command": "",
+  "spec_kit_dir": "specs",
+  "constitution": ".specify/memory/constitution.md"
+}

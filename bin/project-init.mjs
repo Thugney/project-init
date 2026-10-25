@@ -24,7 +24,7 @@ Commands:
   wire         --project PATH [--agent both|codex|claude] [--scope project|user] [--plugin] [--backup-conflicts] [--apply]  Install 7 descriptive project skills per agent
   install      --project PATH --version X.Y.Z [--agent codex|claude|both] [--apply]             Install selected native spec framework
   ecc          --project PATH --version X.Y.Z [--agent both|codex|claude] [--scope local|project|user] [--apply]  Install ECC for coding agents
-  factory      --project PATH [--kit PATH] [--apply]                 Install/validate Claude factory kit + Codex backend skills
+  factory      --project PATH [--kit PATH] [--apply]                 Install/update bundled Claude + Codex Factory; --kit is an optional developer override
   handoff      --project PATH [--phase planning|design|implementation|verification] [--task TEXT]
   render       --project PATH                                      Generate offline high-fidelity review HTML
   lean         --project PATH --input report.md --out .project-init/lean/report.html [--execute]   Built-in Lean Kit

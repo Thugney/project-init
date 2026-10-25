@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Factory Board</title>
+<style>
+:root{--bg:#0f1115;--panel:#171a21;--line:#262b36;--text:#e6e8ee;--mute:#8b93a7;--pass:#3fb950;--chg:#f0883e;--pend:#4b5263;--hot:#f85149;--acc:#a371f7;--codex:#2f81f7}
+@media (prefers-color-scheme:light){:root{--bg:#f6f7f9;--panel:#fff;--line:#e3e6eb;--text:#1b1f24;--mute:#5d6576;--pend:#c7ccd6}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+header h1{font-size:16px;margin:0;font-weight:650}
+header .meta{color:var(--mute);font-size:12px;margin-left:auto}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--pass);display:inline-block}
+.dot.off{background:var(--hot)}
+.board{display:grid;grid-template-columns:repeat(7,minmax(190px,1fr));gap:10px;padding:12px 16px;overflow-x:auto}
+.col{background:var(--panel);border:1px solid var(--line);border-radius:10px;min-height:120px;display:flex;flex-direction:column}
+.col h2{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);margin:0;padding:10px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+.cards{padding:8px;display:flex;flex-direction:column;gap:8px}
+.card{border:1px solid var(--line);border-radius:8px;padding:9px 10px;cursor:pointer;background:var(--bg)}
+.card:hover{border-color:var(--acc)}
+.card.hot{border-color:var(--hot);box-shadow:0 0 0 1px var(--hot) inset}
+.card .id{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--mute)}
+.card .t{font-weight:600;margin:2px 0 6px}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.tag{font-size:11px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--mute)}
+.tag.high{color:var(--hot);border-color:var(--hot)}
+.tag.codex{color:var(--codex);border-color:var(--codex)}
+.rounds{display:flex;flex-direction:column;gap:3px}
+.round{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--mute)}
+.chip{font-size:10px;padding:1px 5px;border-radius:4px;background:var(--pend);color:#fff}
+.chip.PASS{background:var(--pass)}.chip.CHANGES{background:var(--chg)}
+.empty{color:var(--mute);font-size:12px;padding:6px 4px}
+aside{position:fixed;top:0;right:0;height:100%;width:min(720px,100%);background:var(--panel);border-left:1px solid var(--line);transform:translateX(100%);transition:transform .18s;display:flex;flex-direction:column;z-index:5}
+aside.open{transform:none}
+aside .top{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+aside .top b{flex:1}
+aside button{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:4px 9px;cursor:pointer;font:inherit;font-size:12px}
+aside button.on{border-color:var(--acc);color:var(--acc)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px;border-bottom:1px solid var(--line)}
+pre{margin:0;padding:14px;overflow:auto;flex:1;white-space:pre-wrap;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+@media (max-width:700px){.board{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <span class="dot" id="live"></span>
+  <h1>Software Factory</h1>
+  <span class="meta" id="meta">loading…</span>
+</header>
+<main class="board" id="board"></main>
+<aside id="panel">
+  <div class="top"><b id="ptitle"></b><button onclick="closePanel()">Close</button></div>
+  <div class="tabs" id="ptabs"></div>
+  <pre id="pbody"></pre>
+</aside>
+<script>
+const COLS=[["spec","Spec"],["backend","Backend · Codex"],["frontend","Frontend · Claude"],["review","Review"],["fixing","Fixing"],["decision","Decision"],["done","Done / Human"]];
+const DONE=new Set(["merged","needs-human","failed"]);
+let board={jobs:[]},openId=null;
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+async function poll(){
+  try{
+    const r=await fetch("board.json?ts="+Date.now(),{cache:"no-store"});
+    if(!r.ok) throw 0;
+    board=await r.json();
+    document.getElementById("live").className="dot";
+    document.getElementById("meta").textContent=`${board.jobs.length} jobs · updated ${board.updated||"-"}`;
+    render();
+  }catch(e){
+    document.getElementById("live").className="dot off";
+    document.getElementById("meta").textContent="board.json not reachable — run: python3 -m http.server 8765 (inside factory/)";
+  }
+}
+
+function card(j){
+  const hot=j.stage==="needs-human"||j.stage==="failed";
+  const tags=[`<span class="tag">r${j.round}</span>`];
+  if(j.risk) tags.push(`<span class="tag ${j.risk==="HIGH"?"high":""}">${esc(j.risk)}</span>`);
+  const eng=(j.notes&&j.notes.backend_engine)||j.backend_engine;
+  if(eng) tags.push(`<span class="tag ${eng==="codex"?"codex":""}">${esc(eng)}</span>`);
+  if(DONE.has(j.stage)) tags.push(`<span class="tag ${hot?"high":""}">${esc(j.stage)}</span>`);
+  const rounds=(j.rounds||[]).map(r=>`<div class="round">R${r.round}${Object.entries(r.reviews).map(([k,v])=>`<span class="chip ${v}">${esc(k)}</span>`).join("")}</div>`);
+  if(j.stage==="review"&&!(j.rounds||[]).some(r=>r.round===j.round)){
+    rounds.push(`<div class="round">R${j.round}${Object.entries(j.reviews||{}).map(([k,v])=>`<span class="chip ${v}">${esc(k)}</span>`).join("")}</div>`);
+  }
+  return `<div class="card ${hot?"hot":""}" onclick="openJob('${esc(j.id)}')">
+    <div class="id">${esc(j.id)}</div><div class="t">${esc(j.title)}</div>
+    <div class="tags">${tags.join("")}</div><div class="rounds">${rounds.join("")}</div></div>`;
+}
+
+function render(){
+  const by={};COLS.forEach(([k])=>by[k]=[]);
+  for(const j of [...board.jobs].reverse()) (by[DONE.has(j.stage)?"done":j.stage]||by.spec).push(j);
+  document.getElementById("board").innerHTML=COLS.map(([k,label])=>
+    `<section class="col"><h2><span>${label}</span><span>${by[k].length}</span></h2>
+     <div class="cards">${by[k].map(card).join("")||'<div class="empty">—</div>'}</div></section>`).join("");
+  if(openId) buildTabs(false);
+}
+
+function files(j){
+  const f=[["spec","spec.md"],["build","build.md"],["codex","codex/build/report.md"]];
+  for(const r of j.rounds||[]) for(const k of Object.keys(r.reviews)) f.push([`R${r.round} ${k}`,`round-${r.round}/review-${k}.md`]);
+  f.push(["decision","decision.md"]);
+  return f;
+}
+let curFile=null;
+function openJob(id){openId=id;curFile="spec.md";document.getElementById("panel").classList.add("open");buildTabs(true)}
+function closePanel(){openId=null;document.getElementById("panel").classList.remove("open")}
+function buildTabs(load){
+  const j=board.jobs.find(x=>x.id===openId); if(!j) return;
+  document.getElementById("ptitle").textContent=`${j.id} · ${j.stage}`;
+  document.getElementById("ptabs").innerHTML=files(j).map(([l,p])=>`<button class="${p===curFile?"on":""}" onclick="show('${p}')">${esc(l)}</button>`).join("");
+  if(load) show(curFile);
+}
+async function show(p){
+  curFile=p;buildTabs(false);
+  const el=document.getElementById("pbody");
+  try{const r=await fetch(`jobs/${openId}/${p}?ts=${Date.now()}`);el.textContent=r.ok?await r.text():"(not written yet)"}
+  catch(e){el.textContent="(not reachable)"}
+}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closePanel()});
+poll();setInterval(poll,3000);
+</script>
+</body>
+</html>
