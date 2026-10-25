@@ -11,7 +11,7 @@ Project Init is a **local-first development workflow orchestrator** for engineer
 
 It does **not** replace your coding agent or run an autonomous developer in the background. The selected framework owns its **native specifications and tasks**; Codex or Claude writes the code. Project Init coordinates and checks the handoffs.
 
-> **Status: `2.1.0-preview.7` — functional preview, not production-accepted.** The local suites pass, but live framework installs, real Codex/Claude command discovery, native Claude unattended execution, and Windows browser capture have not completed acceptance testing. A passing guard is not proof of full semantic correctness or release approval. See [verification limits](docs/VERIFICATION.md) and the [acceptance report](docs/ACCEPTANCE-REPORT.md).
+> **Status: `2.1.0-preview.14` — functional preview, not production-accepted.** The local suites pass, but live framework installs, real Codex/Claude command discovery, native Claude unattended execution, and Windows browser capture have not completed acceptance testing. A passing guard is not proof of full semantic correctness or release approval. See [verification limits](docs/VERIFICATION.md) and the [acceptance report](docs/ACCEPTANCE-REPORT.md).
 >
 > **Licensing:** Project Init, the bundled Lean Kit, bundled Factory templates, and preserved v1 sources are released under the [Apache License 2.0](LICENSE). External tools such as Spec Kit, ECC, OpenSpec and BMAD are installed separately and keep their own licenses. See [NOTICE](NOTICE.md).
 
@@ -38,7 +38,7 @@ AI-assisted development often accumulates multiple PRDs, unapproved UI changes, 
 | --- | --- | --- |
 | Discovery, framework recommendation, installation preview | Project Init | Project assessment, selected framework and version |
 | Requirements, architecture decisions, native implementation tasks | **OpenSpec, GitHub Spec Kit, BMAD, or `none`** | Framework-native artifacts (not copied PRDs) |
-| Code changes | **Codex** or **Claude Code** | Real commits/diffs and testable application source |
+| Code changes | **Codex** and **Claude Code** in parallel isolated worktrees (Factory) | Real commits on worker branches, merged into one integration branch |
 | Design review, drift evidence, acceptance gate | **Project Init** | Approved artifact hashes, actual test runs, screenshot comparisons, requirement findings |
 | Report rendering | **Bundled Lean Kit** | Deterministic local HTML reports (not application screens) |
 | Final release/merge authorization | **Human maintainer** | Explicit decision under repository protections |
@@ -109,16 +109,69 @@ Use `--yes` only for reviewed non-interactive automation; normal interactive use
 The guided Factory bootstrap handles the normal stack for both new and existing repositories:
 
 ```text
-Project Init
-  -> Spec Kit (single requirements/spec/tasks owner)
-  -> ECC (engineering/security/testing capabilities)
-  -> Factory
-       -> Codex isolated worktree (general worker)
-       -> Claude isolated worktree (general worker)
-       -> integration worktree
-  -> tests/reviewers
-  -> human approval
+                 PROJECT INIT
+       bootstrap / update / install / wire
+                      |
+            +---------+---------+
+            |                   |
+        SPEC KIT               ECC
+   (Codex + Claude)      (Codex + Claude)
+            |                   |
+            +---------+---------+
+                      |
+                   FACTORY
+        factory-spec-writer: task decomposition
+     [CODEX] / [CLAUDE] by dependency + file boundaries
+                      |
+            +---------+---------+
+            |                   |
+       WORKTREE A          WORKTREE B
+        isolated            isolated
+   factory/<slug>/codex  factory/<slug>/claude
+            |                   |
+          CODEX               CLAUDE
+     codex_worker.py      factory-builder
+     factory-worker            (Opus)
+            |                   |
+            +---------+---------+
+                      |
+             INTEGRATION WORKTREE
+          factory/<slug>/integration
+                      |
+          tests + 4 parallel reviewers
+       security / code / ux / ui  (Opus)
+   findings -> owning worker, max 2 fix rounds
+                      |
+       factory-approver -> PR from integration
+                      |
+                human approval
 ```
+
+![Factory flow: parallel Codex and Claude in isolated worktrees](docs/factory-flow.svg)
+
+### How the Factory works
+
+1. **Decompose.** `/factory` (Claude Code) spawns `factory-spec-writer`, which turns an idea or an approved `specs/NNN-x/` folder into `factory/jobs/<slug>/spec.md`. Tasks are tagged `[CODEX]` or `[CLAUDE]` and balanced across independent, non-overlapping file groups. Codex and Claude are **general workers**: either can own frontend, backend, tests, docs or migrations.
+2. **Isolate.** `worktree.py init` creates three Git worktrees from the same base commit: `factory/<slug>/codex`, `factory/<slug>/claude` and `factory/<slug>/integration`. Workers never share a checkout.
+3. **Build in parallel.** Codex runs headless through `codex_worker.py` (`codex exec`, using the `factory-worker` skill). Claude runs as the `factory-builder` subagent. Both start in the same stage.
+4. **Integrate.** `worktree.py integrate` merges both worker branches into the integration branch. A merge conflict stops the job; neither worker overwrites the other.
+5. **Test and review.** Configured tests run in the integration worktree. `security`, `code`, `ux` and `ui` reviewers (all Opus) review the integrated result in parallel; UX/UI are skipped when the job has no UI. The round only completes when every review file exists.
+6. **Fix.** Findings tagged `[CODEX]` or `[CLAUDE]` go back to that worker (`worktree.py sync` first, same session resumed). `[INTEGRATION]` findings stop for an explicit resolution plan. Maximum two fix rounds.
+7. **Decide.** `factory-approver` writes `decision.md`. Risk tier is computed from changed paths, not by a model. Only APPROVE + LOW risk + all PASS proceeds to a PR from the integration branch; anything else is `needs-human`.
+8. **Approve.** A human approves (`/factory approve <slug>`) under branch protection and CI. The Factory never pushes the base branch, force-pushes, or deletes branches.
+
+The Codex `factory-audit` skill is a read-only audit of the integration worktree. It is installed for manual use in Codex and is not called automatically by `/factory`. Job state lives in `factory/board.json` and is shown by `factory/dashboard.html`.
+
+| Component | Installed to | Role |
+| --- | --- | --- |
+| Claude orchestrator | `.claude/skills/factory/SKILL.md` | Runs the loop, sole writer of `factory/board.json` |
+| Claude agents (Opus) | `.claude/agents/factory-*.md` | spec-writer, builder, 4 reviewers, approver |
+| Worktree manager | `.claude/skills/factory/scripts/worktree.py` | init / path / sync / integrate / status |
+| Codex bridge | `.claude/skills/factory/scripts/codex_worker.py` | Runs `codex exec` per job, logs to files, one-line status |
+| Board helper | `.claude/skills/factory/scripts/board.py` | Stages, rounds, verdict collection, risk tier |
+| Codex worker | `.agents/skills/factory-worker/SKILL.md` | Implements `[CODEX]` tasks in its worktree |
+| Codex audit | `.agents/skills/factory-audit/SKILL.md` | Read-only audit of the integrated result |
+| Runtime | `factory/backlog.md`, `factory/dashboard.html` | Queue and live board (jobs are gitignored) |
 
 `inspect`, `recommend`, `select`, `install`, `ecc`, `factory`, and `wire` remain available as advanced/debug controls, but they are not required for the normal Factory bootstrap.
 

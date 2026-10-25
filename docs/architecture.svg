@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1400" height="790" viewBox="0 0 1400 790" role="img" aria-labelledby="t d">
 <title id="t">Project Init workflow and ownership</title>
-<desc id="d">Six explicit stages: Project Init discovery; native framework specification; high-fidelity design approval; Codex or Claude implementation; Project Init verification and drift controls; human release approval. Lean Kit and audit evidence support the lifecycle.</desc>
+<desc id="d">Six explicit stages: Project Init discovery; native framework specification; high-fidelity design approval; Codex and Claude parallel implementation in isolated worktrees; Project Init verification and drift controls; human release approval. Lean Kit and audit evidence support the lifecycle.</desc>
 <rect width="1400" height="790" rx="26" fill="#f6f8fc"/>
 <rect x="26" y="26" width="1348" height="738" rx="20" fill="#ffffff" stroke="#d9e2ef"/>
 <text x="70" y="82" font-family="Segoe UI,Arial,sans-serif" font-size="32" font-weight="700" fill="#182d4d">From requirements to verified change</text>
@@ -43,9 +43,9 @@
 <circle cx="102" cy="470" r="19" fill="#217c60"/>
 <text x="102" y="475" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#ffffff">04</text>
 <text x="136" y="461" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="700" fill="#182d4d">Implement</text>
-<text x="136" y="485" font-family="Segoe UI,Arial,sans-serif" font-size="15" fill="#526986">Agent writes actual code and tests from approved native tasks.</text>
+<text x="136" y="485" font-family="Segoe UI,Arial,sans-serif" font-size="15" fill="#526986">Factory runs Codex + Claude in parallel isolated worktrees, then integrates.</text>
 <rect x="746" y="447" width="220" height="23" rx="11" fill="#e9f0fa"/>
-<text x="856" y="463" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="600" fill="#315682">Codex or Claude Code</text>
+<text x="856" y="463" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="600" fill="#315682">Codex + Claude Code</text>
 <line x1="99" y1="593" x2="99" y2="618" stroke="#b8c9dc" stroke-width="3"/>
 <path d="M 92 611 L 99 619 L 106 611" fill="none" stroke="#b8c9dc" stroke-width="3" stroke-linecap="round"/>
 <rect x="70" y="527" width="920" height="72" rx="14" fill="#ffffff" stroke="#d8e2ee" stroke-width="1.5"/>
