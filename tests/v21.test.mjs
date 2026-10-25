@@ -461,7 +461,7 @@ test('ECC plan chooses one supported channel per harness and never stacks them',
  const write=(name,body)=>{const file=path.join(bin,name);fs.writeFileSync(file,`#!${process.execPath}\n${body}\n`);fs.chmodSync(file,0o755);return file;};
  write('codex',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('codex-test');process.exit(0)}if(a[0]==='plugin'){process.exit(2)}process.exit(0)");
  write('claude',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-test');process.exit(0)}if(a[0]==='plugin'&&a.includes('--json')){console.log('[]');process.exit(0)}process.exit(0)");
- if(process.platform==='win32'){for(const name of ['codex','claude'])fs.writeFileSync(path.join(bin,name+'.cmd'),`@echo off\\r\\n"${process.execPath}" "%~dp0${name}" %*\\r\\n`);}
+ if(process.platform==='win32'){for(const name of ['codex','claude'])fs.writeFileSync(path.join(bin,name+'.cmd'),`@echo off\r\n"${process.execPath}" "%~dp0${name}" %*\r\n`);}
  const prior=process.env.PATH,priorNative=process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE;process.env.PATH=bin+path.delimiter+prior;
  if(process.platform==='win32')process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE=process.execPath;
  try{
