@@ -1,6 +1,6 @@
 ---
 name: project-init
-version: 2.1.0-preview.2
+version: 2.1.0-preview.3
 description: Local development orchestrator with native spec-framework selection, high-fidelity review, bundled Lean Kit and independent evidence-based drift gates for Codex and Claude Code.
 ---
 
@@ -11,6 +11,7 @@ Read `README.md` and `docs/INVARIANTS.md`. This skill orchestrates the process; 
 1. Inspect the real repository and current Project Init status before action. Preserve existing `AGENTS.md`, `CLAUDE.md`, legacy approvals, source and framework-owned files. Do not install, migrate, delete or overwrite without explicit authorization.
 2. Recommend one native spec framework for the actual project. Show ranking and rationale, request a selection, pin framework and preview the exact-version installation. User approval is required before `--apply`.
 3. Use the installed native methodology to produce project specifications and task lists. `project-init handoff` is an instruction handoff, not proof a worker ran.
+   - For the software-factory profile, prefer Spec Kit as the single planning/spec owner unless an existing project already has another chosen methodology. Use `project-init ecc` to install the shared ECC toolbox and `project-init factory` to validate/install the Claude factory plus repo-local Codex backend skills. ECC and Factory never become competing PRD/spec owners.
 4. For UI projects, produce explicit high-fidelity `ui-design.json` screens with real navigation, labels, typography, colors, interactions, states and responsive variants; render `review.html` for human review. Use actual mockup PNGs as immutable-by-approval reference evidence.
 5. Register authoritative native spec files with `baseline`, obtain independent review and **actual** user design approval. Never fabricate reviewers, acceptance or self-approve production.
 6. Execute bounded implementation work using the appropriate native workflow. `project-init run --execute` is a **Codex-only** local foreground runner; Claude follows the skill interactively and must capture genuine code/test evidence. Do not claim unattended execution for Claude.
