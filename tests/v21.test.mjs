@@ -161,15 +161,18 @@ test('explicit conflict backups preserve old skills and do not touch unrelated o
 });
 
 
-test('Spec Kit plan uses pinned GitHub release and installs Codex plus Claude integrations on an existing repo',async()=>{
+test('dirty existing repo initializes and Spec Kit plan uses preserve-merge without force',async()=>{
  const {spawnSync}=await import('node:child_process');
  const tempRoot=fs.realpathSync(os.tmpdir()); const base=fs.mkdtempSync(path.join(tempRoot,'pinit-speckit-')),root=path.join(base,'repo');fs.mkdirSync(root);
  const git=(...args)=>{const r=spawnSync('git',args,{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr);};
  git('init');git('config','user.name','Fixture');git('config','user.email','fixture@example.invalid');fs.writeFileSync(path.join(root,'README.md'),'existing\n');git('add','.');git('commit','-m','baseline');
- initProject(root,{mode:'Existing',intent:'feature',ui:'no'});selectFramework(root,'spec-kit');
- const plan=installPlan(root,'1.2.3','both');assert.equal(plan.safeToApply,true);
+ fs.writeFileSync(path.join(root,'README.md'),'existing local work\n');fs.writeFileSync(path.join(root,'AGENTS.md'),'LOCAL AGENT RULES\n');
+ const initialized=initProject(root,{mode:'Existing',intent:'feature',ui:'no'});assert.equal(initialized.state.initialSource.gitClean,false);
+ assert.equal(fs.readFileSync(path.join(root,'README.md'),'utf8'),'existing local work\n');assert.equal(fs.readFileSync(path.join(root,'AGENTS.md'),'utf8'),'LOCAL AGENT RULES\n');
+ selectFramework(root,'spec-kit');
+ const plan=installPlan(root,'1.2.3','both');assert.equal(plan.safeToApply,true);assert.equal(plan.preflight.gitClean,false);
  const tool=plan.steps.find(x=>x.kind==='tool');if(tool){assert.equal(tool.cmd,'uv');assert.ok(tool.args.includes('git+https://github.com/github/spec-kit.git@v1.2.3'));}
- const init=plan.steps.find(x=>x.cmd==='specify'&&x.args[0]==='init');assert.ok(init);assert.ok(init.args.includes('--force'));assert.ok(init.args.includes('--non-interactive'));assert.ok(init.args.includes('codex'));
+ const init=plan.steps.find(x=>x.cmd==='specify'&&x.args[0]==='init');assert.ok(init);assert.equal(init.input,'y\n');assert.equal(init.preservesExisting,true);assert.equal(init.args.includes('--force'),false);assert.equal(init.args.includes('--non-interactive'),false);assert.ok(init.args.includes('codex'));
  const claude=plan.steps.find(x=>x.cmd==='specify'&&x.args[0]==='integration'&&x.args.includes('claude'));assert.ok(claude);assert.equal(claude.interactive,undefined);
 });
 
@@ -186,8 +189,10 @@ test('Factory installs bundled Claude and Codex sides without an external kit pa
  const git=(...args)=>{const r=spawnSync('git',args,{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr);};
  git('init');git('config','user.name','Fixture');git('config','user.email','fixture@example.invalid');fs.writeFileSync(path.join(root,'README.md'),'factory\n');git('add','.');git('commit','-m','baseline');
  initProject(root,{mode:'Existing',intent:'feature',ui:'no'});
+ fs.writeFileSync(path.join(root,'README.md'),'factory local work\n');fs.writeFileSync(path.join(root,'LOCAL-NOTES.md'),'do not touch\n');
  const plan=factoryPlan(root);assert.equal(plan.ready,true);assert.equal(plan.source,'project-init-bundled-factory');assert.equal(plan.override,false);assert.equal(plan.codexSkills.length,2);assert.ok(plan.factoryFiles.length>=10);assert.equal(plan.interchangeability.codexFrontendBridge,false);
  const applied=applyFactory(root,{apply:true});assert.equal(applied.applied,true);assert.equal(applied.installedBridgeCheck.ok,true);
+ assert.equal(fs.readFileSync(path.join(root,'README.md'),'utf8'),'factory local work\n');assert.equal(fs.readFileSync(path.join(root,'LOCAL-NOTES.md'),'utf8'),'do not touch\n');
  for(const rel of [
   '.claude/skills/factory/SKILL.md',
   '.claude/skills/factory/scripts/board.py',
