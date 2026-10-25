@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import path from 'node:path';
 import fs from 'node:fs';
+import readline from 'node:readline/promises';
 import {
  VERSION,projectRoot,discover,recommendation,initProject,readState,selectFramework,installPlan,applyInstall,applyEcc,
  establishBaseline,recordReview,approve,checkBaseline,status,workflow,runChecks,runCodex,validChecks,readJson,statePath,
@@ -20,7 +21,7 @@ const usage=`Project Init ${VERSION} — local-first development orchestrator (p
 Commands:
   inspect      --project PATH                                      Read-only source discovery
   recommend    --project PATH [--intent ...] [--complexity ...]   Rank OpenSpec / Spec Kit / BMAD / none
-  init         --project PATH [--mode New|Existing] [--intent ...] [--ui yes|no|auto] [--version X.Y.Z] [--ecc-version X.Y.Z] [--apply]  Guided Factory bootstrap (Spec Kit + ECC + Factory)
+  init         --project PATH [--mode New|Existing] [--intent ...] [--ui yes|no|auto] [--version X.Y.Z] [--ecc-version X.Y.Z] [--apply] [--yes]  Guided bootstrap; asks before installing missing prerequisites/components
   update       [--check] [--force]                                Update the global Project Init CLI from GitHub main; independent of any source clone
   status       --project PATH                                      Actual gate and evidence status
   select       --project PATH --framework openspec|spec-kit|bmad|none
@@ -59,7 +60,7 @@ function parseArgs(argv){
    const token=rest[i];
    if(!token.startsWith('--')) fail(`Unexpected argument: ${token}`);
    const key=token.slice(2);
-   if(['json','execute','apply','plugin','backup-conflicts','check','force'].includes(key)) {options[key]=true;continue;}
+   if(['json','execute','apply','plugin','backup-conflicts','check','force','yes'].includes(key)) {options[key]=true;continue;}
    if(!['project','mode','intent','complexity','ui','framework','version','ecc-version','phase','task','actor','evidence','verdict','out','spec','allow','agent','scope','input','id','side','url','browser','file','kit'].includes(key)) fail(`Unknown option: ${key}`);
    const value=rest[++i];
    if(value===undefined||value.startsWith('--')) fail(`Missing value after --${key}`);
@@ -68,6 +69,20 @@ function parseArgs(argv){
  }
  return {command,options};
 }
+async function confirmPrompt(message,assumeYes=false){
+ if(assumeYes) return true;
+ if(!process.stdin.isTTY||!process.stdout.isTTY) fail(`${message} Interactive confirmation requires a terminal; re-run with --yes only after reviewing the preview.`);
+ const rl=readline.createInterface({input:process.stdin,output:process.stdout});
+ try{
+  while(true){
+   const answer=(await rl.question(`${message} [Y/n] `)).trim().toLowerCase();
+   if(answer===''||answer==='y'||answer==='yes') return true;
+   if(answer==='n'||answer==='no') return false;
+   console.log('Enter Y/yes or N/no.');
+  }
+ }finally{rl.close();}
+}
+
 function presentBootstrap(data){
  const state=data.initialization?.state||{};
  const git=data.inspection?.git||{};
@@ -79,10 +94,15 @@ function presentBootstrap(data){
  console.log(`Git: ${git.available?'ready':'will initialize on --apply'}${git.available&&git.clean===false?' · dirty working tree allowed':''}`);
  console.log(`Spec owner: Spec Kit ${data.versions?.specKit||''} · ${spec.installed?'already installed':'planned for Codex + Claude'}`);
  console.log(`ECC: ${data.versions?.ecc||''} · both agents · local scope`);
+ const missing=data.plan?.prerequisites?.missing||[];
+ console.log(`Prerequisites: ${missing.length?missing.join(', ')+' missing · Project Init will ask/install during --apply':'ready'}`);
  console.log(`Factory: ${factory.source||'project-init-bundled-factory'} · Codex + Claude · isolated worktrees · parallel workers`);
  console.log(`Human approval: required`);
  console.log('');
- if(data.status==='failed'){
+ if(data.status==='stopped'){
+  console.log(`Status: STOPPED at ${data.stoppedAt||'user choice'}`);
+  if(data.stopReason) console.log(`Reason: ${data.stopReason}`);
+ }else if(data.status==='failed'){
   console.log(`Status: FAILED at ${data.failedStep||'unknown step'}`);
  }else if(data.applied){
   console.log('Status: READY');
@@ -121,7 +141,7 @@ async function main(){
  switch(command){
  case 'inspect': result=discover(root);break;
  case 'recommend': result=recommendation(discover(root),options);break;
- case 'init': result=await bootstrapProject(root,{...options,eccVersion:options['ecc-version'],apply:!!options.apply});break;
+ case 'init': result=await bootstrapProject(root,{...options,eccVersion:options['ecc-version'],apply:!!options.apply,confirm:options.apply?(message=>confirmPrompt(message,!!options.yes)):undefined,progress:options.apply?(message=>console.log(message)):undefined});break;
  case 'status': result=status(root);break;
  case 'select':
   if(!options.framework) fail('Pass --framework openspec|spec-kit|bmad|none.');

@@ -94,6 +94,16 @@ project-init init --project .
 project-init init --project . --apply
 ```
 
+The guided apply is an installer, not a prerequisite checklist. When a required bootstrap tool is missing, Project Init asks before installing it, verifies it, and continues to the next stage. For example, Spec Kit's `uv` dependency is installed as a pinned Project Init-managed user tool when approved. On Windows, missing Git/Python prerequisites can also be installed after explicit confirmation. ECC verifies npm/npx before running.
+
+```text
+Missing prerequisite -> ask [Y/n]
+  Y -> install -> verify -> continue
+  N -> STOPPED cleanly; rerun later to resume
+```
+
+Use `--yes` only for reviewed non-interactive automation; normal interactive use should keep the per-step confirmations.
+
 The guided Factory bootstrap handles the normal stack for both new and existing repositories:
 
 ```text
