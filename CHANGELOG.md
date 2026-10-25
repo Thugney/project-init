@@ -13,6 +13,22 @@ All notable changes to the public Project Init package are documented here. Ther
 - Updated package and lockfile SPDX metadata; the package stays `private: true` to explicitly prevent accidental npm publication while supporting reviewed GitHub release tarballs.
 - Updated release checks, documentation, and contributor terms. GitHub releases still require an explicitly created version tag; production acceptance remains pending.
 
+## [2.1.0-preview.3] — 2026-10-25 (factory-stack candidate)
+
+### Added
+- Added a pinned dual-agent factory profile: Spec Kit as the default single spec owner, ECC as the shared engineering toolbox, and Factory as the execution/review loop.
+- Added `project-init ecc` and `project-init factory` preview/apply commands.
+- Added bundled repo-local Codex `backend-factory` and read-only `backend-audit` skills plus bridge-contract validation.
+- Added a concise Factory stack cheat sheet and ownership documentation.
+
+### Changed
+- Spec Kit installation can wire both Codex and Claude integrations for clean existing repositories while preserving explicit version pins and preview-first execution.
+- Preview version advanced to `2.1.0-preview.3`.
+
+### Compatibility
+- Preserves the Apache-2.0 release controls and Windows native Codex command-discovery/batch-dispatch fixes already on `main`.
+- Backend defaults to Codex and frontend defaults to Claude. Claude backend fallback exists; Codex frontend fallback is intentionally not claimed until the Factory bridge becomes scope-aware.
+
 ## [2.1.0-preview.2] — 2026-10-19 (public-source candidate)
 
 ### Fixed
