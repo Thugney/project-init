@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import time
+import platform
 
 ROOT = subprocess.run(
     ["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True
@@ -30,11 +31,64 @@ def cfg():
         return json.load(f)
 
 
-def run(cmd, cwd=None, timeout=None):
+def run_process(cmd, cwd=None, timeout=None, **kwargs):
+    args = list(cmd)
+    if os.name == "nt" and args and str(args[0]).lower().endswith((".cmd", ".bat")):
+        command_line = subprocess.list2cmdline(args)
+        args = [os.environ.get("COMSPEC", "cmd.exe"), "/d", "/v:off", "/s", "/c", command_line]
     return subprocess.run(
-        cmd, cwd=cwd or ROOT, capture_output=True, text=True,
-        timeout=timeout, encoding="utf-8", errors="replace"
+        args, cwd=cwd or ROOT, timeout=timeout,
+        encoding="utf-8", errors="replace", **kwargs
     )
+
+
+def run(cmd, cwd=None, timeout=None):
+    return run_process(cmd, cwd=cwd, timeout=timeout, capture_output=True, text=True)
+
+
+def npm_global_root():
+    npm = shutil.which("npm.cmd") if os.name == "nt" else shutil.which("npm")
+    npm = npm or shutil.which("npm")
+    if not npm:
+        return None
+    r = run_process([npm, "root", "-g"], capture_output=True, text=True)
+    if r.returncode:
+        return None
+    value = (r.stdout or "").strip().splitlines()
+    return value[-1] if value else None
+
+
+def resolve_codex(settings):
+    explicit = (settings.get("codex") or {}).get("executable")
+    if explicit:
+        candidate = os.path.abspath(os.path.expanduser(explicit))
+        if os.path.isfile(candidate):
+            return candidate
+
+    if os.name == "nt":
+        native = shutil.which("codex.exe")
+        if native:
+            return native
+
+        root = npm_global_root()
+        machine = platform.machine().lower()
+        if root:
+            if machine in ("amd64", "x86_64"):
+                package_name, triple = "codex-win32-x64", "x86_64-pc-windows-msvc"
+            elif machine in ("arm64", "aarch64"):
+                package_name, triple = "codex-win32-arm64", "aarch64-pc-windows-msvc"
+            else:
+                package_name = triple = None
+            if package_name:
+                candidates = [
+                    os.path.join(root, "@openai", "codex", "node_modules", "@openai", package_name, "vendor", triple, "bin", "codex.exe"),
+                    os.path.join(root, "@openai", package_name, "vendor", triple, "bin", "codex.exe"),
+                ]
+                for candidate in candidates:
+                    if os.path.isfile(candidate):
+                        return candidate
+
+    return shutil.which("codex")
 
 
 def worktree_path(slug):
@@ -106,12 +160,11 @@ def main():
     if mode == "fix" and not round_no:
         print("CODEX USAGE fix <slug> <round>")
         return 6
-    codex = shutil.which("codex")
-    if not codex:
-        print("CODEX MISSING codex CLI not on PATH")
-        return 2
-
     settings = cfg()
+    codex = resolve_codex(settings)
+    if not codex:
+        print("CODEX MISSING codex CLI runtime not found")
+        return 2
     wt = worktree_path(slug)
     context = sync_context(slug, wt, round_no)
     out = os.path.join(ROOT, "factory", "jobs", slug, "codex", "build" if mode == "build" else f"fix-r{round_no}")
@@ -155,7 +208,7 @@ Rules:
     start = time.time()
     try:
         with open(events, "w", encoding="utf-8") as ef, open(stderr, "w", encoding="utf-8") as sf:
-            r = subprocess.run(args, stdout=ef, stderr=sf, text=True, timeout=timeout_min * 60)
+            r = run_process(args, cwd=wt, stdout=ef, stderr=sf, text=True, timeout=timeout_min * 60)
     except subprocess.TimeoutExpired:
         print(f"CODEX FAILED timeout after {timeout_min}m worktree={wt}")
         return 3

@@ -49,6 +49,14 @@ Never use a version placeholder with `--apply`. Native install runs third-party 
 
 ## Coding-agent runtime prerequisites
 
+### Windows npm shim normalization
+
+On Windows, npm commonly exposes agent CLIs through `.cmd` shims. PowerShell can run those shims, but vendor code that uses Node `execFile(..., shell:false)` may require a native `.exe`. ECC 2.2.3's Codex plugin path uses that shell-less execution model.
+
+Project Init therefore resolves the native Codex payload installed by `@openai/codex`, prepends its directory to the vendor child-process PATH, preserves Codex's npm-managed environment markers, and preflights the plugin inventory APIs ECC will call. The same normalized runtime is used by guided ECC and the bundled Factory Codex worker.
+
+
+
 The Factory runs terminal workers in isolated Git worktrees, so desktop apps alone are not sufficient. Project Init owns these runtime checks:
 
 ```text

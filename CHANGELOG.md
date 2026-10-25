@@ -13,6 +13,23 @@ All notable changes to the public Project Init package are documented here. Ther
 - Updated package and lockfile SPDX metadata; the package stays `private: true` to explicitly prevent accidental npm publication while supporting reviewed GitHub release tarballs.
 - Updated release checks, documentation, and contributor terms. GitHub releases still require an explicitly created version tag; production acceptance remains pending.
 
+## [2.1.0-preview.13] — 2026-10-25 (Windows agent runtime normalization)
+
+### Fixed
+- Fixed a Windows runtime mismatch where `codex --version` succeeded in PowerShell through npm's `codex.cmd` shim, but ECC 2.2.3 failed with `Codex CLI is not installed or codex is not on PATH` because its Codex plugin adapter uses `execFile(..., shell:false)`.
+- Project Init now resolves the native `codex.exe` payload shipped by the official `@openai/codex` platform package and prepends that native directory to the environment passed to ECC.
+- Preserves the npm-managed Codex environment markers when bypassing the JavaScript launcher.
+- Guided and advanced ECC execution now use the same normalized vendor environment.
+- The bundled Factory Codex worker now resolves the native Windows Codex payload as well, rather than relying only on npm shell shims.
+
+### Added
+- Project Init preflights the Codex and Claude plugin inventory commands required by ECC before starting ECC.
+- Added a Windows regression that launches `codex` with `shell:false` from the normalized vendor environment, directly reproducing the execution style that previously failed.
+
+### Compatibility
+- Existing Codex/Claude authentication and installed Spec Kit state are reused.
+- No Trace cleanup is required after the preview.12 ECC failure; update Project Init and resume the same guided bootstrap.
+
 ## [2.1.0-preview.12] — 2026-10-25 (ECC dual-harness fix)
 
 ### Fixed
