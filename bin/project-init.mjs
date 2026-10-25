@@ -66,8 +66,32 @@ function parseArgs(argv){
  }
  return {command,options};
 }
-function present(data,json=false) {
+function presentBootstrap(data){
+ const state=data.initialization?.state||{};
+ const git=data.inspection?.git||{};
+ const spec=data.plan?.specKit||{};
+ const factory=data.plan?.factory||{};
+ console.log(`Project Init ${VERSION} — Factory bootstrap`);
+ console.log(`Project: ${data.project}`);
+ console.log(`Mode: ${state.mode||'unknown'} · ${data.resumed?'resumed existing Project Init state':'initialized'}`);
+ console.log(`Git: ${git.available?'ready':'will initialize on --apply'}${git.available&&git.clean===false?' · dirty working tree allowed':''}`);
+ console.log(`Spec owner: Spec Kit ${data.versions?.specKit||''} · ${spec.installed?'already installed':'planned for Codex + Claude'}`);
+ console.log(`ECC: ${data.versions?.ecc||''} · both agents · local scope`);
+ console.log(`Factory: ${factory.source||'project-init-bundled-factory'} · backend=Codex · frontend=Claude`);
+ console.log(`Human approval: required`);
+ console.log('');
+ if(data.status==='failed'){
+  console.log(`Status: FAILED at ${data.failedStep||'unknown step'}`);
+ }else if(data.applied){
+  console.log('Status: READY');
+ }else{
+  console.log('Status: PREVIEW');
+ }
+ if(data.next) console.log(`Next: ${data.next}`);
+}
+function present(data,json=false,command='') {
  if(json){console.log(JSON.stringify(data,null,2));return;}
+ if(command==='init'&&data?.profile==='factory'){presentBootstrap(data);return;}
  if(typeof data==='string'){console.log(data);return;}
  console.log(JSON.stringify(data,null,2));
 }
@@ -111,7 +135,7 @@ async function main(){
  case 'run':result=await runCodex(root,{phase:options.phase||'planning',task:options.task||'',allowed:options.allow||[],execute:!!options.execute});break;
  default:fail(`Unknown command: ${command}. Use project-init help.`);
  }
- present(result,!!options.json);
+ present(result,!!options.json,command);
  // Mutating/evidence commands return failure exit status when the attempted activity failed.
  if(command==='verify'&&options.execute&&!result.passed)process.exitCode=1;
  if(['visual compare','guard'].includes(command)&&!result.passed)process.exitCode=1;
