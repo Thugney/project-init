@@ -2,13 +2,14 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import {
- VERSION,projectRoot,discover,recommendation,initProject,readState,selectFramework,installPlan,applyInstall,
+ VERSION,projectRoot,discover,recommendation,initProject,readState,selectFramework,installPlan,applyInstall,applyEcc,
  establishBaseline,recordReview,approve,checkBaseline,status,workflow,runChecks,runCodex,validChecks,readJson,statePath,
  fail,reconcileSource
 } from '../lib/core.mjs';
 import { renderVisualReview } from '../lib/visual.mjs';
 import {skillPlan} from '../lib/skills.mjs';
 import {renderLean} from '../lib/lean.mjs';
+import {applyFactory} from '../lib/factory.mjs';
 import {visualPlan,captureVisual,compareVisual} from '../lib/visual-gate.mjs';
 import {semanticPlan,importSemanticReview,verifyGuard} from '../lib/guard.mjs';
 
@@ -21,7 +22,9 @@ Commands:
   status       --project PATH                                      Actual gate and evidence status
   select       --project PATH --framework openspec|spec-kit|bmad|none
   wire         --project PATH [--agent both|codex|claude] [--scope project|user] [--plugin] [--backup-conflicts] [--apply]  Install 7 descriptive project skills per agent
-  install      --project PATH --version X.Y.Z [--agent codex|claude|both] [--apply]             Preview by default; vendor install is opt-in
+  install      --project PATH --version X.Y.Z [--agent codex|claude|both] [--apply]             Install selected native spec framework
+  ecc          --project PATH --version X.Y.Z [--agent both|codex|claude] [--scope local|project|user] [--apply]  Install ECC for coding agents
+  factory      --project PATH [--kit PATH] [--apply]                 Install/validate Claude factory kit + Codex backend skills
   handoff      --project PATH [--phase planning|design|implementation|verification] [--task TEXT]
   render       --project PATH                                      Generate offline high-fidelity review HTML
   lean         --project PATH --input report.md --out .project-init/lean/report.html [--execute]   Built-in Lean Kit
@@ -54,7 +57,7 @@ function parseArgs(argv){
    if(!token.startsWith('--')) fail(`Unexpected argument: ${token}`);
    const key=token.slice(2);
    if(['json','execute','apply','plugin','backup-conflicts'].includes(key)) {options[key]=true;continue;}
-   if(!['project','mode','intent','complexity','ui','framework','version','phase','task','actor','evidence','verdict','out','spec','allow','agent','scope','input','id','side','url','browser','file'].includes(key)) fail(`Unknown option: ${key}`);
+   if(!['project','mode','intent','complexity','ui','framework','version','phase','task','actor','evidence','verdict','out','spec','allow','agent','scope','input','id','side','url','browser','file','kit'].includes(key)) fail(`Unknown option: ${key}`);
    const value=rest[++i];
    if(value===undefined||value.startsWith('--')) fail(`Missing value after --${key}`);
    if(multi.has(key)){options[key]??=[];options[key].push(value);}
@@ -85,6 +88,10 @@ async function main(){
  case 'wire': result=skillPlan(root,{agent:options.agent||'both',scope:options.scope||'project',apply:!!options.apply,plugin:!!options.plugin,backupConflicts:!!options['backup-conflicts']});break;
  case 'install':
   result=await applyInstall(root,options.version,{apply:!!options.apply,agent:options.agent||'codex'});break;
+ case 'ecc':
+  result=await applyEcc(root,options.version||'2.2.3',{apply:!!options.apply,agent:options.agent||'both',scope:options.scope||'local'});break;
+ case 'factory':
+  result=applyFactory(root,{kit:options.kit,apply:!!options.apply});break;
  case 'handoff': result=workflow(root,options.phase||'planning',options.task||'');break;
  case 'render': result=renderVisualReview(root,options.out);break;
  case 'lean': result=renderLean(root,{input:options.input,out:options.out,execute:!!options.execute});break;
@@ -110,5 +117,6 @@ async function main(){
  if(command==='lean'&&options.execute&&!result.passed)process.exitCode=1;
  if(command==='run'&&options.execute&&['failed','blocked-review'].includes(result.status))process.exitCode=1;
  if(command==='install'&&options.apply&&result.results?.some(x=>x.exitCode!==0))process.exitCode=1;
+ if(command==='ecc'&&options.apply&&result.result?.exitCode!==0)process.exitCode=1;
 }
 main().catch(error=>{console.error(`Project Init: ${error.message}`);process.exitCode=1;});

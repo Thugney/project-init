@@ -1,6 +1,6 @@
 # Project Init
 
-**One entry point for a project. One native spec framework at a time. Real execution evidence—not progress theater.**
+**One entry point for a project. One spec owner. One execution factory. Real evidence.**
 
 [![CI](https://github.com/Thugney/project-init/actions/workflows/ci.yml/badge.svg)](https://github.com/Thugney/project-init/actions/workflows/ci.yml)
 [![Preview](https://img.shields.io/badge/channel-preview-9b59b6)](docs/RELEASES.md)
@@ -11,9 +11,9 @@ Project Init is a **local-first development workflow orchestrator** for engineer
 
 It does **not** replace your coding agent or run an autonomous developer in the background. The selected framework owns its **native specifications and tasks**; Codex or Claude writes the code. Project Init coordinates and checks the handoffs.
 
-> **Status: `2.1.0-preview.2` — functional preview, not production-accepted.** The local suites pass, but live framework installs, real Codex/Claude command discovery, native Claude unattended execution, and Windows browser capture have not completed acceptance testing. A passing guard is not proof of full semantic correctness or release approval. See [verification limits](docs/VERIFICATION.md) and the [acceptance report](docs/ACCEPTANCE-REPORT.md).
+> **Status: `2.1.0-preview.3` — functional preview, not production-accepted.** The local suites pass, but live framework installs, real Codex/Claude command discovery, native Claude unattended execution, and Windows browser capture have not completed acceptance testing. A passing guard is not proof of full semantic correctness or release approval. See [verification limits](docs/VERIFICATION.md) and the [acceptance report](docs/ACCEPTANCE-REPORT.md).
 >
-> **Licensing:** Project Init, the bundled Codex Lean Kit, and the preserved v1 sources are released under the [Apache License 2.0](LICENSE), as authorized by their maintainer. See [NOTICE](NOTICE.md) for provenance and attribution. GitHub preview source is licensed; **production readiness remains unverified**. npm publishing remains disabled intentionally.
+> **Licensing:** Project Init, the bundled Codex Lean Kit, and preserved v1 sources are released under the [Apache License 2.0](LICENSE). External tools such as Spec Kit, ECC, OpenSpec and BMAD are installed separately and keep their own licenses. See [NOTICE](NOTICE.md).
 
 ## The problem this solves
 
@@ -73,14 +73,26 @@ Use it on a disposable repository first; do not replace an older Project Init in
 
 ```powershell
 $project = 'C:\Work\ExampleRepo'
+$factoryKit = 'C:\Tools\factory-kit'
+
 project-init inspect --project $project
-project-init recommend --project $project --intent feature --complexity medium
 project-init init --project $project --mode Existing --intent feature --ui auto
-project-init select --project $project --framework openspec
-project-init handoff --project $project --phase planning
+
+# Factory profile: Spec Kit is the recommended single spec owner.
+project-init select --project $project --framework spec-kit
+project-init install --project $project --version 1.2.3 --agent both
+project-init install --project $project --version 1.2.3 --agent both --apply
+
+# Shared engineering toolbox for Claude Code + Codex.
+project-init ecc --project $project --version 2.2.3 --agent both --scope local
+project-init ecc --project $project --version 2.2.3 --agent both --scope local --apply
+
+# Install/validate the Claude factory kit and its Codex backend skills.
+project-init factory --project $project --kit $factoryKit
+project-init factory --project $project --kit $factoryKit --apply
 ```
 
-`recommend` offers alternatives. The user decides; for small projects `none` is valid. Framework selection does **not** automatically download or execute a vendor installer. Use `project-init install` first as a preview, then `--apply` with an explicit version only after checking the proposed steps.
+For this factory stack, **Spec Kit is the default** because it natively installs into both Codex and Claude and the factory already consumes `specs/NNN-x/`. BMAD remains an optional alternative for projects that need its deeper product/UX workflow; do not install both planning methodologies for the same change. ECC is a toolbox, not a second spec owner. Factory is the execution/review loop. Start with the [Factory stack cheat sheet](docs/CHEAT-SHEET.md), then see [Factory stack](docs/FACTORY-STACK.md) for boundaries and details.
 
 ## Discoverable skills in Codex and Claude Code
 
@@ -129,9 +141,10 @@ Before migrating from an older personal skill, read [the skill installation and 
 
 | For | Read |
 | --- | --- |
+| Start here / daily workflow | [Factory stack cheat sheet](docs/CHEAT-SHEET.md) |
 | Installation and platform caveats | [Install](docs/INSTALL.md) |
 | All CLI operations | [Commands](docs/COMMANDS.md) |
-| Architecture and ownership | [Architecture](docs/ARCHITECTURE.md) |
+| Architecture and ownership | [Architecture](docs/ARCHITECTURE.md), [Factory stack](docs/FACTORY-STACK.md) |
 | Threats, guard guarantees and limits | [Security model](docs/SECURITY-MODEL.md) |
 | Reproducible checks and acceptance | [Verification](docs/VERIFICATION.md), [Acceptance report](docs/ACCEPTANCE-REPORT.md) |
 | Maintainers and release channels | [Releases](docs/RELEASES.md), [Changelog](CHANGELOG.md) |
@@ -142,4 +155,4 @@ Before migrating from an older personal skill, read [the skill installation and 
 
 Maintained by **[Thugney](https://github.com/Thugney)**. Practical Microsoft cloud/security writing: **[Eriteach blog](https://blog.eriteach.com/)**. Professional updates: **[LinkedIn](https://www.linkedin.com/in/eriteach/)**. Contributions and technical criticism are welcome—especially reproducible bug reports, adversarial security tests, and Windows/Claude CLI acceptance evidence.
 
-Project Init is an independent community project, **not affiliated with OpenAI, Anthropic, GitHub, OpenSpec, or BMAD**. Respective names belong to their owners. See [NOTICE](NOTICE.md) for bundled code provenance and the Apache-2.0 attribution.
+Project Init is an independent community project, **not affiliated with OpenAI, Anthropic, GitHub, ECC, OpenSpec, or BMAD**. Respective names belong to their owners. See [NOTICE](NOTICE.md) for bundled code provenance and the Apache-2.0 attribution.

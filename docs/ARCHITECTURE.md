@@ -12,6 +12,8 @@ See [ADR 0001](adr/0001-single-source-of-truth.md), [security model](SECURITY-MO
 | PRD, architecture decisions, native specifications, implementation task status | Chosen framework: OpenSpec, Spec Kit, BMAD, or deliberate `none` |
 | Approved high-fidelity screens, states, visual reference PNGs, reviewer baseline hashes | Project Init visual-review capability, linked from native specs |
 | Actual code changes | Codex or Claude Code (depending on operator) |
+| Optional software-factory execution routing/review loop | Factory skill + its worker/reviewer contracts |
+| Reusable coding/review toolbox | ECC (external optional install; never spec authority) |
 | Native framework review | Selected framework (follow its installed version's actual workflow) |
 | Deterministic build/test results, source fingerprints, bounded Codex receipts, screenshot diffs, requirement-level evidence gate | Project Init |
 | Human design and release approval | User |

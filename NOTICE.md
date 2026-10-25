@@ -13,7 +13,7 @@ The maintainer has authorized release of these included components under Apache-
 
 ## External frameworks
 
-OpenSpec, GitHub Spec Kit and BMAD are optional external tools selected and installed separately. Their source is **not** bundled with Project Init; their respective licenses and trademarks belong to their owners.
+OpenSpec, GitHub Spec Kit, BMAD and ECC are optional external tools selected and installed separately. Their source is **not** bundled with Project Init; their respective licenses and trademarks belong to their owners.
 
 GitHub, OpenAI, Anthropic, Codex and Claude Code are mentioned for interoperability only. Project Init is not affiliated with or endorsed by those organizations.
 

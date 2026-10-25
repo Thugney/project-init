@@ -1,8 +1,8 @@
 # Project Init 2.1 — Acceptance and test report
 
-Build: 2026-10-19  
-Artifact: `ProjectInit-OpenSource-Preview-2.1.0-preview.2.zip`  
-Version: `2.1.0-preview.2`  
+Build: 2026-10-25  
+Artifact: `ProjectInit-OpenSource-Preview-2.1.0-preview.3.zip`  
+Version: `2.1.0-preview.3`  
 **Status: FUNCTIONAL PREVIEW — NOT PRODUCTION ACCEPTED**
 
 ## Delivered and checked
