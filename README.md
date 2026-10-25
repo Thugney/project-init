@@ -11,7 +11,7 @@ Project Init is a **local-first development workflow orchestrator** for engineer
 
 It does **not** replace your coding agent or run an autonomous developer in the background. The selected framework owns its **native specifications and tasks**; Codex or Claude writes the code. Project Init coordinates and checks the handoffs.
 
-> **Status: `2.1.0-preview.6` — functional preview, not production-accepted.** The local suites pass, but live framework installs, real Codex/Claude command discovery, native Claude unattended execution, and Windows browser capture have not completed acceptance testing. A passing guard is not proof of full semantic correctness or release approval. See [verification limits](docs/VERIFICATION.md) and the [acceptance report](docs/ACCEPTANCE-REPORT.md).
+> **Status: `2.1.0-preview.7` — functional preview, not production-accepted.** The local suites pass, but live framework installs, real Codex/Claude command discovery, native Claude unattended execution, and Windows browser capture have not completed acceptance testing. A passing guard is not proof of full semantic correctness or release approval. See [verification limits](docs/VERIFICATION.md) and the [acceptance report](docs/ACCEPTANCE-REPORT.md).
 >
 > **Licensing:** Project Init, the bundled Lean Kit, bundled Factory templates, and preserved v1 sources are released under the [Apache License 2.0](LICENSE). External tools such as Spec Kit, ECC, OpenSpec and BMAD are installed separately and keep their own licenses. See [NOTICE](NOTICE.md).
 
@@ -70,6 +70,17 @@ project-init help
 ```
 
 Use it on a disposable repository first; do not replace an older Project Init installation without consulting the [migration guide](docs/MIGRATION.md).
+
+### Updating Project Init itself
+
+Starting with preview.7, the global CLI updates independently of any development checkout:
+
+```powershell
+project-init update --check
+project-init update
+```
+
+The updater reads GitHub `main`, pins the exact commit it found, installs that source globally with npm, and verifies the resulting `project-init version`. It does **not** run `git pull` in `C:\Tools\project-init` or require that clone to be clean.
 
 Existing repositories do **not** need a clean working tree just to use Project Init. `init`, Spec Kit preserve-merge, ECC guided setup, and the bundled Factory are designed to coexist with unrelated local work. Project Init must still refuse an actual file collision rather than overwrite user-owned content.
 
