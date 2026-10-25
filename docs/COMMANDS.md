@@ -1,12 +1,12 @@
 # CLI command reference
 
-This documents **the shipped Project Init 2.1.0-preview.8 CLI**, not a speculative roadmap. Every command accepts `--json` for structured output. Use `project-init help` for canonical syntax and arguments; new commands are not available simply by installing agent skills.
+This documents **the shipped Project Init 2.1.0-preview.9 CLI**, not a speculative roadmap. Every command accepts `--json` for structured output. Use `project-init help` for canonical syntax and arguments; new commands are not available simply by installing agent skills.
 
 | Command | What it does | Side effect / safety |
 | --- | --- | --- |
 | `inspect` | Discover existing files, technology indicators and Git state | Read-only |
 | `recommend` | Rank OpenSpec, Spec Kit, BMAD and none | Read-only heuristic |
-| `init` | Guided Factory bootstrap/resume: inspect state, select Spec Kit profile, plan/apply Spec Kit + ECC + bundled Factory | Preview/plan by default; `--apply` executes the combined bootstrap; resumes existing Project Init state |
+| `init` | Guided bootstrap/resume: prerequisites + Spec Kit + ECC + bundled parallel-worktree Factory | Preview by default; `--apply` asks per missing prerequisite/component, installs+verifies accepted steps, resumes verified progress; `--yes` is explicit non-interactive consent |
 | `update` | Check/update the globally installed Project Init CLI from GitHub `main` | `--check` is read-only; default updates when a newer version is available; independent of local source clones |
 | `status` | Report selected framework, approval, tests, evidence and blockers | Reads state, may recalculate stale evidence |
 | `select` | Pin one framework | Requires initialized project, does not install |
