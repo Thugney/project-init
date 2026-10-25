@@ -13,6 +13,29 @@ All notable changes to the public Project Init package are documented here. Ther
 - Updated package and lockfile SPDX metadata; the package stays `private: true` to explicitly prevent accidental npm publication while supporting reviewed GitHub release tarballs.
 - Updated release checks, documentation, and contributor terms. GitHub releases still require an explicitly created version tag; production acceptance remains pending.
 
+## [2.1.0-preview.14] — 2026-10-25 (ECC capability fallback)
+
+### Fixed
+- Stable Codex CLI releases that do not expose `codex plugin ...` are no longer treated as broken or repeatedly reinstalled.
+- Project Init now selects the ECC install channel independently for Claude and Codex instead of requiring both harnesses to support ECC's native plugin lifecycle.
+- The obsolete "repair Codex plugin inventory API" loop has been removed.
+- ECC execution still uses the normalized Windows native Codex runtime for later shell-less Factory workers.
+
+### ECC channel selection
+- Claude: native ECC plugin when Claude Code exposes plugin inventory APIs; otherwise ECC's supported project-local managed adapter.
+- Codex: native ECC marketplace/plugin lifecycle when available; otherwise ECC's supported `--profile core --target codex` managed home adapter.
+- Custom `CODEX_HOME`: when native Codex plugin APIs are unavailable, Project Init uses ECC's documented legacy Codex sync compatibility path because that path explicitly honors `CODEX_HOME`.
+- Existing ECC ownership state pins the previously selected managed/legacy channel to avoid stacking install methods.
+
+### Added
+- Bootstrap preview and confirmation now show the selected ECC channel for each worker.
+- Added regressions for the real mixed case: Claude native plugin + Codex managed fallback.
+- Added regression coverage that custom `CODEX_HOME` selects ECC legacy sync instead of installing into the wrong default `.codex` directory.
+
+### Compatibility
+- Existing uv, Spec Kit, Codex/Claude CLI authentication and prior verified bootstrap steps are reused.
+- No cleanup is required after preview.13's failed Codex plugin-capability repair attempt; update Project Init and rerun the same guided bootstrap.
+
 ## [2.1.0-preview.13] — 2026-10-25 (Windows agent runtime normalization)
 
 ### Fixed
