@@ -1,131 +1,148 @@
-# Getting started — new vs existing project
+# Getting started — exactly how to use it
 
-One page. PowerShell examples; on macOS/Linux use the same commands with `/` paths.
+PowerShell examples. One page. Follow it top to bottom the first time.
 
 ```text
-Is the folder empty or missing?  ── yes ──> NEW
-                                 └─ no  ──> EXISTING (has files or Git)
+Project Init  -> installs everything            (once per repo)
+Spec Kit      -> decides WHAT to build          (every feature)
+/factory      -> Codex + Claude BUILD it        (every feature)
+ECC           -> extra agent skills             (automatic, never called directly)
+You           -> approve the spec, merge the PR
 ```
-
-Project Init detects this itself. You run the same `init` command either way.
-
-Spec Kit commands below use the installed skill names (`/speckit-*` in Claude Code, `$speckit-*` in Codex). If your Spec Kit version shows dot names (`/speckit.specify`), use those.
 
 ---
 
-## NEW project
+## Rule 0 — three things that break everything
 
-```powershell
-# 1. Preview. The folder may not exist yet.
-project-init init --project C:\Work\NewApp
-
-# 2. Apply. Creates the folder, runs git init, installs Spec Kit + ECC + Factory.
-#    Answer Y/n for each missing prerequisite (CLIs, auth, uv, Python, Git).
-project-init init --project C:\Work\NewApp --apply
-
-cd C:\Work\NewApp
-git add -A; git commit -m "chore: project-init bootstrap"
-```
-
-```text
-3. Constitution   Claude: /speckit-constitution   Codex: $speckit-constitution
-                  stack, coding rules, security rules, test policy
-4. First spec     /speckit-specify  "scaffold: <stack>, health endpoint, test runner, CI"
-5. Plan + tasks   /speckit-plan  ->  /speckit-tasks
-6. Commit         git add -A; git commit -m "spec: 001-scaffold"
-7. Build          Claude Code: /factory spec specs/001-scaffold
-```
-
-8. After the scaffold PR is merged, set the test command so later jobs are tested after integration:
-
-```json
-// .claude/skills/factory/config.json
-"base_branch": "main",
-"test_command": "npm test"
-```
-
-From here, use the **daily loop** below.
+1. **One clone per repo.** Delete or stop using any other copy of the same repo. Two clones = you install in one and open the other.
+2. **Commit the setup.** The Claude desktop app and `/factory` both work in Git *worktrees* made from your **last commit**. Uncommitted files (skills, `.specify/`, factory) do not exist there.
+3. **Open the repo folder itself.** Not its parent, not a cloud session. Local, exact folder.
 
 ---
 
-## EXISTING project
+## A. First time in a repo (once)
 
+### New project
 ```powershell
-cd C:\Work\ExistingApp
+project-init init --project J:\Projects\MyApp            # preview (folder may not exist)
+project-init init --project J:\Projects\MyApp --apply    # answer Y/n per prerequisite
+cd J:\Projects\MyApp
+```
 
-# 1. Preview. Read it: it lists what it will add and what it preserves.
-project-init init --project .
-
-# 2. Apply. Spec Kit preserve-merge (no --force), ECC collision checks,
-#    Factory writes only its own paths. Unrelated dirty work is kept.
+### Existing project
+```powershell
+cd J:\Projects\MyApp
+project-init init --project .            # preview: read what it adds/keeps
 project-init init --project . --apply
 ```
+- Existing **BMAD/OpenSpec**? `init` stops. Pick one spec owner; don't force Spec Kit in.
+- Your unrelated changes are kept. Existing `.specify/` is reused.
 
-3. Set Factory config right away. The repo already has a branch and tests:
+### Then, both
+```powershell
+# 1. Config: open .claude\skills\factory\config.json and set
+#    "base_branch": "main"
+#    "test_command": "npm test"          (empty for a new repo until the scaffold exists)
+#    add your own sensitive folders to "high_risk_paths"
 
-```json
-// .claude/skills/factory/config.json
-"base_branch": "main",
-"test_command": "npm test",
-"high_risk_paths": [ "...add your own sensitive folders..." ]
+# 2. Commit the setup (Rule 0.2)
+git add .specify .claude .agents factory .gitignore
+git commit -m "chore: project-init bootstrap"
+git push
 ```
 
-```text
-4. Constitution   /speckit-constitution  "derive rules from this codebase: stack,
-                  conventions, test command, auth pattern"
-5. Commit         git add -A; git commit -m "chore: project-init bootstrap"
-                  (/factory refuses tracked uncommitted changes; worktrees start from HEAD)
-6. First job      keep it small, e.g. one endpoint + one UI change
-```
+### Check it works
+| App | Do | Expect |
+|---|---|---|
+| Claude desktop | **Code** tab → new **local** session → folder = the repo | `/speck` lists `speckit-specify`, `/factory` exists |
+| Claude CLI | `cd` repo → `claude` | same |
+| Codex | open the repo | `$speckit-specify`, `$factory-worker` listed |
 
-**Existing-project checks:**
-- Already has **BMAD or OpenSpec**? `init` stops on purpose. Don't run two spec owners; use that methodology instead of the Factory profile.
-- Already has **Spec Kit** (`.specify/`)? It is reused, not overwritten.
-- Already ran **Project Init** before? `init` resumes the recorded state.
+Ask the session *"What is your working directory?"* — it must be inside your repo (a `.claude\worktrees\…` subfolder is fine).
+
+New project only: make your first feature a scaffold (`/speckit-specify "scaffold: <stack>, health endpoint, test runner, CI"`), run it through section B, then fill in `test_command`.
 
 ---
 
-## Daily loop (both)
+## B. Every feature (the normal day)
 
-```text
-/speckit-specify "<feature>"        -> specs/NNN-x/spec.md
-/speckit-plan  ->  /speckit-tasks    -> plan.md, tasks.md
-review + commit the spec
-/factory spec specs/NNN-x            -> Codex + Claude build in parallel worktrees
-                                       -> integration -> tests -> 4 reviews -> fixes
-watch: cd factory; python -m http.server 8765   (open /dashboard.html)
-result: PR from factory/<slug>/integration  OR  needs-human
-/factory approve <slug>              -> only after you've read decision.md
+Use **Claude Code** for this whole flow. Codex is called by `/factory` automatically.
+
+```powershell
+git checkout main; git pull; git status     # must be clean
 ```
 
-Small items without a full spec: add `- [ ] <feature>` to `factory/backlog.md`, then `/factory next`.
+| # | Type in Claude Code | You get | You do |
+|---|---|---|---|
+| 1 | `/speckit-specify <feature in plain words>` | `specs/00X-name/spec.md` | read it |
+| 2 | `/speckit-clarify` (optional) | open questions answered | answer them |
+| 3 | `/speckit-plan` | `plan.md` | read it |
+| 4 | `/speckit-tasks` | `tasks.md` | read it |
+| 5 | *(PowerShell)* `git add specs; git commit -m "spec: 00X-name"` | spec saved | — |
+| 6 | `/factory spec specs/00X-name` | Codex + Claude build in parallel → integrate → tests → 4 reviews → fixes | wait |
+| 7 | — | **PR opened**, or **`needs-human`** | see C |
 
-## Commands
+Watch it live (optional):
+```powershell
+cd factory; python -m http.server 8765     # open http://localhost:8765/dashboard.html
+```
 
-| I want to… | Run |
+---
+
+## C. When it finishes
+
+| Result | Do |
 |---|---|
-| Bootstrap / resume a repo | `project-init init --project .` then `--apply` |
-| Update Project Init itself | `project-init update --check` · `project-init update` |
-| Re-install / update Factory only | `project-init factory --project .` then `--apply` |
-| Make `/project-init*` skills visible everywhere | `project-init wire --project . --agent both --scope user --apply` |
-| Run a feature from Spec Kit | `/factory spec specs/NNN-x` |
-| Run a one-liner | `/factory <idea>` or backlog + `/factory next` |
-| See all jobs | `/factory status` |
-| Re-review an existing job | `/factory review <slug>` |
-| Send back with feedback | `/factory rework <slug> "<feedback>"` |
-| Approve an escalated job | `/factory approve <slug>` |
-| Manual Codex audit of the result | in Codex, in the integration worktree: `$factory-audit` |
-| See the worktrees | `git worktree list` |
+| **PR opened** | Review on GitHub, merge it yourself (squash-merge = signed commit under your name) |
+| **needs-human** | Read `factory\jobs\<slug>\decision.md`, then `/factory approve <slug>` **or** `/factory rework <slug> "what to change"` |
+| **Merge conflict** | Spec gave both workers the same file. Fix the paths in `factory\jobs\<slug>\spec.md`, `/factory review <slug>` |
+| **Codex failed** | `codex login status`; look in `factory\jobs\<slug>\codex\`; run `/factory review <slug>` |
+| **No tests ran** | `test_command` is empty in config.json |
+| **`/factory` refuses to start** | You have uncommitted tracked changes. Commit or stash |
 
-## When it stops
+---
 
-| You see | Do |
-|---|---|
-| `needs-human` | Read `factory/jobs/<slug>/decision.md` → fix or `/factory approve <slug>` |
-| Merge conflict at integration | The spec gave both workers the same file. Fix the spec paths, rerun |
-| `[INTEGRATION]` findings | Write a short resolution plan, `/factory rework <slug> "<plan>"` |
-| Codex worker failed | Check `factory/jobs/<slug>/codex/`; confirm `codex login status`; rerun |
-| `/factory` refuses to start | Commit or stash tracked changes first |
-| No tests ran after integration | `test_command` is empty in config.json |
+## D. Which tool for which job
+
+| Job | Use | Not |
+|---|---|---|
+| New feature, backend + frontend | Spec Kit → `/factory spec …` | — |
+| Small one-liner | `/factory <idea>` or backlog + `/factory next` | Spec Kit |
+| Fix review comments on an **existing PR** | Plain Claude Code (or Codex): *"check out branch X, fix PR #N comments, add tests, push"* | `/factory` (it makes a new PR) |
+| Bug fix with a known cause | Plain Claude Code / Codex on a branch | `/factory` |
+| Extra independent audit of a factory result | Codex in the integration worktree: `$factory-audit` | — |
+| Feature that targets another feature branch | `git checkout <that-branch>` first, set `"base_branch"` to it, then section B | — |
+
+---
+
+## E. Keeping it up to date
+
+```powershell
+project-init update --check
+project-init update                          # updates the CLI
+project-init init --project .                # preview what changed for this repo
+project-init init --project . --apply        # applies; keeps your config.json + backlog
+git add .claude .agents factory .specify; git commit -m "chore: update project-init"
+```
+After any update: commit (Rule 0.2), then start a **new** Claude/Codex session.
+
+---
+
+## F. One picture
+
+```text
+             (once)  project-init init --apply  →  commit setup
+                                   │
+ /speckit-specify → /speckit-plan → /speckit-tasks → commit spec      WHAT
+                                   │
+                    /factory spec specs/00X-name                       BUILD
+                                   │
+          ┌────────────────────────┴───────────────────────┐
+   Worktree A: Codex                              Worktree B: Claude
+          └────────────────────────┬───────────────────────┘
+                     integration branch → tests → 4 reviews
+                                   │
+                    PR on GitHub  →  YOU merge
+```
 
 Related: [Cheat sheet](CHEAT-SHEET.md) (who owns what) · [Factory stack](FACTORY-STACK.md) · [Install](INSTALL.md)
