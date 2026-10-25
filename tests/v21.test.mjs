@@ -381,7 +381,12 @@ test('ECC apply is allowed on a dirty existing repo and preserves unrelated file
  initProject(root,{mode:'Existing',intent:'feature',ui:'no'});
  fs.writeFileSync(path.join(root,'README.md'),'dirty ecc work\n');fs.writeFileSync(path.join(root,'LOCAL.txt'),'keep me\n');
  const fake=path.join(bin,'npx');fs.writeFileSync(fake,`#!/usr/bin/env node
-const fs=require('fs');fs.mkdirSync('.claude/ecc-fixture',{recursive:true});fs.writeFileSync('.claude/ecc-fixture/installed','yes\\n');process.exit(0);
+const fs=require('fs');const a=process.argv.slice(2);
+if(a.includes('--profile')){console.error('Kimi-only profile must not be sent for Claude+Codex');process.exit(23);}
+const hs=a.flatMap((v,i)=>v==='--harness'?[a[i+1]]:[]);
+if(!hs.includes('claude')||!hs.includes('codex')){console.error('missing dual harness');process.exit(24);}
+if(!a.includes('--claude-scope')||!a.includes('local')||!a.includes('--claude-hooks')||!a.includes('standard')){console.error('missing Claude choices');process.exit(25);}
+fs.mkdirSync('.claude/ecc-fixture',{recursive:true});fs.writeFileSync('.claude/ecc-fixture/installed','yes\\n');process.exit(0);
 `);fs.chmodSync(fake,0o755);
  if(process.platform==='win32')fs.writeFileSync(path.join(bin,'npx.cmd'),'@echo off\r\nnode "%~dp0npx" %*\r\n');
  const prior=process.env.PATH;process.env.PATH=bin+path.delimiter+prior;
@@ -396,7 +401,11 @@ test('ECC plan is pinned, dual-harness, and dry-run by default',()=>{
  const {root}=fixture('ecc');
  const plan=eccInstallPlan(root,'2.2.3',{agent:'both',scope:'local'});
  assert.deepEqual(plan.command.slice(0,4),['npx','--yes','ecc-universal@2.2.3','install']);
- assert.ok(plan.command.includes('claude'));assert.ok(plan.command.includes('codex'));assert.ok(plan.command.includes('--profile'));assert.ok(plan.dryRunCommand.includes('--dry-run'));
+ assert.ok(plan.command.includes('--guided'));assert.ok(plan.command.includes('claude'));assert.ok(plan.command.includes('codex'));
+ assert.ok(plan.command.includes('--claude-scope'));assert.ok(plan.command.includes('local'));assert.ok(plan.command.includes('--claude-hooks'));assert.ok(plan.command.includes('standard'));
+ assert.equal(plan.command.includes('--profile'),false,'--profile is Kimi-only and must not be sent for Claude+Codex');
+ assert.equal(plan.command.filter(x=>x==='--harness').length,2);
+ assert.ok(plan.dryRunCommand.includes('--dry-run'));
 });
 
 test('Factory installs generic Codex and Claude parallel-worktree stack and preserves user config',async()=>{
