@@ -32,6 +32,8 @@ header .meta{color:var(--mute);font-size:12px;margin-left:auto}
 .chip{font-size:10px;padding:1px 5px;border-radius:4px;background:var(--pend);color:#fff}
 .chip.PASS{background:var(--pass)}.chip.CHANGES{background:var(--chg)}
 .empty{color:var(--mute);font-size:12px;padding:6px 4px}
+.notice{margin:12px 16px 0;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--mute)}
+.notice[data-state="missing"],.notice[data-state="invalid"],.notice[data-state="http"],.notice[data-state="connection"]{border-color:var(--hot)}
 aside{position:fixed;top:0;right:0;height:100%;width:min(720px,100%);background:var(--panel);border-left:1px solid var(--line);transform:translateX(100%);transition:transform .18s;display:flex;flex-direction:column;z-index:5}
 aside.open{transform:none}
 aside .top{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
@@ -45,10 +47,11 @@ pre{margin:0;padding:14px;overflow:auto;flex:1;white-space:pre-wrap;font:12.5px/
 </head>
 <body>
 <header>
-  <span class="dot" id="live"></span>
+  <span class="dot off" id="live"></span>
   <h1>Software Factory</h1>
   <span class="meta" id="meta">loading…</span>
 </header>
+<section class="notice" id="notice" role="status" aria-live="polite">Loading the Factory board for this checkout…</section>
 <main class="board" id="board"></main>
 <aside id="panel">
   <div class="top"><b id="ptitle"></b><button onclick="closePanel()">Close</button></div>
@@ -58,21 +61,54 @@ pre{margin:0;padding:14px;overflow:auto;flex:1;white-space:pre-wrap;font:12.5px/
 <script>
 const COLS=[["spec","Spec"],["building","Parallel build"],["integrating","Integration"],["review","Review"],["fixing","Fixing"],["decision","Decision"],["done","Done / Human"]];
 const DONE=new Set(["merged","needs-human","failed"]);
-let board={jobs:[]},openId=null;
+const STAGES=new Set([...COLS.map(([stage])=>stage).filter(stage=>stage!=="done"),...DONE]);
+let board={jobs:[]},openId=null,polling=false;
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
+function validBoard(data){
+  if(!data||typeof data!=="object"||Array.isArray(data)||!Array.isArray(data.jobs)||(data.updated!==undefined&&typeof data.updated!=="string")) return false;
+  const ids=new Set();
+  const reviews=value=>value&&typeof value==="object"&&!Array.isArray(value)&&Object.entries(value).every(([key,verdict])=>/^[a-zA-Z0-9_-]+$/.test(key)&&["pending","PASS","CHANGES"].includes(verdict));
+  return data.jobs.every(j=>{
+    if(!j||typeof j!=="object"||Array.isArray(j)||typeof j.id!=="string"||!/^\d+-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(j.id)||ids.has(j.id)||typeof j.title!=="string"||!STAGES.has(j.stage)||!Number.isInteger(j.round)||j.round<0||!reviews(j.reviews)||!Array.isArray(j.rounds)||j.rounds.some(r=>!r||!Number.isInteger(r.round)||r.round<0||!reviews(r.reviews))) return false;
+    ids.add(j.id);return true;
+  });
+}
+function unavailable(state,message){
+  board={jobs:[]};closePanel();
+  document.getElementById("live").className="dot off";
+  document.getElementById("meta").textContent="Board unavailable";
+  document.getElementById("notice").dataset.state=state;
+  document.getElementById("notice").textContent=message;
+  document.getElementById("board").innerHTML="";
+  document.getElementById("pbody").textContent="";
+}
 async function poll(){
+  if(polling) return;
+  polling=true;
   try{
     const r=await fetch("board.json?ts="+Date.now(),{cache:"no-store"});
-    if(!r.ok) throw 0;
-    board=await r.json();
+    if(!r.ok){
+      if(r.status===404) unavailable("missing","No board.json in the served checkout. The dashboard server is responding. Factory setup may not have initialized this board, or another orchestration worktree owns the job. Check the board path shown by /factory status; preserve existing state when applying Factory setup. No jobs have been inferred from PRs or other agent sessions.");
+      else if(r.status===401||r.status===403) unavailable("http",`Access to board.json was denied (HTTP ${r.status}). Check the server's file access and the served checkout. Existing job state has not been changed.`);
+      else unavailable("http",`The server could not return board.json (HTTP ${r.status}). Check the server response and the served checkout. This is not an empty board.`);
+      return;
+    }
+    let data;
+    try{data=await r.json();}
+    catch(error){unavailable("invalid","board.json could not be read as JSON. Preserve the file and inspect it in the orchestration checkout; do not replace it with an empty board.");return;}
+    if(!validBoard(data)){unavailable("invalid","board.json has an invalid jobs schema. Preserve the file and inspect it in the orchestration checkout; no job status can be shown reliably.");return;}
+    board=data;
     document.getElementById("live").className="dot";
     document.getElementById("meta").textContent=`${board.jobs.length} jobs · updated ${board.updated||"-"}`;
+    document.getElementById("notice").dataset.state=board.jobs.length?"ready":"empty";
+    document.getElementById("notice").textContent=board.jobs.length
+      ?"Connected to this checkout's Factory board. Job records describe registered Factory work; they do not establish that a worker process is currently running."
+      :"No Factory jobs registered in this checkout. The board is ready. Existing PRs, Spec Kit artifacts and ordinary Claude/Codex sessions do not automatically become Factory jobs. Use /factory status in the orchestration checkout to confirm its board path before starting approved work.";
     render();
   }catch(e){
-    document.getElementById("live").className="dot off";
-    document.getElementById("meta").textContent="board.json not reachable — run: python3 -m http.server 8765 (inside factory/)";
-  }
+    unavailable("connection","Unable to connect to the board. Open dashboard.html through the HTTP server serving this checkout's factory folder. For local viewing: python3 -m http.server 8765 --bind 127.0.0.1. Keep the server running and check its output.");
+  }finally{polling=false;}
 }
 
 function card(j){

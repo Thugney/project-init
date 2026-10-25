@@ -17,6 +17,7 @@ jobs:
   test:
     name: Node ${{ matrix.node }} / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -27,9 +28,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
       - name: Install reproducibly
         run: npm ci --ignore-scripts
-      - name: Syntax, regression and vendor tests
+      - name: Syntax, preparation, Factory evidence, dashboard and vendor regressions
         run: npm run test:all
       - name: CLI smoke tests
         run: npm run smoke

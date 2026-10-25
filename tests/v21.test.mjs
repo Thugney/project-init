@@ -24,7 +24,7 @@ test('self-update version comparison handles preview releases',()=>{
 
 test('self-update check never invokes npm when current',async()=>{
  const sha='a'.repeat(40);
- const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.14'}});
+ const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.15'}});
  let calls=0;
  const result=await updateProjectInit({check:true,fetcher,runner:()=>{calls++;throw new Error('runner should not execute');}});
  assert.equal(result.status,'current');assert.equal(result.updated,false);assert.equal(calls,0);assert.equal(result.remoteCommit,sha);
@@ -32,11 +32,11 @@ test('self-update check never invokes npm when current',async()=>{
 
 test('self-update installs pinned GitHub source and verifies replacement CLI',async()=>{
  const sha='b'.repeat(40);
- const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.15'}});
+ const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.16'}});
  const calls=[];
- const runner=(command,args)=>{calls.push([command,...args]);if(command==='npm')return {status:0,stdout:'updated',stderr:''};return {status:0,stdout:'2.1.0-preview.15\n',stderr:''};};
+ const runner=(command,args)=>{calls.push([command,...args]);if(command==='npm')return {status:0,stdout:'updated',stderr:''};return {status:0,stdout:'2.1.0-preview.16\n',stderr:''};};
  const result=await updateProjectInit({fetcher,runner});
- assert.equal(result.status,'updated');assert.equal(result.installedVersion,'2.1.0-preview.15');
+ assert.equal(result.status,'updated');assert.equal(result.installedVersion,'2.1.0-preview.16');
  assert.deepEqual(calls[0],['npm','install','--global','--force',`git+https://github.com/Thugney/project-init.git#${sha}`]);
  assert.deepEqual(calls[1],['project-init','version']);
 });
@@ -264,12 +264,12 @@ test('guided init selects Spec Kit and returns the complete Factory stack plan',
  git('init');git('config','user.name','Fixture');git('config','user.email','fixture@example.invalid');fs.writeFileSync(path.join(root,'README.md'),'baseline\n');git('add','.');git('commit','-m','baseline');
  fs.writeFileSync(path.join(root,'LOCAL.txt'),'dirty existing work\n');
  const first=await bootstrapProject(root,{mode:'Existing',intent:'feature',ui:'auto'});
- assert.equal(first.initialized,true);assert.equal(first.resumed,false);assert.equal(first.profile,'factory');assert.equal(first.framework.id,'spec-kit');
+ assert.equal(first.initialized,false);assert.equal(first.resumed,false);assert.equal(first.profile,'factory');assert.equal(first.framework.id,'spec-kit');
  assert.equal(first.plan.specKit.framework,'spec-kit');assert.equal(first.plan.specKit.agent,'both');assert.equal(first.plan.ecc.agent,'both');assert.equal(first.plan.ecc.scope,'local');assert.ok(first.plan.prerequisites);
  assert.equal(first.plan.factory.source,'project-init-bundled-factory');assert.equal(first.applied,false);assert.match(first.next,/same init command with --apply/i);
- assert.equal(readState(root).framework,'spec-kit');assert.equal(fs.readFileSync(path.join(root,'LOCAL.txt'),'utf8'),'dirty existing work\n');
+ assert.equal(fs.existsSync(path.join(root,'.project-init')),false);assert.equal(fs.readFileSync(path.join(root,'LOCAL.txt'),'utf8'),'dirty existing work\n');
  const resumed=await bootstrapProject(root,{mode:'Existing'});
- assert.equal(resumed.initialized,false);assert.equal(resumed.resumed,true);assert.equal(resumed.framework.id,'spec-kit');
+ assert.equal(resumed.initialized,false);assert.equal(resumed.resumed,false);assert.equal(resumed.framework.id,'spec-kit');assert.equal(fs.existsSync(path.join(root,'.project-init')),false);
 });
 
 test('guided init --apply executes Spec Kit, ECC and Factory and resumes idempotently',async()=>{
@@ -309,7 +309,7 @@ const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-code te
  try{
   const prompts=[],messages=[];
   const result=await bootstrapProject(root,{mode:'Existing',intent:'feature',ui:'auto',apply:true,confirm:async message=>{prompts.push(message);return true;},progress:message=>messages.push(message)});
-  assert.equal(result.status,'ready',JSON.stringify(result));assert.equal(result.applied,true);assert.ok(prompts.some(x=>x.includes('Spec Kit')));assert.ok(prompts.some(x=>x.includes('ECC')));assert.ok(prompts.some(x=>x.includes('Factory')));assert.ok(messages.some(x=>x.includes('PROJECT READY')));
+  assert.equal(result.status,'ready',JSON.stringify(result));assert.equal(result.applied,true);assert.ok(prompts.some(x=>x.includes('Spec Kit')));assert.ok(prompts.some(x=>x.includes('ECC')));assert.ok(prompts.some(x=>x.includes('Factory')));assert.ok(messages.some(x=>x.includes('TOOLING READY')));assert.equal(result.readiness.tooling,true);assert.equal(result.readiness.feature,false);assert.equal(result.preparation.status,'feature-required');
   assert.ok(fs.existsSync(path.join(root,'.specify/fixture.txt')));
   assert.ok(fs.existsSync(path.join(root,'.claude/ecc-fixture/installed')));
   assert.ok(fs.existsSync(path.join(root,'.claude/skills/factory/SKILL.md')));
@@ -349,12 +349,12 @@ const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-code te
  }finally{process.env.PATH=prior;if(priorNative===undefined)delete process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE;else process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE=priorNative;}
 });
 
-test('guided init detects and creates a brand-new repository before Git exists',async()=>{
+test('guided init previews a brand-new repository without creating its directory',async()=>{
  const tempRoot=fs.realpathSync(os.tmpdir()); const base=fs.mkdtempSync(path.join(tempRoot,'pinit-bootstrap-new-')),root=path.join(base,'repo');
  const result=await bootstrapProject(root,{intent:'new-product',ui:'yes'});
- assert.equal(result.initialized,true);assert.equal(result.initialization.state.mode,'New');assert.equal(result.framework.id,'spec-kit');assert.equal(result.plan.git.action,'init');assert.equal(result.plan.factory.deferredUntilGitInit,true);
+ assert.equal(result.initialized,false);assert.equal(result.initialization.state.mode,'New');assert.equal(result.framework.id,'spec-kit');assert.equal(result.plan.git.action,'init');assert.equal(result.plan.factory.deferredUntilGitInit,true);
  assert.equal(result.plan.specKit.mode,'New');const init=result.plan.specKit.steps.find(x=>x.cmd==='specify'&&x.args[0]==='init');assert.ok(init);assert.ok(init.args.includes('--non-interactive'));assert.equal(init.args.includes('--force'),false);assert.equal(init.input,undefined);
- assert.equal(fs.existsSync(root),true);
+ assert.equal(fs.existsSync(root),false);
 });
 
 test('dirty existing repo initializes and Spec Kit plan uses preserve-merge without force',async()=>{

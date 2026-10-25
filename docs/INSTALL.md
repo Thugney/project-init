@@ -106,8 +106,11 @@ Install Spec Kit 1.2.3 for Codex + Claude now? [Y/n]
 Install ECC 2.2.3 for Codex + Claude now? [Y/n]
 
 Install/update the bundled Factory for parallel Codex + Claude isolated worktrees now? [Y/n]
-✓ PROJECT READY for Codex + Claude
+Install the Project Init workflow skills for Codex + Claude in this project now? [Y/n]
+✓ TOOLING READY for Codex + Claude
 ```
+
+The separate feature status reports whether the existing native specification, actual checks, requirement mappings, baseline, review and human approval are ready. An empty/new project has no prepared feature merely because tooling installed successfully. See [feature preparation](FEATURE-PREPARATION.md).
 
 A `No` answer stops cleanly without rolling back already verified prerequisites. Re-running the same command resumes from current state. `--yes` bypasses prompts only for intentionally reviewed automation.
 

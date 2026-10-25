@@ -14,6 +14,10 @@ import subprocess
 import sys
 import time
 import platform
+import hashlib
+import re
+import uuid
+from datetime import datetime, timezone
 
 ROOT = subprocess.run(
     ["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True
@@ -29,6 +33,30 @@ WT = os.path.join(ROOT, ".claude", "skills", "factory", "scripts", "worktree.py"
 def cfg():
     with open(CFG, encoding="utf-8") as f:
         return json.load(f)
+
+
+def begin_attempt(slug):
+    """Invalidate an earlier success before any preflight that can fail."""
+    if not re.fullmatch(r"\d{3,}-[a-z0-9]+(?:-[a-z0-9]+)*", slug):
+        print("CODEX ERROR invalid Factory job slug")
+        return False
+    try:
+        with open(os.path.join(ROOT, "factory", "board.json"), encoding="utf-8") as f:
+            board = json.load(f)
+        if not any(job.get("id") == slug for job in board.get("jobs", [])):
+            raise ValueError("job is not registered in this checkout")
+        directory = os.path.join(ROOT, "factory", "jobs", slug, "codex")
+        os.makedirs(directory, exist_ok=True)
+        pointer = os.path.join(directory, "latest-execution.json")
+        temporary = pointer + "." + str(uuid.uuid4()) + ".tmp"
+        with open(temporary, "x", encoding="utf-8") as f:
+            json.dump({"path": None, "status": "preflight", "processStarted": False,
+                       "startedAt": datetime.now(timezone.utc).isoformat()}, f)
+        os.replace(temporary, pointer)
+        return True
+    except (OSError, ValueError, TypeError, AttributeError) as error:
+        print(f"CODEX ERROR cannot begin registered Factory work: {error}")
+        return False
 
 
 def run_process(cmd, cwd=None, timeout=None, **kwargs):
@@ -133,13 +161,26 @@ def sync_context(slug, worktree, round_no=None):
 
 
 def commit_changes(worktree, slug, tag):
-    status = run(["git", "-C", worktree, "status", "--porcelain", "--", ".", ":(exclude).factory-context/"])
+    status = run(["git", "-C", worktree, "status", "--porcelain=v1", "-z", "--untracked-files=all", "--", ".",
+                  ":(exclude).factory-context", ":(exclude).project-init"])
     if status.returncode:
-        return "none", 0
-    changed = len([x for x in status.stdout.splitlines() if x.strip()])
+        print(f"CODEX ERROR git status failed: {(status.stderr or status.stdout).strip()[:300]}")
+        sys.exit(7)
+    rows = iter(status.stdout.split("\0"))
+    files = []
+    for row in rows:
+        if not row:
+            continue
+        files.append(row[3:])
+        if "R" in row[:2] or "C" in row[:2]:
+            previous = next(rows, "")
+            if previous:
+                files.append(previous)
+    files = list(dict.fromkeys(files))
+    changed = len(files)
     if not changed:
         return "none", 0
-    add = run(["git", "-C", worktree, "add", "-A", "--", ".", ":(exclude).factory-context/"])
+    add = run(["git", "-C", worktree, "add", "-A", "--", *files])
     if add.returncode:
         print(f"CODEX ERROR git add failed: {(add.stderr or add.stdout).strip()[:300]}")
         sys.exit(7)
@@ -151,6 +192,39 @@ def commit_changes(worktree, slug, tag):
     return head.stdout.strip() or "unknown", changed
 
 
+def record_execution(slug, worktree, output, started, before, exit_code, status, paths, prompt):
+    """Capture observed process/Git facts, never infer success from a prior summary."""
+    immutable = os.path.join(output, "evidence", str(uuid.uuid4()))
+    os.makedirs(immutable)
+    logs = []
+    for filename in paths:
+        if not os.path.exists(filename):
+            with open(filename, "w", encoding="utf-8"):
+                pass
+        retained = os.path.join(immutable, os.path.basename(filename))
+        shutil.copyfile(filename, retained)
+        with open(retained, "rb") as f:
+            digest = hashlib.sha256(f.read()).hexdigest()
+        logs.append({"path": os.path.relpath(retained, ROOT).replace(os.sep, "/"), "sha256": digest})
+    head = run(["git", "-C", worktree, "rev-parse", "HEAD"])
+    receipt = {
+        "schemaVersion": 1, "job": slug, "worker": "codex", "cwd": worktree,
+        "startedAt": started, "finishedAt": datetime.now(timezone.utc).isoformat(),
+        "beforeRevision": before, "afterRevision": head.stdout.strip(),
+        "exitCode": exit_code, "status": status, "logs": logs,
+        "command": "codex exec --cd <isolated-worktree> --json -o <last-message> <prompt>",
+        "promptHash": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
+    }
+    filename = os.path.join(immutable, "execution.json")
+    with open(filename, "x", encoding="utf-8") as f:
+        json.dump(receipt, f, indent=2)
+        f.write("\n")
+    pointer = os.path.join(ROOT, "factory", "jobs", slug, "codex", "latest-execution.json")
+    with open(pointer + ".tmp", "w", encoding="utf-8") as f:
+        json.dump({"path": os.path.relpath(filename, ROOT).replace(os.sep, "/")}, f)
+    os.replace(pointer + ".tmp", pointer)
+
+
 def main():
     if len(sys.argv) < 3 or sys.argv[1] not in ("build", "fix"):
         print("CODEX USAGE build <slug> | fix <slug> <round>")
@@ -159,6 +233,8 @@ def main():
     round_no = sys.argv[3] if mode == "fix" and len(sys.argv) > 3 else None
     if mode == "fix" and not round_no:
         print("CODEX USAGE fix <slug> <round>")
+        return 6
+    if not begin_attempt(slug):
         return 6
     settings = cfg()
     codex = resolve_codex(settings)
@@ -205,15 +281,27 @@ Rules:
     args += settings.get("codex", {}).get("args", [])
     args += ["--cd", wt, "--json", "-o", last, prompt]
     timeout_min = int(settings.get("codex", {}).get("timeout_minutes", 45))
+    before = run(["git", "-C", wt, "rev-parse", "HEAD"]).stdout.strip()
+    started = datetime.now(timezone.utc).isoformat()
+    if os.path.exists(last):
+        os.remove(last)
+    def receipt(code, state):
+        record_execution(slug, wt, out, started, before, code, state, [events, stderr, last], prompt)
     start = time.time()
     try:
         with open(events, "w", encoding="utf-8") as ef, open(stderr, "w", encoding="utf-8") as sf:
             r = run_process(args, cwd=wt, stdout=ef, stderr=sf, text=True, timeout=timeout_min * 60)
     except subprocess.TimeoutExpired:
+        receipt(124, "failed")
         print(f"CODEX FAILED timeout after {timeout_min}m worktree={wt}")
+        return 3
+    except OSError as error:
+        receipt(127, "failed")
+        print(f"CODEX FAILED could not launch process: {error}")
         return 3
     secs = int(time.time() - start)
     if r.returncode:
+        receipt(r.returncode, "failed")
         tail = ""
         try:
             tail = open(stderr, encoding="utf-8", errors="replace").read()[-300:].replace("\n", " ")
@@ -227,11 +315,21 @@ Rules:
         with open(last, encoding="utf-8", errors="replace") as f:
             first = next((line.strip() for line in f if line.strip()), "")
     if first.startswith("WORKER: BLOCKED"):
+        receipt(4, "blocked")
         print(f"CODEX BLOCKED {first[len('WORKER: BLOCKED'):].strip()} worktree={wt}")
         return 4
+    if first != "WORKER: DONE":
+        receipt(5, "failed")
+        print(f"CODEX FAILED missing WORKER: DONE result worktree={wt}")
+        return 5
 
     tag = "build" if mode == "build" else f"fix-r{round_no}"
-    commit, changed = commit_changes(wt, slug, tag)
+    try:
+        commit, changed = commit_changes(wt, slug, tag)
+    except SystemExit as error:
+        receipt(int(error.code or 7), "failed")
+        return int(error.code or 7)
+    receipt(0, "done")
     report = os.path.join(out, "report.md")
     with open(report, "w", encoding="utf-8") as f:
         f.write(f"# Codex worker report\n\n- mode: {tag}\n- worktree: {wt}\n- commit: {commit}\n- files changed: {changed}\n- duration: {secs}s\n")

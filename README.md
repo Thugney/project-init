@@ -11,7 +11,7 @@ Project Init is a **local-first development workflow orchestrator** for engineer
 
 It does **not** replace your coding agent or run an autonomous developer in the background. The selected framework owns its **native specifications and tasks**; Codex or Claude writes the code. Project Init coordinates and checks the handoffs.
 
-> **Status: `2.1.0-preview.14` — functional preview, not production-accepted.** The local suites pass, but live framework installs, real Codex/Claude command discovery, native Claude unattended execution, and Windows browser capture have not completed acceptance testing. A passing guard is not proof of full semantic correctness or release approval. See [verification limits](docs/VERIFICATION.md) and the [acceptance report](docs/ACCEPTANCE-REPORT.md).
+> **Status: `2.1.0-preview.15` — functional preview, not production-accepted.** Automated regression coverage includes feature preparation, isolated Factory evidence, and dashboard states. Live framework installs, real Codex/Claude command discovery, native Claude unattended execution, and Windows browser capture still require workstation acceptance. A passing guard is not proof of full semantic correctness or release approval. See [verification limits](docs/VERIFICATION.md) and the [acceptance report](docs/ACCEPTANCE-REPORT.md).
 >
 > **Licensing:** Project Init, the bundled Lean Kit, bundled Factory templates, and preserved v1 sources are released under the [Apache License 2.0](LICENSE). External tools such as Spec Kit, ECC, OpenSpec and BMAD are installed separately and keep their own licenses. See [NOTICE](NOTICE.md).
 
@@ -27,6 +27,8 @@ AI-assisted development often accumulates multiple PRDs, unapproved UI changes, 
 | “Done” is based on agent narration | Test receipts, source hashes, bounded execution logs and review requirements |
 | UI changes quietly diverge | Configured PNG baseline comparisons and screenshot coverage checks |
 | Lean Kit requires a separate setup | Bundled source renderer for reports, diagrams and boards |
+| Installed tools look like a prepared feature | Native feature preparation discovers checks, preserves task/requirement IDs and reports pending review/approval separately |
+| A dashboard with no jobs looks broken | Valid empty Factory state on apply, actual board location, and distinct missing/invalid/connection states |
 
 ## Architecture at a glance
 
@@ -179,6 +181,8 @@ For this factory stack, **Spec Kit is the default** because it natively installs
 
 ## Discoverable skills in Codex and Claude Code
 
+Guided `init --apply` installs these project-local skills and updates older versions through a reviewed backup plan. They now use the built-in `prepare` lifecycle before build/verification. Personal installation below remains optional for cross-project command discovery.
+
 ```powershell
 # For personal skills visible across your local projects (recommended):
 project-init wire --project . --agent both --scope user
@@ -202,6 +206,8 @@ These are **skill instructions**, not seven independent always-running workers. 
 
 ## Verification lifecycle
 
+For existing work, `prepare` selects the actual native feature, reads task progress, discovers supported check commands and prepares requirement mappings **before** baselining. It reuses a valid baseline/approval and reports missing coverage without inventing it. A new worktree receives its own preparation state; a new session receives the feature/task/worktree context. See [feature preparation](docs/FEATURE-PREPARATION.md).
+
 ```text
 Approve native specification + UI reference screenshots (human)
    -> run bounded implementation through coding agent
@@ -211,11 +217,14 @@ Approve native specification + UI reference screenshots (human)
    -> if passing: human release review (not automatic release)
 ```
 
-Core commands: `project-init baseline`, `review`, `approve`, `verify`, `semantic plan`, `semantic import`, `visual plan`, `visual compare`, `source-review`, `guard`, and `status`. See [the complete command reference](docs/COMMANDS.md) and [verification contract](docs/VERIFICATION.md).
+Core commands: `project-init prepare`, `baseline`, `review`, `approve`, `verify`, `execution factory`, `execution existing`, `semantic plan`, `semantic import`, `visual plan`, `visual compare`, `source-review`, `guard`, and `status`. See [the complete command reference](docs/COMMANDS.md) and [verification contract](docs/VERIFICATION.md).
 
 - **Semantic guard:** demands a finding for each mapped requirement, current hashed evidence paths and passing configured checks. It **does not automatically infer semantic correctness**; the independent reviewer supplies findings.
 - **Visual guard:** compares PNG pixels/viewport sizes and expected theme/state coverage. It does **not** execute click flows unless you configure independent browser interaction tests.
 - **Execution:** `project-init run --execute` is a **foreground Codex runner** only. Claude skills guide interactive execution. No daemon, continuous coding, automatic push/merge or deployment is claimed.
+- **Factory evidence:** real worker outcomes and Git integration operations are bound to the job's starting baseline, native feature and final integration worktree. Verification uses that integrated source, not a worker's summary. [Evidence workflow](docs/FACTORY-EVIDENCE.md).
+- **Existing code:** an explicitly reviewed existing-code mode supports already implemented PRs without a dummy code edit or invented runner history. All current check, source-review, semantic, design and visual gates still apply.
+- **CI:** this tool's own CI tests its implementation. Application CI configuration is discovered separately; a workflow file is not a successful run or a required-check rule.
 - **Safety:** explicit `--execute` / `--apply` for mutating or executing actions, conflict refusal, local JSONL audit and SHA-256 provenance; local records are **not cryptographic identity signatures**.
 
 Before migrating from an older personal skill, read [the skill installation and migration guide](docs/MIGRATION.md). An agent skill is not installed simply by downloading this repository. Codex personal skills use `$HOME/.agents/skills` and Claude personal skills use `$HOME/.claude/skills`. A Codex Cloud/web environment may require its own configured skill or plugin distribution; do not assume local installation synchronizes with a remote environment.
@@ -228,6 +237,8 @@ Before migrating from an older personal skill, read [the skill installation and 
 | Start here / daily workflow | [Factory stack cheat sheet](docs/CHEAT-SHEET.md) |
 | Installation and platform caveats | [Install](docs/INSTALL.md) |
 | All CLI operations | [Commands](docs/COMMANDS.md) |
+| Adopt an existing feature and preserve task progress | [Feature preparation](docs/FEATURE-PREPARATION.md), [Check discovery](docs/CHECK-DISCOVERY.md) |
+| Factory dashboard and integrated execution evidence | [Dashboard](docs/FACTORY-DASHBOARD.md), [Evidence bridge](docs/FACTORY-EVIDENCE.md) |
 | Architecture and ownership | [Architecture](docs/ARCHITECTURE.md), [Factory stack](docs/FACTORY-STACK.md) |
 | Threats, guard guarantees and limits | [Security model](docs/SECURITY-MODEL.md) |
 | Reproducible checks and acceptance | [Verification](docs/VERIFICATION.md), [Acceptance report](docs/ACCEPTANCE-REPORT.md) |

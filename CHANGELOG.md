@@ -13,6 +13,28 @@ All notable changes to the public Project Init package are documented here. Ther
 - Updated package and lockfile SPDX metadata; the package stays `private: true` to explicitly prevent accidental npm publication while supporting reviewed GitHub release tarballs.
 - Updated release checks, documentation, and contributor terms. GitHub releases still require an explicitly created version tag; production acceptance remains pending.
 
+## [2.1.0-preview.15] — 2026-10-25 (feature preparation and Factory evidence)
+
+### Added
+- Built-in `prepare` discovers the active native feature, existing task IDs and real package checks, preserves custom mappings, and registers the baseline only after check/mapping/design preparation is complete. Explicit feature/file selections survive normal follow-up calls.
+- Existing-feature preparation and project-local Project Init skill updates are connected to normal guided init and the Claude/Codex start, plan, build and verify instructions. New sessions carry native feature/task/worktree context.
+- Factory records actual Codex process outcomes and Git integrations, binds each job to its approved starting baseline/native scope, and verifies the integrated source through `execution factory`.
+- `execution existing` supports independently reviewed already implemented code without fabricating an implementation run or changing code solely to satisfy a receipt gate.
+- Check discovery reports application CI configuration separately from verified runs and branch-rule enforcement. The tool's own CI now provisions Python and includes preparation, evidence and dashboard regression suites.
+
+### Fixed
+- Init preview is read-only, including a missing target directory. Tooling readiness no longer claims feature or acceptance readiness.
+- Factory apply safely creates a valid empty board only if absent. Existing job history is preserved; missing, invalid, denied and disconnected dashboard states have distinct messages.
+- Failed check launches invalidate older passing results, checks that modify source cannot pass, and check working directories cannot cross into another Git worktree.
+- Registered nested worktrees and Factory runtime updates no longer stale the parent source fingerprint. Git-tracked vendored source remains covered.
+- Missing native requirement mappings, partial preparation, stale/failed worker attempts, wrong-feature integration, altered logs and out-of-scope filenames fail closed.
+
+### Compatibility and validation limits
+- Existing native specifications, user checks, requirement IDs, valid approvals, board history and unmanaged source are preserved. Skill upgrades use the existing explicit backup flow.
+- Legacy execution receipts without baseline/scope binding are not upgraded into invented evidence. Existing code can be reviewed through the explicit existing-code path; older Factory jobs remain visible but cannot acquire fabricated start-time history.
+- Regression fixtures exercise synthetic workers/installers and real local Git/check processes. Live authenticated Codex/Claude operation and Windows browser/workstation acceptance remain separate.
+- No Trace application changes, automatic merge, release or deployment are included.
+
 ## [2.1.0-preview.14] — 2026-10-25 (ECC capability fallback)
 
 ### Fixed

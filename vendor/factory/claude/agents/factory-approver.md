@@ -12,6 +12,7 @@ You decide; you never merge, push or edit code. The only file you may write is `
 - `factory/jobs/<slug>/round-*/review-*.md` — all rounds, latest round counts
 - `factory/jobs/<slug>/build.md` and `factory/jobs/<slug>/codex/*/report.md` if present
 - The RISK line the orchestrator passes you (computed from the diff by script, not by a model)
+- The integration worktree's current `.project-init/evidence/latest-run.json` and `latest-guard.json`, together with actual checks and independent source/semantic/visual review evidence. The orchestrator must run the guard on the reviewed integrated HEAD; a historical PASS or worker-only result is insufficient.
 
 ## ESCALATE if any is true
 - Latest round has any `VERDICT: CHANGES` (fix rounds exhausted).
@@ -21,6 +22,7 @@ You decide; you never merge, push or edit code. The only file you may write is `
 - A review file is missing, empty, or its verdict contradicts its own findings.
 - A worker reported `WORKER: BLOCKED`, an unresolved worktree merge conflict remains, or an `[INTEGRATION]` finding was not explicitly resolved.
 - The diff contains changes clearly outside the spec's scope.
+- Project Init's current integrated evidence gate is missing, stale or failed. Installation readiness and a successful worker process do not replace feature verification.
 
 Otherwise APPROVE.
 

@@ -1,148 +1,156 @@
-# Getting started — exactly how to use it
+# Getting started
 
-PowerShell examples. One page. Follow it top to bottom the first time.
+Use Project Init to resume the work in the checkout you have open. Spec Kit
+owns the native feature specification and tasks; Claude or Codex implements
+them. Factory is available when the work benefits from coordinated workers
+and integration review.
 
-```text
-Project Init  -> installs everything            (once per repo)
-Spec Kit      -> decides WHAT to build          (every feature)
-/factory      -> Codex + Claude BUILD it        (every feature)
-ECC           -> extra agent skills             (automatic, never called directly)
-You           -> approve the spec, merge the PR
-```
+## 1. Set up or update the project
 
----
+Open the exact project or orchestration worktree you intend to use. Multiple
+clones and worktrees are supported; each has its own local state and evidence.
+Keep existing work and state.
 
-## Rule 0 — three things that break everything
+PowerShell examples:
 
-1. **One clone per repo.** Delete or stop using any other copy of the same repo. Two clones = you install in one and open the other.
-2. **Commit the setup.** The Claude desktop app and `/factory` both work in Git *worktrees* made from your **last commit**. Uncommitted files (skills, `.specify/`, factory) do not exist there.
-3. **Open the repo folder itself.** Not its parent, not a cloud session. Local, exact folder.
-
----
-
-## A. First time in a repo (once)
-
-### New project
 ```powershell
-project-init init --project J:\Projects\MyApp            # preview (folder may not exist)
-project-init init --project J:\Projects\MyApp --apply    # answer Y/n per prerequisite
-cd J:\Projects\MyApp
-```
-
-### Existing project
-```powershell
-cd J:\Projects\MyApp
-project-init init --project .            # preview: read what it adds/keeps
+Set-Location 'J:\Projects\MyApp'
+project-init init --project .
 project-init init --project . --apply
 ```
-- Existing **BMAD/OpenSpec**? `init` stops. Pick one spec owner; don't force Spec Kit in.
-- Your unrelated changes are kept. Existing `.specify/` is reused.
 
-### Then, both
-```powershell
-# 1. Config: open .claude\skills\factory\config.json and set
-#    "base_branch": "main"
-#    "test_command": "npm test"          (empty for a new repo until the scaffold exists)
-#    add your own sensitive folders to "high_risk_paths"
+The first command is a read-only preview. The second installs or resumes the
+tooling, asks before missing prerequisite installations, updates managed
+Project Init skills with reviewed backups where needed, and prepares an
+unambiguous existing native feature. For a new directory, pass its path to
+`--project`; preview does not create it.
 
-# 2. Commit the setup (Rule 0.2)
-git add .specify .claude .agents factory .gitignore
-git commit -m "chore: project-init bootstrap"
-git push
-```
+Guided bootstrap uses Spec Kit. An existing BMAD/OpenSpec selection is
+preserved and must use its corresponding workflow rather than installing a
+competing methodology.
 
-### Check it works
-| App | Do | Expect |
+**TOOLING READY** means the installed tools passed their setup checks. The
+separate feature status tells you whether the actual work still needs
+requirements, check mappings, a baseline, review or human approval. It does
+not mean a feature was implemented or verified.
+
+## 2. Choose the normal entry point
+
+Use these skills inside the coding agent, opened in the intended checkout:
+
+| Your goal | Claude | Codex |
 |---|---|---|
-| Claude desktop | **Code** tab → new **local** session → folder = the repo | `/speck` lists `speckit-specify`, `/factory` exists |
-| Claude CLI | `cd` repo → `claude` | same |
-| Codex | open the repo | `$speckit-specify`, `$factory-worker` listed |
+| Start or resume existing work | `/project-init` | `$project-init` |
+| Plan new or changed scope | `/project-init-plan` | `$project-init-plan` |
+| Implement the next approved task | `/project-init-build` | `$project-init-build` |
+| Verify an implementation or existing PR | `/project-init-verify` | `$project-init-verify` |
+| Read current status and blockers | `/project-init-status` | `$project-init-status` |
 
-Ask the session *"What is your working directory?"* — it must be inside your repo (a `.claude\worktrees\…` subfolder is fine).
+Describe the actual task with the chosen skill. For work already in progress,
+the agent reuses the existing specification, task IDs, branch and worktree.
+Planning fills missing or changed scope; it does not restart a completed
+feature plan.
 
-New project only: make your first feature a scaffold (`/speckit-specify "scaffold: <stack>, health endpoint, test runner, CI"`), run it through section B, then fill in `test_command`.
+The agent performs built-in preparation: discovers real checks, inspects
+requirement coverage, resolves agent-owned mapping gaps, and registers the
+completed baseline. You should not need to author configuration JSON by hand.
+An unchanged approved baseline is preserved. A missing or changed baseline
+still needs an actual independent review and the human's real acceptance.
 
----
+A small bug or a repair to an existing PR can use the build and verify skills
+directly. It does not require a Factory job or a replacement PR. Already
+implemented code can use the explicit existing-code evidence path after real
+checks and independent review; no dummy edit is needed.
 
-## B. Every feature (the normal day)
+## 3. Use Factory when coordination helps
 
-Use **Claude Code** for this whole flow. Codex is called by `/factory` automatically.
+Choose Factory for approved work with independent tasks, isolated workers or
+a coordinated integration/review loop. Both agents can own any application
+layer. One indivisible task may remain with a single worker.
 
-```powershell
-git checkout main; git pull; git status     # must be clean
+Before dispatch, the applicable setup and native feature artifacts must be in
+the committed base: worker worktrees start from committed `HEAD`. Review
+and commit only the intended changes. Preserve unrelated local work; do not
+delete another checkout, reset it, or stash everything merely to bootstrap.
+If tracked local changes prevent dispatch, use an appropriate isolated
+orchestration checkout or resolve those changes intentionally.
+
+In Claude, use the actual existing feature path:
+
+```text
+/factory spec specs/001-example
 ```
 
-| # | Type in Claude Code | You get | You do |
-|---|---|---|---|
-| 1 | `/speckit-specify <feature in plain words>` | `specs/00X-name/spec.md` | read it |
-| 2 | `/speckit-clarify` (optional) | open questions answered | answer them |
-| 3 | `/speckit-plan` | `plan.md` | read it |
-| 4 | `/speckit-tasks` | `tasks.md` | read it |
-| 5 | *(PowerShell)* `git add specs; git commit -m "spec: 00X-name"` | spec saved | — |
-| 6 | `/factory spec specs/00X-name` | Codex + Claude build in parallel → integrate → tests → 4 reviews → fixes | wait |
-| 7 | — | **PR opened**, or **`needs-human`** | see C |
+Replace `specs/001-example` with your feature folder. This starts the Factory
+execution workflow; it is not a command that only writes a specification.
+The actual job slug identifies its worktrees, review rounds and evidence.
 
-Watch it live (optional):
-```powershell
-cd factory; python -m http.server 8765     # open http://localhost:8765/dashboard.html
-```
-
----
-
-## C. When it finishes
-
-| Result | Do |
+| Existing Factory work | Claude command |
 |---|---|
-| **PR opened** | Review on GitHub, merge it yourself (squash-merge = signed commit under your name) |
-| **needs-human** | Read `factory\jobs\<slug>\decision.md`, then `/factory approve <slug>` **or** `/factory rework <slug> "what to change"` |
-| **Merge conflict** | Spec gave both workers the same file. Fix the paths in `factory\jobs\<slug>\spec.md`, `/factory review <slug>` |
-| **Codex failed** | `codex login status`; look in `factory\jobs\<slug>\codex\`; run `/factory review <slug>` |
-| **No tests ran** | `test_command` is empty in config.json |
-| **`/factory` refuses to start** | You have uncommitted tracked changes. Commit or stash |
+| Inspect registered jobs and the board location | `/factory status` |
+| Review an actual job | `/factory review <actual-slug>` |
+| Address feedback within its approved scope | `/factory rework <actual-slug> <feedback>` |
 
----
+Follow the installed job workflow for failures or integration conflicts.
+Changed scope needs a reviewed execution context; changing a job contract
+does not make old receipts valid. Verification uses the integrated worktree
+and its actual process/Git receipts, checks and independent reviews.
 
-## D. Which tool for which job
+## 4. View the Factory dashboard
 
-| Job | Use | Not |
-|---|---|---|
-| New feature, backend + frontend | Spec Kit → `/factory spec …` | — |
-| Small one-liner | `/factory <idea>` or backlog + `/factory next` | Spec Kit |
-| Fix review comments on an **existing PR** | Plain Claude Code (or Codex): *"check out branch X, fix PR #N comments, add tests, push"* | `/factory` (it makes a new PR) |
-| Bug fix with a known cause | Plain Claude Code / Codex on a branch | `/factory` |
-| Extra independent audit of a factory result | Codex in the integration worktree: `$factory-audit` | — |
-| Feature that targets another feature branch | `git checkout <that-branch>` first, set `"base_branch"` to it, then section B | — |
+First confirm the board path with `/factory status`. In another terminal,
+serve that orchestration checkout's exact `factory` directory:
 
----
+```powershell
+Set-Location 'J:\Projects\MyApp\factory'
+python -m http.server 8765 --bind 127.0.0.1
+```
 
-## E. Keeping it up to date
+Open `http://127.0.0.1:8765/dashboard.html`. Use `python3` instead if that
+is your Python command. Ctrl+C stops the viewing server, not Factory workers.
+
+An empty board means zero registered jobs in that checkout. A missing
+`board.json` is distinct from a connection failure; another worktree may own
+the job. After confirming the intended checkout, preview
+`project-init init --project .` from its repository root, then use
+`project-init init --project . --apply` to initialize a missing board.
+Existing board data is preserved; malformed state is reported instead of
+replaced.
+
+The dashboard does not discover ordinary agent sessions, Spec Kit tasks or
+GitHub PRs automatically.
+
+## 5. Verify the result and maintain the installation
+
+Use the verify skill on the current source. Passing configured checks,
+independent requirement review and applicable visual evidence are separate
+gates. A passing guard prepares a candidate for human review; it does not
+authorize merging or deployment.
+
+Application CI is also separate. A workflow file proves configuration
+presence, not that the current PR triggered it, passed it or requires it.
+Zero reported PR checks is no successful CI result. Project Init's own CI
+tests the tool; it does not install application CI automatically.
+
+To check for a CLI update and then preview the project changes:
 
 ```powershell
 project-init update --check
-project-init update                          # updates the CLI
-project-init init --project .                # preview what changed for this repo
-project-init init --project . --apply        # applies; keeps your config.json + backlog
-git add .claude .agents factory .specify; git commit -m "chore: update project-init"
-```
-After any update: commit (Rule 0.2), then start a **new** Claude/Codex session.
-
----
-
-## F. One picture
-
-```text
-             (once)  project-init init --apply  →  commit setup
-                                   │
- /speckit-specify → /speckit-plan → /speckit-tasks → commit spec      WHAT
-                                   │
-                    /factory spec specs/00X-name                       BUILD
-                                   │
-          ┌────────────────────────┴───────────────────────┐
-   Worktree A: Codex                              Worktree B: Claude
-          └────────────────────────┬───────────────────────┘
-                     integration branch → tests → 4 reviews
-                                   │
-                    PR on GitHub  →  YOU merge
+project-init update
+project-init init --project .
+project-init init --project . --apply
 ```
 
-Related: [Cheat sheet](CHEAT-SHEET.md) (who owns what) · [Factory stack](FACTORY-STACK.md) · [Install](INSTALL.md)
+Review the selected CLI version and managed-file changes before applying.
+Reload skills or restart the coding-agent session after an update, carrying
+the same native feature and task context. No automatic push, merge or
+deployment is performed by these setup commands.
+
+For rollback, restore the previously reviewed tooling version and managed
+files from their reviewed backup or version-control diff. Preserve native
+specifications, local evidence and Factory job history.
+
+Related: [Cheat sheet](CHEAT-SHEET.md) ·
+[Feature preparation](FEATURE-PREPARATION.md) ·
+[Factory evidence](FACTORY-EVIDENCE.md) ·
+[Dashboard states](FACTORY-DASHBOARD.md)

@@ -15,13 +15,17 @@ node --test vendor/lean-kit/tests/render.test.mjs
 
 1. **Baseline:** exact hashes of authoritative native spec documents, UI design JSON, check configuration, visual case manifest and approved reference PNGs.
 2. **Design review:** local reviewer and human approver records for the current baseline. These are user-supplied names/evidence, not cryptographic signatures.
-3. **Execution receipt:** a bounded actual `codex exec` completed with Git-scoped source changes; out-of-scope changes block further acceptance. Claude work must supply real evidence through a separately reviewed process; it is not automatically equivalent.
+3. **Implementation evidence:** a bounded actual `codex exec`, a validated Factory integration receipt tied to the job's starting native baseline, or an explicitly labeled independently reviewed existing-code attestation. These are distinct modes; existing code never claims a new implementation run. Out-of-scope changes, stale/failed attempts, wrong-feature jobs and altered logs block acceptance. See [Factory evidence](FACTORY-EVIDENCE.md).
 4. **Tests:** configured real commands exit successfully on the *current* source and approved baseline. No configured checks means blocked.
 5. **Semantic evidence:** each mapped requirement references a native spec, configured test(s) or visual evidence, current code files and a full independent review finding of `pass`. Actual semantic correctness is not guaranteed simply because the finding JSON says `pass`.
 6. **Visual fidelity:** actual/reference PNGs at matching pixel sizes, both themes and viewports for each approved screen, plus defined states. The diff must stay within per-case allowed thresholds. Screenshot pixels do not verify application semantics, accessibility or interactions.
 7. **Guard:** collates evidence; fails on stale, absent or failed inputs; `status` will invalidate cached gate status after source/screenshot change.
 
 A passing `guard` returns `readyForHumanReleaseReview:true` and **`releaseApproved:false`**. A separate human release decision, protected branches and required CI checks remain necessary for production.
+
+Use [feature preparation](FEATURE-PREPARATION.md) before registering/reviewing the baseline: checks and mappings are hashed inputs. `prepare --apply` preserves valid approval on unchanged inputs and reports agent-owned configuration gaps separately from actual human review/approval. A baseline containing a recognized native requirement without a mapping cannot pass readiness or semantic validation.
+
+Verification receipts bind the configured argv and working directory to the current source. A failed launch supersedes old passing check evidence. Changes to fingerprinted source during a check invalidate its result. Registered nested worktrees and Factory job runtime state are excluded from the parent's source; Git-tracked vendored source remains included.
 
 ## Gaps requiring acceptance on user workstation
 
