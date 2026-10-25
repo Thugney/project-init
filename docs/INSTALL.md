@@ -70,9 +70,9 @@ The apply order is managed by Project Init:
 1. ensure Git exists for the project;
 2. install/initialize Spec Kit for Codex + Claude using the safe new/existing-repo path;
 3. install ECC for both agents;
-4. install/update the bundled Factory (Claude orchestrator/reviewers + Codex backend/audit).
+4. install/update the bundled Factory (orchestrator/reviewers + generic Codex/Claude workers + isolated worktree/integration tooling).
 
-Current reviewed pins are Spec Kit `1.2.3` and ECC `2.2.3`. Existing Project Init state is resumed rather than overwritten. Existing repos use Spec Kit preserve-merge without `--force`; ECC retains its own collision/ownership checks; Factory preserves its config/backlog and refuses conflicting Codex skill content.
+Current reviewed pins are Spec Kit `1.2.3` and ECC `2.2.3`. Existing Project Init state is resumed rather than overwritten. Existing repos use Spec Kit preserve-merge without `--force`; ECC retains its own collision/ownership checks; Factory preserves the backlog, migrates legacy Factory config while retaining user settings, removes unchanged legacy backend-only managed skills, and refuses conflicting current Codex skill content.
 
 The lower-level `select`, `install`, `ecc`, `factory`, and `wire` commands remain available for debugging, custom/non-Factory methodologies, or component-level maintenance. They are not the normal setup sequence.
 
