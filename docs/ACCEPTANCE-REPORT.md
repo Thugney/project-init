@@ -1,11 +1,21 @@
-# Project Init 2.1 — Acceptance and test report
+# Project Init — Validation and operational evidence
+
+## Maintainer-reported use — 2026-10-26
+
+The maintainer reports that Claude and Codex are consuming task handoffs, continuing with the next tasks, and updating stages on the Factory dashboard during work in Trace. This is operational evidence that the handoff and job-tracking workflow is being used in an existing project.
+
+**Evidence source:** maintainer observation reported on 2026-10-26. This entry records that observation; it is not an independently inspected end-to-end acceptance run. The report does not establish that the job has completed its checks, independent reviews, visual acceptance or rollback exercise.
+
+For current automated results, inspect the [CI runs](https://github.com/Thugney/project-init/actions/workflows/ci.yml). Package versions and release promotion are tracked in [Releases](RELEASES.md). The snapshot below preserves earlier test results and the limits recorded at that time; its test counts and pending workstation checks describe that historical snapshot.
+
+## Historical validation snapshot — 2026-10-25
 
 Build: 2026-10-25  
 Artifact: GitHub source candidate + `npm pack --dry-run` package inspection  
 Version: `2.1.0-preview.13`  
-**Status: FUNCTIONAL PREVIEW — NOT PRODUCTION ACCEPTED**
+**Status recorded for this snapshot: FUNCTIONAL PREVIEW — NOT PRODUCTION ACCEPTED**
 
-## Delivered and checked
+### Delivered and checked
 
 | Agreed requirement | Implementation | Evidence |
 |---|---|---|
@@ -23,7 +33,7 @@ Version: `2.1.0-preview.13`
 | Release acceptance safeguard | `guard` requires current implementation, tests, semantic and visual evidence and reports ready only for *human* release review | Synthetic end-to-end acceptance succeeds, later code/screenshot edits invalidate; `releaseApproved` always false |
 | Auditing and rollback | Local JSONL records, isolated v1 backup, no silent overwrite of existing AGENTS/CLAUDE, no commits/merge/deploy | Core regression suite, manual code inspection |
 
-## Validation results
+### Validation results
 
 - GitHub CI matrix: **6/6 jobs passed** on Windows, Ubuntu and macOS with Node 22 and Node 24.
 - Windows Node 24: **50/50 Project Init regression tests passed**, 0 failed/skipped; JavaScript syntax and CLI smoke passed.
@@ -43,7 +53,7 @@ Version: `2.1.0-preview.13`
 - Screenshot drift after a green cached gate correctly made `status.releaseCandidateReady: false`.
 - At least one genuine Playwright-rendered browser PNG decoded and compared successfully by the new strict PNG comparator.
 
-## Important test limits
+### Important test limits
 
 - Codex execution regression uses **a fake local Codex program**, not an authenticated ChatGPT subscription. It produces a real Git code change to test receipts and scoping only.
 - Semantic review `actor`, `evidence` and `verdict` are unverified local attestations. Machine checks verify existence, mapping and freshness of evidence, **not an agent's ability to understand semantics**. Real semantic review remains a separately required operation.
@@ -52,7 +62,7 @@ Version: `2.1.0-preview.13`
 - Live upstream ECC completion after the Windows native-runtime fix, the real network download/extraction path for managed uv, old v1 PowerShell Pester, authenticated user approval and one complete end-to-end Factory worktree job in a real user project are **not yet acceptance-tested**. Trace has already live-validated managed uv, Codex/Claude CLI install/auth, and Spec Kit installation; ECC is the remaining live bootstrap checkpoint. Synthetic execution now validates the dirty-existing-repo contract, but the user's real Trace repository remains the next acceptance test.
 - No continuous autonomous task runner, automatic Claude programmatic executor, production release or live vendor setup is claimed.
 
-## Operations / rollback
+### Operations / rollback
 
 1. Use `project-init init --project .` to preview the complete guided Factory bootstrap on a real Windows project, then run the same command with `--apply` after reviewing the plan.
 2. Verify real Spec Kit/ECC installation plus actual Codex/Claude command discovery and one complete Factory job.
