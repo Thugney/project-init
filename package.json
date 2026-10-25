@@ -1,6 +1,6 @@
 {
   "name": "@thugney/project-init",
-  "version": "2.1.0-preview.7",
+  "version": "2.1.0-preview.8",
   "private": true,
   "description": "Local-first project workflow orchestrator for Codex and Claude Code with native spec frameworks, ECC setup, software-factory wiring, visual review, and evidence-based drift gates.",
   "type": "module",
