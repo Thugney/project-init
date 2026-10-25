@@ -11,9 +11,9 @@ Project Init is a **local-first development workflow orchestrator** for engineer
 
 It does **not** replace your coding agent or run an autonomous developer in the background. The selected framework owns its **native specifications and tasks**; Codex or Claude writes the code. Project Init coordinates and checks the handoffs.
 
-> **Status: `2.1.0-preview.3` — functional preview, not production-accepted.** The local suites pass, but live framework installs, real Codex/Claude command discovery, native Claude unattended execution, and Windows browser capture have not completed acceptance testing. A passing guard is not proof of full semantic correctness or release approval. See [verification limits](docs/VERIFICATION.md) and the [acceptance report](docs/ACCEPTANCE-REPORT.md).
+> **Status: `2.1.0-preview.4` — functional preview, not production-accepted.** The local suites pass, but live framework installs, real Codex/Claude command discovery, native Claude unattended execution, and Windows browser capture have not completed acceptance testing. A passing guard is not proof of full semantic correctness or release approval. See [verification limits](docs/VERIFICATION.md) and the [acceptance report](docs/ACCEPTANCE-REPORT.md).
 >
-> **Licensing:** Project Init, the bundled Codex Lean Kit, and preserved v1 sources are released under the [Apache License 2.0](LICENSE). External tools such as Spec Kit, ECC, OpenSpec and BMAD are installed separately and keep their own licenses. See [NOTICE](NOTICE.md).
+> **Licensing:** Project Init, the bundled Lean Kit, bundled Factory templates, and preserved v1 sources are released under the [Apache License 2.0](LICENSE). External tools such as Spec Kit, ECC, OpenSpec and BMAD are installed separately and keep their own licenses. See [NOTICE](NOTICE.md).
 
 ## The problem this solves
 
@@ -72,24 +72,23 @@ project-init help
 Use it on a disposable repository first; do not replace an older Project Init installation without consulting the [migration guide](docs/MIGRATION.md).
 
 ```powershell
-$project = 'C:\Work\ExampleRepo'
-$factoryKit = 'C:\Tools\factory-kit'
+cd C:\Work\ExampleRepo
 
-project-init inspect --project $project
-project-init init --project $project --mode Existing --intent feature --ui auto
+project-init inspect --project .
+project-init init --project . --mode Existing --intent feature --ui auto
 
 # Factory profile: Spec Kit is the recommended single spec owner.
-project-init select --project $project --framework spec-kit
-project-init install --project $project --version 1.2.3 --agent both
-project-init install --project $project --version 1.2.3 --agent both --apply
+project-init select --project . --framework spec-kit
+project-init install --project . --version 1.2.3 --agent both
+project-init install --project . --version 1.2.3 --agent both --apply
 
 # Shared engineering toolbox for Claude Code + Codex.
-project-init ecc --project $project --version 2.2.3 --agent both --scope local
-project-init ecc --project $project --version 2.2.3 --agent both --scope local --apply
+project-init ecc --project . --version 2.2.3 --agent both --scope local
+project-init ecc --project . --version 2.2.3 --agent both --scope local --apply
 
-# Install/validate the Claude factory kit and its Codex backend skills.
-project-init factory --project $project --kit $factoryKit
-project-init factory --project $project --kit $factoryKit --apply
+# Factory is bundled with Project Init; no separate Factory path is needed.
+project-init factory --project .
+project-init factory --project . --apply
 ```
 
 For this factory stack, **Spec Kit is the default** because it natively installs into both Codex and Claude and the factory already consumes `specs/NNN-x/`. BMAD remains an optional alternative for projects that need its deeper product/UX workflow; do not install both planning methodologies for the same change. ECC is a toolbox, not a second spec owner. Factory is the execution/review loop. Start with the [Factory stack cheat sheet](docs/CHEAT-SHEET.md), then see [Factory stack](docs/FACTORY-STACK.md) for boundaries and details.
