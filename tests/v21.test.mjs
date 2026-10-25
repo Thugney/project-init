@@ -32,7 +32,7 @@ test('self-update check never invokes npm when current',async()=>{
 
 test('self-update installs pinned GitHub source and verifies replacement CLI',async()=>{
  const sha='b'.repeat(40);
- const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.11'}});
+ const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.12'}});
  const calls=[];
  const runner=(command,args)=>{calls.push([command,...args]);if(command==='npm')return {status:0,stdout:'updated',stderr:''};return {status:0,stdout:'2.1.0-preview.12\n',stderr:''};};
  const result=await updateProjectInit({fetcher,runner});
