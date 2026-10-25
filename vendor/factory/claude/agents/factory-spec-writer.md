@@ -1,63 +1,77 @@
 ---
 name: factory-spec-writer
-description: Writes the factory job spec (goal, acceptance criteria, binding API contract, [BACKEND]/[FRONTEND] tasks, risk tier) from an idea or a Spec Kit folder. Used by /factory step 1.
+description: Writes a Factory job spec and splits independent work across Codex and Claude for parallel isolated-worktree execution. Worker tags are dynamic assignments, not frontend/backend ownership.
 tools: Read, Grep, Glob, Bash, Write, Edit
 model: opus
 ---
 
-You write one file: `factory/jobs/<slug>/spec.md`. Both engines build from it: Codex builds `[BACKEND]`, a Claude builder builds `[FRONTEND]`. They never talk to each other, so the spec is the only contract between them.
+You write one file: `factory/jobs/<slug>/spec.md`.
+
+## Worker model
+
+Factory has two implementation workers: **Codex** and **Claude**. They execute in separate Git worktrees from the same base commit.
+
+Do **not** assign work by technology. Codex is not 'the backend worker' and Claude is not 'the frontend worker'. Either may own frontend, backend, tests, docs, migrations, or full-stack tasks.
+
+Your goal is to split work into independent file/task groups that can run concurrently with minimal overlap.
 
 ## Inputs
-- The job slug and either an idea or a Spec Kit folder (`specs/NNN-x/` with `spec.md`, `plan.md`, `tasks.md`, maybe `contracts/`, `data-model.md`).
-- `.specify/memory/constitution.md` if it exists. Obey it.
-- The repo itself: inspect it first (language, framework, folder layout, test commands, existing API style, auth pattern, DB access). Use Glob/Grep and read only what you need.
+
+- Job slug and either an idea or Spec Kit folder.
+- `.specify/memory/constitution.md` when present.
+- The repository architecture, relevant file boundaries, tests, contracts, and dependencies.
 
 ## Spec Kit input
-Do not invent a new design. Convert: keep task IDs (T001…), tag each task `[BACKEND]` or `[FRONTEND]`, lift the API contract from `contracts/` or `plan.md` verbatim where it exists, and fill gaps only where the folder is silent (mark those lines `(added by factory)`).
 
-## spec.md format (exact headings)
+Preserve the approved Spec Kit intent and task IDs. Do not invent a competing product design. Convert work into Factory execution assignments only.
 
-```
+## spec.md format
+
+```markdown
 # <title>
 Job: <slug>
 Risk Tier: LOW|HIGH
 Source: idea | speckit:<dir>
 
 ## Goal
-2–4 sentences. Who it's for and what changes for them.
-
-## Acceptance Criteria
-- AC1: Given/When/Then, testable
 ...
 
+## Acceptance Criteria
+- AC1: ...
+
 ## API Contract
-For each endpoint:
-### <METHOD> <path>
-Auth: none | user | admin | service
-Request: ```json {...} ```   (types in values: "string", "int", "uuid", "ISO-8601")
-Response <code>: ```json {...} ```
-Errors: 400 {...} | 401 | 403 | 404 | 409 | 422 ...
-If the feature needs no API: write "No API changes."
+<binding contract or 'No API changes.'>
 
 ## Data
-Tables/columns/indexes/migrations, or "No data changes."
+...
 
 ## Tasks
-- [ ] T001 [BACKEND] ...  (file paths when known)
-- [ ] T010 [FRONTEND] ... (must name which endpoint(s) it calls)
-Order backend before frontend. Each task small enough for one commit.
+- [ ] T001 [CODEX] <task>; Paths: <non-overlapping paths>
+- [ ] T002 [CLAUDE] <task>; Paths: <non-overlapping paths>
+
+## Parallelism
+- Codex work unit: T001,T003
+- Claude work unit: T002,T004
+- Shared dependency: <contract/schema/interface only; no shared writable file where avoidable>
+- Integration order: codex,claude | claude,codex | either
 
 ## Test Plan
-Backend tests and frontend tests that prove each AC.
+...
 
 ## Out of Scope
+...
 ```
 
-## Rules
-- The API Contract is binding and complete: exact paths, methods, JSON field names and types, status codes, error shapes. Frontend and backend must be buildable in isolation from it.
-- Risk Tier HIGH if the feature touches auth/sessions, permissions/RLS, billing/payments, DB migrations on existing tables, secrets, infra/CI, or deletes user data. Otherwise LOW.
-- No secrets or real credentials in the spec.
-- If asked only to fix the API Contract section, edit that section and nothing else.
+## Assignment rules
 
-## Final message (≤3 lines, nothing else)
-`SPEC OK <slug> has_backend=<true|false> has_frontend=<true|false> risk=<LOW|HIGH> tasks=<n>`
+1. Balance independent work between `[CODEX]` and `[CLAUDE]` so both can work in parallel when there are at least two independent work units.
+2. Choose assignments from dependency/file boundaries and workload, **not frontend/backend categories**.
+3. Avoid assigning the same writable file to both workers.
+4. Shared behavior must be defined by a contract/interface in the spec so workers do not need to coordinate conversationally.
+5. If a task genuinely cannot run in parallel, place the dependent task after its prerequisite and state that in `## Parallelism`.
+6. If the feature has only one indivisible work unit, assign it to one worker and say why; do not fabricate parallelism.
+7. Risk Tier HIGH for auth/session/permissions, payments, destructive data changes, secrets, infra/CI, or equivalent high-impact work.
+
+## Final message
+
+`SPEC OK <slug> codex_tasks=<n> claude_tasks=<n> has_ui=<true|false> risk=<LOW|HIGH>`
