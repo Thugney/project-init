@@ -3,13 +3,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import {initProject,selectFramework,establishBaseline,recordReview,approve,checkBaseline,status,statePath,runChecks} from '../lib/core.mjs';
+import {initProject,selectFramework,establishBaseline,recordReview,approve,checkBaseline,status,statePath,runChecks,installPlan,eccInstallPlan} from '../lib/core.mjs';
 import {skillPlan} from '../lib/skills.mjs';
 import {renderLean} from '../lib/lean.mjs';
 import {comparePng,readPng,writePng} from '../lib/png.mjs';
 import {visualPlan,compareVisual,captureVisual} from '../lib/visual-gate.mjs';
 import {semanticPlan,importSemanticReview,verifyGuard} from '../lib/guard.mjs';
 import {renderVisualReview} from '../lib/visual.mjs';
+import {factoryPlan,applyFactory} from '../lib/factory.mjs';
 function fixture(label,ui='no'){
  const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),`pinit-v21-${label}-`)),root=path.join(base,'repo');
  initProject(root,{mode:'New',ui,intent:'automation'});selectFramework(root,'none');fs.mkdirSync(path.join(root,'specs'));fs.writeFileSync(path.join(root,'specs','feature.md'),'# Requirement\nMake a working feature.\n');return {base,root};
@@ -157,4 +158,39 @@ test('explicit conflict backups preserve old skills and do not touch unrelated o
  assert.match(fs.readFileSync(path.join(oldDir,'SKILL.md'),'utf8'),/Start or resume development project/);
  assert.equal(fs.readFileSync(unrelated,'utf8'),'UNCHANGED');
  assert.equal(skillPlan(root,{agent:'both',scope:'user',userHome:home,backupConflicts:true,apply:true}).backedUp,0);
+});
+
+
+test('Spec Kit plan uses pinned GitHub release and installs Codex plus Claude integrations on an existing repo',async()=>{
+ const {spawnSync}=await import('node:child_process');
+ const base=fs.mkdtempSync(path.join(os.tmpdir(),'pinit-speckit-')),root=path.join(base,'repo');fs.mkdirSync(root);
+ const git=(...args)=>{const r=spawnSync('git',args,{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr);};
+ git('init');git('config','user.name','Fixture');git('config','user.email','fixture@example.invalid');fs.writeFileSync(path.join(root,'README.md'),'existing\n');git('add','.');git('commit','-m','baseline');
+ initProject(root,{mode:'Existing',intent:'feature',ui:'no'});selectFramework(root,'spec-kit');
+ const plan=installPlan(root,'1.2.3','both');assert.equal(plan.safeToApply,true);
+ const tool=plan.steps.find(x=>x.kind==='tool');if(tool){assert.equal(tool.cmd,'uv');assert.ok(tool.args.includes('git+https://github.com/github/spec-kit.git@v1.2.3'));}
+ const init=plan.steps.find(x=>x.cmd==='specify'&&x.args[0]==='init');assert.ok(init);assert.ok(init.args.includes('--force'));assert.ok(init.args.includes('--non-interactive'));assert.ok(init.args.includes('codex'));
+ const claude=plan.steps.find(x=>x.cmd==='specify'&&x.args[0]==='integration'&&x.args.includes('claude'));assert.ok(claude);assert.equal(claude.interactive,undefined);
+});
+
+test('ECC plan is pinned, dual-harness, and dry-run by default',()=>{
+ const {root}=fixture('ecc');
+ const plan=eccInstallPlan(root,'2.2.3',{agent:'both',scope:'local'});
+ assert.deepEqual(plan.command.slice(0,4),['npx','--yes','ecc-universal@2.2.3','install']);
+ assert.ok(plan.command.includes('claude'));assert.ok(plan.command.includes('codex'));assert.ok(plan.command.includes('--profile'));assert.ok(plan.dryRunCommand.includes('--dry-run'));
+});
+
+test('Codex factory skills match the supplied backend bridge contract and install repo-locally',async()=>{
+ const {spawnSync}=await import('node:child_process');
+ const base=fs.mkdtempSync(path.join(os.tmpdir(),'pinit-factory-')),root=path.join(base,'repo');fs.mkdirSync(root);
+ const git=(...args)=>{const r=spawnSync('git',args,{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr);};
+ git('init');git('config','user.name','Fixture');git('config','user.email','fixture@example.invalid');fs.writeFileSync(path.join(root,'README.md'),'factory\n');git('add','.');git('commit','-m','baseline');
+ initProject(root,{mode:'Existing',intent:'feature',ui:'no'});
+ const bridge=path.join(root,'.claude/skills/factory/scripts/codex_backend.sh');fs.mkdirSync(path.dirname(bridge),{recursive:true});
+ fs.writeFileSync(bridge,`JOB="factory/jobs/$SLUG"\nRead tasks tagged [BACKEND] and nothing tagged [FRONTEND].\nThe API Contract is binding.\nDo not edit frontend/UI files.\nWrite report.md.\nDo not run git commit.\nUse resume.\nBACKEND: DONE\nBACKEND: BLOCKED\nCONTRACT_ISSUE\n`);
+ git('add','.claude');git('commit','-m','factory bridge');
+ const plan=factoryPlan(root);assert.equal(plan.ready,true);assert.equal(plan.codexSkills.length,2);assert.equal(plan.interchangeability.codexFrontendBridge,false);
+ const applied=applyFactory(root,{apply:true});assert.equal(applied.applied,true);
+ assert.ok(fs.existsSync(path.join(root,'.agents/skills/backend-factory/SKILL.md')));assert.ok(fs.existsSync(path.join(root,'.agents/skills/backend-audit/SKILL.md')));
+ assert.match(fs.readFileSync(path.join(root,'.agents/skills/backend-factory/SKILL.md'),'utf8'),/BACKEND: BLOCKED CONTRACT_ISSUE/);
 });
