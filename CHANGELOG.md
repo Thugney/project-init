@@ -13,6 +13,23 @@ All notable changes to the public Project Init package are documented here. Ther
 - Updated package and lockfile SPDX metadata; the package stays `private: true` to explicitly prevent accidental npm publication while supporting reviewed GitHub release tarballs.
 - Updated release checks, documentation, and contributor terms. GitHub releases still require an explicitly created version tag; production acceptance remains pending.
 
+## [2.1.0-preview.6] — 2026-10-25 (guided Factory bootstrap candidate)
+
+### Fixed
+- Restored the architecture contract: Project Init is the normal entry point; Spec Kit, ECC and Factory are managed behind it rather than exposed as a required manual command chain.
+- Guided bootstrap resumes an existing `.project-init` state instead of forcing users to restart setup.
+- Recorded New/Existing mode is authoritative during framework installation, preventing a new repo from being reclassified after Project Init creates its own state files.
+
+### Added
+- `project-init init --project .` now returns one combined Factory bootstrap plan.
+- `project-init init --project . --apply` executes Git setup when needed, Spec Kit for Codex + Claude, ECC for both agents, and the bundled Factory in order.
+- Guided init automatically selects Spec Kit for the Factory profile when no competing methodology exists.
+- Regression coverage for guided preview/apply, resume behavior, dirty existing repos, and brand-new paths.
+
+### Compatibility
+- `inspect`, `recommend`, `select`, `install`, `ecc`, `factory`, and `wire` remain available as advanced/component-level controls.
+- The Factory routing contract remains backend→Codex (Claude fallback) and frontend→Claude.
+
 ## [2.1.0-preview.5] — 2026-10-25 (existing-project workflow candidate)
 
 ### Fixed
