@@ -2,7 +2,7 @@
 
 Build: 2026-10-25  
 Artifact: GitHub source candidate + `npm pack --dry-run` package inspection  
-Version: `2.1.0-preview.6`  
+Version: `2.1.0-preview.7`  
 **Status: FUNCTIONAL PREVIEW — NOT PRODUCTION ACCEPTED**
 
 ## Delivered and checked
@@ -26,12 +26,13 @@ Version: `2.1.0-preview.6`
 ## Validation results
 
 - GitHub CI matrix: **6/6 jobs passed** on Windows, Ubuntu and macOS with Node 22 and Node 24.
-- Windows Node 24: **43/43 Project Init regression tests passed**, 0 failed/skipped; JavaScript syntax and CLI smoke passed.
-- Ubuntu Node 24: **39/39 applicable Project Init tests passed**, 4 Windows-only tests skipped, 0 failed.
+- Windows Node 24: **46/46 Project Init regression tests passed**, 0 failed/skipped; JavaScript syntax and CLI smoke passed.
+- Ubuntu Node 24: **42/42 applicable Project Init tests passed**, 4 Windows-only tests skipped, 0 failed.
 - `node --test vendor/lean-kit/tests/render.test.mjs`: **8/8 Lean Kit tests passed** across the CI matrix.
 - `npm pack --dry-run` includes the complete `vendor/factory/` Claude, Codex and runtime distribution.
 - Dirty-existing-repo regressions passed on Windows: Project Init init, Spec Kit preserve-merge apply, ECC apply and bundled Factory install all preserve unrelated modified/untracked files.
 - Guided Factory bootstrap regressions passed: one `init` selects/plans the full Spec Kit + ECC + Factory stack, `init --apply` executes it and resumes idempotently, and a missing new project path is correctly recorded as `New`.
+- Self-update regressions passed: preview version comparison, read-only `update --check`, and pinned GitHub-source installation with post-update CLI verification.
 - Synthetic positive whole lifecycle reached `readyForHumanReleaseReview: true` and `releaseApproved: false`, then failed correctly after modified source.
 - Screenshot drift after a green cached gate correctly made `status.releaseCandidateReady: false`.
 - At least one genuine Playwright-rendered browser PNG decoded and compared successfully by the new strict PNG comparator.

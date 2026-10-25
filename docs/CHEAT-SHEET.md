@@ -46,6 +46,17 @@ For an **existing** repo, you do not need to stash or commit unrelated work firs
 
 For a new path, Project Init creates the project directory and initializes Git during `--apply`.
 
+## Update Project Init itself
+
+This updates the CLI, not the current application project:
+
+```powershell
+project-init update --check
+project-init update
+```
+
+No `cd C:\Tools\project-init`, `git pull`, or clean source checkout is required.
+
 ## Day-to-day feature flow
 
 ```text

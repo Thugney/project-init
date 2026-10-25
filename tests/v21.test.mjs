@@ -12,6 +12,34 @@ import {semanticPlan,importSemanticReview,verifyGuard} from '../lib/guard.mjs';
 import {renderVisualReview} from '../lib/visual.mjs';
 import {factoryPlan,applyFactory} from '../lib/factory.mjs';
 import {bootstrapProject} from '../lib/bootstrap.mjs';
+import {compareVersions,updateDecision,updateProjectInit} from '../lib/update.mjs';
+test('self-update version comparison handles preview releases',()=>{
+ assert.equal(compareVersions('2.1.0-preview.6','2.1.0-preview.7')<0,true);
+ assert.equal(compareVersions('2.1.0-preview.7','2.1.0-preview.7'),0);
+ assert.equal(compareVersions('2.1.0','2.1.0-preview.99')>0,true);
+ assert.equal(updateDecision('2.1.0-preview.7','2.1.0-preview.7').status,'current');
+ assert.equal(updateDecision('2.1.0-preview.7','2.1.0-preview.7',{force:true}).status,'update-available');
+});
+
+test('self-update check never invokes npm when current',async()=>{
+ const sha='a'.repeat(40);
+ const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.7'}});
+ let calls=0;
+ const result=await updateProjectInit({check:true,fetcher,runner:()=>{calls++;throw new Error('runner should not execute');}});
+ assert.equal(result.status,'current');assert.equal(result.updated,false);assert.equal(calls,0);assert.equal(result.remoteCommit,sha);
+});
+
+test('self-update installs pinned GitHub source and verifies replacement CLI',async()=>{
+ const sha='b'.repeat(40);
+ const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.8'}});
+ const calls=[];
+ const runner=(command,args)=>{calls.push([command,...args]);if(command==='npm')return {status:0,stdout:'updated',stderr:''};return {status:0,stdout:'2.1.0-preview.8\n',stderr:''};};
+ const result=await updateProjectInit({fetcher,runner});
+ assert.equal(result.status,'updated');assert.equal(result.installedVersion,'2.1.0-preview.8');
+ assert.deepEqual(calls[0],['npm','install','--global','--force',`git+https://github.com/Thugney/project-init.git#${sha}`]);
+ assert.deepEqual(calls[1],['project-init','version']);
+});
+
 function fixture(label,ui='no'){
  const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),`pinit-v21-${label}-`)),root=path.join(base,'repo');
  initProject(root,{mode:'New',ui,intent:'automation'});selectFramework(root,'none');fs.mkdirSync(path.join(root,'specs'));fs.writeFileSync(path.join(root,'specs','feature.md'),'# Requirement\nMake a working feature.\n');return {base,root};
