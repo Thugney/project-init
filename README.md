@@ -94,6 +94,8 @@ project-init init --project .
 project-init init --project . --apply
 ```
 
+Factory readiness is based on the **actual terminal clients**, not desktop applications. Project Init verifies `codex --version` + `codex login status` and `claude --version` + `claude auth status`. When missing, it offers to install the official Codex CLI (`@openai/codex`) and Claude Code CLI (`@anthropic-ai/claude-code`) through npm, then launches their sign-in flow and verifies authentication before continuing.
+
 The guided apply is an installer, not a prerequisite checklist. When a required bootstrap tool is missing, Project Init asks before installing it, verifies it, and continues to the next stage. For example, Spec Kit's `uv` dependency is installed as a pinned Project Init-managed user tool when approved. On Windows, missing Git/Python prerequisites can also be installed after explicit confirmation. ECC verifies npm/npx before running.
 
 ```text
