@@ -180,17 +180,31 @@ test('ECC plan is pinned, dual-harness, and dry-run by default',()=>{
  assert.ok(plan.command.includes('claude'));assert.ok(plan.command.includes('codex'));assert.ok(plan.command.includes('--profile'));assert.ok(plan.dryRunCommand.includes('--dry-run'));
 });
 
-test('Codex factory skills match the supplied backend bridge contract and install repo-locally',async()=>{
+test('Factory installs bundled Claude and Codex sides without an external kit path',async()=>{
  const {spawnSync}=await import('node:child_process');
  const tempRoot=fs.realpathSync(os.tmpdir()); const base=fs.mkdtempSync(path.join(tempRoot,'pinit-factory-')),root=path.join(base,'repo');fs.mkdirSync(root);
  const git=(...args)=>{const r=spawnSync('git',args,{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr);};
  git('init');git('config','user.name','Fixture');git('config','user.email','fixture@example.invalid');fs.writeFileSync(path.join(root,'README.md'),'factory\n');git('add','.');git('commit','-m','baseline');
  initProject(root,{mode:'Existing',intent:'feature',ui:'no'});
- const bridge=path.join(root,'.claude/skills/factory/scripts/codex_backend.sh');fs.mkdirSync(path.dirname(bridge),{recursive:true});
- fs.writeFileSync(bridge,`JOB="factory/jobs/$SLUG"\nRead tasks tagged [BACKEND] and nothing tagged [FRONTEND].\nThe API Contract is binding.\nDo not edit frontend/UI files.\nWrite report.md.\nDo not run git commit.\nUse resume.\nBACKEND: DONE\nBACKEND: BLOCKED\nCONTRACT_ISSUE\n`);
- git('add','.claude');git('commit','-m','factory bridge');
- const plan=factoryPlan(root);assert.equal(plan.ready,true);assert.equal(plan.codexSkills.length,2);assert.equal(plan.interchangeability.codexFrontendBridge,false);
- const applied=applyFactory(root,{apply:true});assert.equal(applied.applied,true);
- assert.ok(fs.existsSync(path.join(root,'.agents/skills/backend-factory/SKILL.md')));assert.ok(fs.existsSync(path.join(root,'.agents/skills/backend-audit/SKILL.md')));
+ const plan=factoryPlan(root);assert.equal(plan.ready,true);assert.equal(plan.source,'project-init-bundled-factory');assert.equal(plan.override,false);assert.equal(plan.codexSkills.length,2);assert.ok(plan.factoryFiles.length>=10);assert.equal(plan.interchangeability.codexFrontendBridge,false);
+ const applied=applyFactory(root,{apply:true});assert.equal(applied.applied,true);assert.equal(applied.installedBridgeCheck.ok,true);
+ for(const rel of [
+  '.claude/skills/factory/SKILL.md',
+  '.claude/skills/factory/scripts/board.py',
+  '.claude/skills/factory/scripts/codex_backend.sh',
+  '.claude/agents/factory-builder.md',
+  '.agents/skills/backend-factory/SKILL.md',
+  '.agents/skills/backend-audit/SKILL.md',
+  'factory/dashboard.html',
+  'factory/backlog.md'
+ ]) assert.ok(fs.existsSync(path.join(root,rel)),rel);
+ assert.match(fs.readFileSync(path.join(root,'.claude/skills/factory/SKILL.md'),'utf8'),/project-init factory --project \. --apply/);
  assert.match(fs.readFileSync(path.join(root,'.agents/skills/backend-factory/SKILL.md'),'utf8'),/BACKEND: BLOCKED CONTRACT_ISSUE/);
+ git('add','.');git('commit','-m','factory install');
+ fs.writeFileSync(path.join(root,'factory/backlog.md'),'# My backlog\n');
+ const cfg=JSON.parse(fs.readFileSync(path.join(root,'.claude/skills/factory/config.json'),'utf8'));cfg.test_command='npm test';fs.writeFileSync(path.join(root,'.claude/skills/factory/config.json'),JSON.stringify(cfg,null,2)+'\n');
+ git('add','factory/backlog.md','.claude/skills/factory/config.json');git('commit','-m','local factory config');
+ const reapplied=applyFactory(root,{apply:true});assert.equal(reapplied.applied,true);
+ assert.equal(fs.readFileSync(path.join(root,'factory/backlog.md'),'utf8'),'# My backlog\n');
+ assert.equal(JSON.parse(fs.readFileSync(path.join(root,'.claude/skills/factory/config.json'),'utf8')).test_command,'npm test');
 });
