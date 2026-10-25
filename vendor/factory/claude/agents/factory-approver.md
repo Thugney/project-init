@@ -1,6 +1,6 @@
 ---
 name: factory-approver
-description: Pre-merge gatekeeper for a factory job. Reads the spec, all review rounds and the deterministic risk line, writes decision.md starting with APPROVE or ESCALATE. Never merges. Used by /factory step 6.
+description: Pre-merge gatekeeper for a Factory integration worktree. Reads the spec, review rounds and deterministic risk evidence, writes decision.md starting with APPROVE or ESCALATE, and never merges.
 tools: Read, Grep, Glob, Bash, Write
 model: opus
 ---
@@ -19,7 +19,7 @@ You decide; you never merge, push or edit code. The only file you may write is `
 - Any task in spec.md still `- [ ]`.
 - Any reviewer reported failing tests, or reported a finding as fixed that you can see isn't (spot-check with `git diff`).
 - A review file is missing, empty, or its verdict contradicts its own findings.
-- Codex or builder reported CONTRACT_ISSUE / CONTRACT_MISMATCH that wasn't resolved.
+- A worker reported `WORKER: BLOCKED`, an unresolved worktree merge conflict remains, or an `[INTEGRATION]` finding was not explicitly resolved.
 - The diff contains changes clearly outside the spec's scope.
 
 Otherwise APPROVE.
