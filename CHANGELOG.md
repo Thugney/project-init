@@ -13,6 +13,20 @@ All notable changes to the public Project Init package are documented here. Ther
 - Updated package and lockfile SPDX metadata; the package stays `private: true` to explicitly prevent accidental npm publication while supporting reviewed GitHub release tarballs.
 - Updated release checks, documentation, and contributor terms. GitHub releases still require an explicitly created version tag; production acceptance remains pending.
 
+## [2.1.0-preview.5] — 2026-10-25 (existing-project workflow candidate)
+
+### Fixed
+- Existing projects no longer require users to stash or commit unrelated local work before Project Init bootstrap.
+- Spec Kit existing-repo initialization now uses its preserve-merge path instead of `--force`; Project Init supplies the explicit merge confirmation and existing files are preserved.
+- ECC and bundled Factory setup no longer use blanket Git-clean blockers; their own collision/ownership checks remain authoritative.
+
+### Added
+- Regression coverage for initializing a dirty existing repository and preserving unrelated modified/untracked files through Factory installation.
+
+### Compatibility
+- New-project behavior is unchanged.
+- Actual file collisions still fail closed; this change only removes the blanket requirement that unrelated project work be clean.
+
 ## [2.1.0-preview.4] — 2026-10-25 (self-contained Factory candidate)
 
 ### Fixed
