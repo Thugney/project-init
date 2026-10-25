@@ -8,6 +8,7 @@ import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {initProject,selectFramework,statePath} from '../lib/core.mjs';
 import {applyFactory,factoryPlan,factoryRuntimeStatus} from '../lib/factory.mjs';
+import {sameExistingPath} from '../lib/paths.mjs';
 
 const sourceRoot=fileURLToPath(new URL('../',import.meta.url));
 const boardHelper=path.join(sourceRoot,'vendor/factory/claude/skill/scripts/board.py');
@@ -35,14 +36,16 @@ function assertBoardLocation(stdout,root){
  const reported=stdout.match(/^board=(.+?) state=(missing|empty) checkout=(.+)$/m);
  assert.ok(reported,`Missing board/checkout location in status output: ${stdout}`);
  const reportedBoard=reported[1],reportedRoot=reported[3];
- const expectedRoot=fs.realpathSync(root);
+ // The JavaScript realpath implementation can retain Windows 8.3 aliases.
+ // Compare physical identities and use native realpath for canonical spelling.
+ const expectedRoot=fs.realpathSync.native(root);
  const detail=JSON.stringify({reportedRoot,reportedBoard,expectedRoot,stdout});
  assert.equal(path.isAbsolute(reportedRoot),true,detail);
  assert.equal(path.isAbsolute(reportedBoard),true,detail);
- assert.equal(path.relative(expectedRoot,fs.realpathSync(reportedRoot)),'',`Status identifies a different checkout: ${detail}`);
+ assert.equal(sameExistingPath(root,reportedRoot),true,`Status identifies a different checkout: ${detail}`);
  assert.equal(path.relative(expectedRoot,reportedRoot),'',`Status must report the canonical checkout path: ${detail}`);
  assert.equal(path.relative(reportedRoot,reportedBoard),path.join('factory','board.json'),`Board is not under the reported checkout: ${detail}`);
- if(fs.existsSync(reportedBoard))assert.equal(path.relative(fs.realpathSync(path.join(root,'factory','board.json')),fs.realpathSync(reportedBoard)),'',`Status identifies a different board file: ${detail}`);
+ if(fs.existsSync(reportedBoard))assert.equal(sameExistingPath(path.join(root,'factory','board.json'),reportedBoard),true,`Status identifies a different board file: ${detail}`);
 }
 
 test('Factory preview and runtime inspection identify an absent board without writing state',t=>{

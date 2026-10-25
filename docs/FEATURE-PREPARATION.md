@@ -92,6 +92,8 @@ Each worktree owns its source fingerprint, preparation state and evidence. Statu
 
 The Factory integration bridge has a separate, stricter process for copying the exact reviewed baseline with provenance; see [Factory evidence](FACTORY-EVIDENCE.md).
 
+For a Factory checkout, a recorded UTF-8 native Markdown/text LF/CRLF conversion can preserve the original approved digest without modifying the specification or approval. This requires the bridge's baseline-bound representation evidence; ordinary baseline checks do not broadly normalize files. Actual source fingerprints remain byte-exact.
+
 A new agent session should resume the same native feature and remaining task IDs, carrying the actual worktree and branch, configured checks, remaining gates and real Factory slug if applicable. A follow-up card or an open PR is not a Factory execution receipt.
 
 Registered nested worktrees and Factory runtime records are excluded from the parent source fingerprint. Ordinary nested repositories and Git-tracked vendored application source remain covered. Check working directories cannot cross into another nested Git checkout; verify that checkout separately.

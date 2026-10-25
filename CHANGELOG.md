@@ -28,6 +28,7 @@ All notable changes to the public Project Init package are documented here. Ther
 - Failed check launches invalidate older passing results, checks that modify source cannot pass, and check working directories cannot cross into another Git worktree.
 - Registered nested worktrees and Factory runtime updates no longer stale the parent source fingerprint. Git-tracked vendored source remains covered.
 - Worktree registration, execution receipts and board locations resolve real filesystem identity across Windows short/long path aliases while retaining different-checkout and unsafe-link rejection.
+- Factory records baseline-bound LF/CRLF checkout representations for native UTF-8 Markdown/text specifications without rewriting source or approval. Actual content changes and stale raw-byte source evidence remain blocked.
 - Missing native requirement mappings, partial preparation, stale/failed worker attempts, wrong-feature integration, altered logs and out-of-scope filenames fail closed.
 
 ### Compatibility and validation limits

@@ -20,7 +20,7 @@ Based on decisions through October 19, 2026 and the uploaded original `project-i
 | PI-014 | Retired destructive setup/scaffold | Active v2.1 package excludes old overwrite/global scaffolder |
 | PI-015 | Lean Kit bundled | Actual prior Lean Kit source vendored; `lean --execute` renders with Node, auditable, no extra install |
 | PI-016 | Evidence-based semantic and visual drift guard | Real screenshot pixels/dimensions/diff coverage; every requirement maps to current specs, tests and independently supplied source evidence. Not infallible semantic AI proof |
-| PI-017 | Codex and Claude discoverable skills | Seven descriptive skill files per agent with explicit `wire --apply`, conflict refusal; Claude namespaced commands require plugin activation |
+| PI-017 | Codex and Claude discoverable skills | Seven descriptive skill files per agent through reviewed guided `init --apply` or explicit `wire --apply`, with conflict handling/backups; Claude namespaced commands require plugin activation |
 | PI-018 | Idempotency, rollback and audit | Local JSONL events, exact hashes, dry-run by default for external actions, v1 protected. No tamper-resistant identity signature |
 | PI-019 | Human release decision | `guard` may produce a human-review-ready candidate, but no automatic release approval is possible |
 
@@ -30,6 +30,7 @@ Based on decisions through October 19, 2026 and the uploaded original `project-i
 - `.project-init/config.json` — deterministic verification command arrays.
 - `.project-init/requirements.json` — mapping stable requirement IDs to authoritative native specs, test names and visual cases; not a competing requirement document.
 - `.project-init/preparation.json` — selected native feature paths and task IDs for continuation; no second specification or approval.
+- `.project-init/factory-origin.json` — exact copied approval provenance and any verified UTF-8 native Markdown/text LF/CRLF checkout representations. Each representation is checked against the original baseline, native path, approved digest and current bytes; it never normalizes configuration, screenshot references or raw source evidence.
 - `.project-init/ui-design.json` — explicit screen mockup representation.
 - `.project-init/visual-cases.json` — required screenshot matrix.
 - `.project-init/visual/baselines/*.png` — exact approved mockup/reference images; hashed during baseline.

@@ -193,10 +193,17 @@ test('registered worktree aliases identify the same checkout without excluding u
  const metadata=path.resolve(child,git(child,'rev-parse','--git-dir'));
  // Model Git reporting another filesystem spelling of the same checkout, as
  // short/long Windows paths do. The scanned checkout itself is not a link.
- write(metadata,'gitdir',path.join(alias,'work','tutor-v2','.git')+'\n');
- assert.ok(git(root,'worktree','list','--porcelain','-z').includes('worktree '));
+ // Git metadata uses forward slashes, including on Windows. Backslashes here
+ // can make Git report the .git file as the worktree instead of its directory.
+ const registeredGitdir=path.join(alias,'work','tutor-v2','.git').split(path.sep).join('/');
+ write(metadata,'gitdir',registeredGitdir+'\n');
+ const listing=git(root,'worktree','list','--porcelain','-z');
  const context=worktreeContext(child);
- assert.equal(context.otherWorktrees.length,1,'the aliased current checkout must not be listed as another worktree');
+ const failureContext=JSON.stringify({child,registeredGitdir,listing,otherWorktrees:context.otherWorktrees});
+ const registeredPaths=listing.split('\0').filter(field=>field.startsWith('worktree ')).map(field=>field.slice(9));
+ assert.equal(registeredPaths.length,2,`fixture must register exactly two checkouts: ${failureContext}`);
+ for(const registered of registeredPaths)assert.ok(fs.statSync(registered).isDirectory(),`Git must report an existing checkout directory: ${failureContext}`);
+ assert.equal(context.otherWorktrees.length,1,`the aliased current checkout must not be listed as another worktree: ${failureContext}`);
  const before=sourceSnapshot(root).hash;
  write(child,'test.mjs','// registered checkout change\n');
  assert.equal(sourceSnapshot(root).hash,before);

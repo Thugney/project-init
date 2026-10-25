@@ -6,7 +6,7 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {
  initProject,selectFramework,statePath,establishBaseline,recordReview,approve,reconcileSource,
- runChecks,readJson,sourceSnapshot,status
+ runChecks,readJson,sourceSnapshot,status,checkBaseline,hashFile
 } from '../lib/core.mjs';
 import {applyFactory} from '../lib/factory.mjs';
 import {factoryEvidence,verifyExisting,executionEvidence} from '../lib/execution.mjs';
@@ -138,6 +138,66 @@ test('real Git Factory integration and synthetic worker produce evidence for int
  assert.equal(executionEvidence(j.integration).valid,true,'Native task completion does not rewrite the execution contract.');
  fs.writeFileSync(path.join(j.integration,'src/feature.mjs'),'export const value = 3;\n');
  assert.equal(executionEvidence(j.integration).valid,false);assert.equal(status(j.integration).driftGuardCurrent,false);
+});
+
+test('Git CRLF checkout preserves the approved native baseline while source evidence remains byte-bound',async t=>{
+ const {base,root}=fixture(t,{factory:true,value:1});
+ command(root,'git',['config','core.autocrlf','true']);
+ const nativeSpec=fs.readFileSync(path.join(root,'specs/feature.md'));
+ assert.equal(nativeSpec.includes(Buffer.from('\r\n')),false,'The authoritative checkout starts with LF bytes.');
+ const baselineBefore=fs.readFileSync(statePath(root,'baseline.json')),approvalBefore=fs.readFileSync(statePath(root,'approval.json'));
+ const j=job(root),integrationSpec=path.join(j.integration,'specs/feature.md');
+ const checkoutBytes=fs.readFileSync(integrationSpec);
+ assert.equal(checkoutBytes.includes(Buffer.from('\r\n')),true,'Real Git checkout, not a test rewrite, converted the native text to CRLF.');
+ assert.equal(checkoutBytes.toString('utf8').replaceAll('\r\n','\n'),nativeSpec.toString('utf8'));
+ command(root,py,[j.helper('codex_worker'),'build',j.slug],fakeWorker(base));
+ command(root,py,[j.helper('worktree'),'integrate',j.slug,'codex']);
+ const expectedRepresentations=[{path:'specs/feature.md',mode:'utf8-crlf-lf-v1',approvedSha256:JSON.parse(baselineBefore).files.find(file=>file.path==='specs/feature.md').sha256,actualSha256:hashFile(integrationSpec)}];
+ const preview=await factoryEvidence(root,{job:j.slug,allowed:['src/']});
+ assert.equal(preview.executed,false);assert.deepEqual(preview.nativeTextRepresentations,expectedRepresentations);
+ assert.equal(fs.existsSync(statePath(j.integration,'project.json')),false,'Preview does not copy runtime state.');
+ assert.equal(fs.existsSync(statePath(j.integration,'factory-origin.json')),false,'Preview does not authorize native text representation changes.');
+ assert.deepEqual(fs.readFileSync(integrationSpec),checkoutBytes);
+ const conflictFile=statePath(j.integration,'config.json'),conflict=JSON.stringify({schemaVersion:1,checks:[]});
+ fs.mkdirSync(path.dirname(conflictFile),{recursive:true});fs.writeFileSync(conflictFile,conflict);
+ await assert.rejects(factoryEvidence(root,{job:j.slug,allowed:['src/'],execute:true}),/Integration state differs at config\.json/);
+ assert.equal(fs.readFileSync(conflictFile,'utf8'),conflict,'An existing state conflict is preserved.');
+ assert.equal(fs.existsSync(statePath(j.integration,'approval.json')),false);
+ assert.equal(fs.existsSync(statePath(j.integration,'factory-origin.json')),false);
+ assert.deepEqual(fs.readFileSync(integrationSpec),checkoutBytes);
+ fs.unlinkSync(conflictFile); // Resolve only this synthetic fixture's deliberate conflict.
+ const result=await factoryEvidence(root,{job:j.slug,allowed:['src/'],execute:true});
+ assert.equal(result.passed,true,JSON.stringify(checkBaseline(j.integration)));
+ assert.equal(checkBaseline(j.integration).current,true);
+ assert.deepEqual(fs.readFileSync(statePath(j.integration,'baseline.json')),baselineBefore,'The baseline is preserved, not re-registered.');
+ assert.deepEqual(fs.readFileSync(statePath(j.integration,'approval.json')),approvalBefore,'The human approval is copied without rewriting its digest.');
+ const origin=readJson(statePath(j.integration,'factory-origin.json'));
+ assert.equal(origin.baselineHash,JSON.parse(baselineBefore).hash);assert.deepEqual(origin.nativeTextRepresentations,expectedRepresentations);
+ assert.deepEqual(fs.readFileSync(integrationSpec),checkoutBytes,'The native checkout file is not rewritten to satisfy approval.');
+ assert.equal(verifyGuard(j.integration).passed,false,'The changed implementation still needs actual independent review.');
+ review(j.integration);assert.equal(verifyGuard(j.integration).passed,true);
+ // Approval permits equivalent native text; execution/source receipts still bind
+ // the exact bytes actually checked and independently reviewed.
+ fs.writeFileSync(integrationSpec,nativeSpec);
+ assert.equal(checkBaseline(j.integration).current,true);
+ assert.equal(executionEvidence(j.integration).valid,false);
+});
+
+test('Factory import rejects substantive native specification changes before copying approval state',async t=>{
+ const {root}=fixture(t,{factory:true,value:1}),j=job(root);
+ const worker=command(root,py,[j.helper('worktree'),'path',j.slug,'claude']);
+ fs.writeFileSync(path.join(worker,'src/feature.mjs'),'export const value = 2;\n');
+ fs.appendFileSync(path.join(worker,'specs/feature.md'),'FR-2: An unapproved extra requirement.\n');
+ command(worker,'git',['add','src/feature.mjs','specs/feature.md']);
+ command(worker,'git',['commit','-qm','Synthetic substantive native specification edit']);
+ command(root,py,[j.helper('worktree'),'integrate',j.slug,'claude']);
+ const native=path.join(j.integration,'specs/feature.md'),before=fs.readFileSync(native);
+ for(const execute of [false,true]){
+  await assert.rejects(factoryEvidence(root,{job:j.slug,allowed:['src/','specs/'],execute}),/Integrated native specification differs from the approved baseline: specs\/feature\.md/);
+  assert.equal(fs.existsSync(statePath(j.integration,'approval.json')),false,'Rejected import cannot copy approval.');
+  assert.equal(fs.existsSync(statePath(j.integration,'factory-origin.json')),false,'Rejected import cannot grant a representation exception.');
+  assert.deepEqual(fs.readFileSync(native),before,'Rejected import preserves the actual native file.');
+ }
 });
 
 test('Factory rejects unsupported scope, unrecorded jobs, failed worker evidence and modified logs',async t=>{
