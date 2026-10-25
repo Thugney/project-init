@@ -46,20 +46,21 @@ test('Factory prerequisites require Codex and Claude CLIs plus authentication, n
  const node=process.execPath.replaceAll('\\','\\\\');
  const js=(name,body)=>{const file=path.join(bin,name);fs.writeFileSync(file,`#!${process.execPath}\n${body}\n`);fs.chmodSync(file,0o755);return file;};
  js('npm',"if(process.argv[2]==='--version'){console.log('10.0.0');process.exit(0)}process.exit(0)");
- js('codex',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('codex-test');process.exit(0)}if(a[0]==='login'&&a[1]==='status')process.exit(1);process.exit(0)");
- js('claude',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-test');process.exit(0)}if(a[0]==='auth'&&a[1]==='status')process.exit(1);process.exit(0)");
+ js('codex',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('codex-test');process.exit(0)}if(a[0]==='login'&&a[1]==='status')process.exit(1);if(a[0]==='plugin'&&a.includes('--json')){console.log('{}');process.exit(0)}process.exit(0)");
+ js('claude',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-test');process.exit(0)}if(a[0]==='auth'&&a[1]==='status')process.exit(1);if(a[0]==='plugin'&&a.includes('--json')){console.log('[]');process.exit(0)}process.exit(0)");
  if(process.platform==='win32'){
   for(const name of ['npm','codex','claude'])fs.writeFileSync(path.join(bin,name+'.cmd'),`@echo off\r\n"${process.execPath}" "%~dp0${name}" %*\r\n`);
  }
- const prior=process.env.PATH;process.env.PATH=bin;
+ const prior=process.env.PATH,priorNative=process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE;process.env.PATH=bin;
+ if(process.platform==='win32')process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE=process.execPath;
  try{
   const plan=prerequisitePlan({needUv:false,needEcc:false,needFactory:true});
   const codex=plan.checks.find(x=>x.id==='codex-cli'),claude=plan.checks.find(x=>x.id==='claude-code');
   assert.equal(codex.ready,true);assert.equal(claude.ready,true);
   assert.equal(plan.checks.find(x=>x.id==='codex-auth').ready,false);
   assert.equal(plan.checks.find(x=>x.id==='claude-auth').ready,false);
-  assert.ok(plan.missing.includes('codex-auth'));assert.ok(plan.missing.includes('claude-auth'));
- }finally{process.env.PATH=prior;}
+  assert.ok(plan.missing.includes('codex-auth'));assert.ok(plan.missing.includes('claude-auth'));assert.equal(plan.checks.find(x=>x.id==='codex-ecc-capability').ready,true);assert.equal(plan.checks.find(x=>x.id==='claude-ecc-capability').ready,true);if(process.platform==='win32')assert.equal(plan.checks.find(x=>x.id==='codex-native-runtime').ready,true);
+ }finally{process.env.PATH=prior;if(priorNative===undefined)delete process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE;else process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE=priorNative;}
 });
 
 test('agent authentication helpers use current Codex and Claude CLI subcommands',()=>{
@@ -270,10 +271,10 @@ process.exit(9);
 const fs=require('fs');fs.mkdirSync('.claude/ecc-fixture',{recursive:true});fs.writeFileSync('.claude/ecc-fixture/installed','yes\\n');process.exit(0);
 `);fs.chmodSync(npx,0o755);
  const codex=path.join(bin,'codex');fs.writeFileSync(codex,`#!/usr/bin/env node
-const a=process.argv.slice(2);if(a[0]==='--version'){console.log('codex-cli test');process.exit(0);}if(a[0]==='login'&&a[1]==='status')process.exit(0);process.exit(0);
+const a=process.argv.slice(2);if(a[0]==='--version'){console.log('codex-cli test');process.exit(0);}if(a[0]==='login'&&a[1]==='status')process.exit(0);if(a[0]==='plugin'&&a.includes('--json')){console.log('{}');process.exit(0);}process.exit(0);
 `);fs.chmodSync(codex,0o755);
  const claude=path.join(bin,'claude');fs.writeFileSync(claude,`#!/usr/bin/env node
-const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-code test');process.exit(0);}if(a[0]==='auth'&&a[1]==='status')process.exit(0);process.exit(0);
+const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-code test');process.exit(0);}if(a[0]==='auth'&&a[1]==='status')process.exit(0);if(a[0]==='plugin'&&a.includes('--json')){console.log('[]');process.exit(0);}process.exit(0);
 `);fs.chmodSync(claude,0o755);
  if(process.platform==='win32'){
   fs.writeFileSync(path.join(bin,'specify.cmd'),'@echo off\r\nnode "%~dp0specify" %*\r\n');
@@ -281,7 +282,8 @@ const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-code te
   fs.writeFileSync(path.join(bin,'codex.cmd'),'@echo off\r\nnode "%~dp0codex" %*\r\n');
   fs.writeFileSync(path.join(bin,'claude.cmd'),'@echo off\r\nnode "%~dp0claude" %*\r\n');
  }
- const prior=process.env.PATH;process.env.PATH=bin+path.delimiter+prior;
+ const prior=process.env.PATH,priorNative=process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE;process.env.PATH=bin+path.delimiter+prior;
+ if(process.platform==='win32')process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE=process.execPath;
  try{
   const prompts=[],messages=[];
   const result=await bootstrapProject(root,{mode:'Existing',intent:'feature',ui:'auto',apply:true,confirm:async message=>{prompts.push(message);return true;},progress:message=>messages.push(message)});
@@ -293,7 +295,7 @@ const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-code te
   assert.equal(fs.readFileSync(path.join(root,'README.md'),'utf8'),'local dirty work\n');assert.equal(fs.readFileSync(path.join(root,'LOCAL.txt'),'utf8'),'keep me\n');
   const state=JSON.parse(fs.readFileSync(statePath(root,'bootstrap.json'),'utf8'));assert.equal(state.steps.specKit.status,'completed');assert.equal(state.steps.ecc.status,'completed');assert.equal(state.steps.factory.status,'completed');
   const resumed=await bootstrapProject(root,{mode:'Existing',apply:true});assert.equal(resumed.status,'ready');assert.equal(resumed.execution.ecc.skipped,true);
- }finally{process.env.PATH=prior;}
+ }finally{process.env.PATH=prior;if(priorNative===undefined)delete process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE;else process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE=priorNative;}
 });
 
 test('guided init stops cleanly when a component install is declined',async()=>{
@@ -306,10 +308,10 @@ const a=process.argv.slice(2);if(a[0]==='version'){console.log('specify 1.2.3');
 `);fs.chmodSync(specify,0o755);
  const npx=path.join(bin,'npx');fs.writeFileSync(npx,'#!/usr/bin/env node\nprocess.exit(0);\n');fs.chmodSync(npx,0o755);
  const codex=path.join(bin,'codex');fs.writeFileSync(codex,`#!/usr/bin/env node
-const a=process.argv.slice(2);if(a[0]==='--version'){console.log('codex-cli test');process.exit(0);}if(a[0]==='login'&&a[1]==='status')process.exit(0);process.exit(0);
+const a=process.argv.slice(2);if(a[0]==='--version'){console.log('codex-cli test');process.exit(0);}if(a[0]==='login'&&a[1]==='status')process.exit(0);if(a[0]==='plugin'&&a.includes('--json')){console.log('{}');process.exit(0);}process.exit(0);
 `);fs.chmodSync(codex,0o755);
  const claude=path.join(bin,'claude');fs.writeFileSync(claude,`#!/usr/bin/env node
-const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-code test');process.exit(0);}if(a[0]==='auth'&&a[1]==='status')process.exit(0);process.exit(0);
+const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-code test');process.exit(0);}if(a[0]==='auth'&&a[1]==='status')process.exit(0);if(a[0]==='plugin'&&a.includes('--json')){console.log('[]');process.exit(0);}process.exit(0);
 `);fs.chmodSync(claude,0o755);
  if(process.platform==='win32'){
   fs.writeFileSync(path.join(bin,'specify.cmd'),'@echo off\r\nnode "%~dp0specify" %*\r\n');
@@ -317,11 +319,12 @@ const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-code te
   fs.writeFileSync(path.join(bin,'codex.cmd'),'@echo off\r\nnode "%~dp0codex" %*\r\n');
   fs.writeFileSync(path.join(bin,'claude.cmd'),'@echo off\r\nnode "%~dp0claude" %*\r\n');
  }
- const prior=process.env.PATH;process.env.PATH=bin+path.delimiter+prior;
+ const prior=process.env.PATH,priorNative=process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE;process.env.PATH=bin+path.delimiter+prior;
+ if(process.platform==='win32')process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE=process.execPath;
  try{
   const result=await bootstrapProject(root,{mode:'Existing',intent:'feature',ui:'no',apply:true,confirm:async message=>!message.includes('Spec Kit')});
   assert.equal(result.status,'stopped');assert.equal(result.stoppedAt,'spec-kit');assert.equal(result.applied,false);assert.equal(fs.existsSync(path.join(root,'.specify')),false);
- }finally{process.env.PATH=prior;}
+ }finally{process.env.PATH=prior;if(priorNative===undefined)delete process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE;else process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE=priorNative;}
 });
 
 test('guided init detects and creates a brand-new repository before Git exists',async()=>{
