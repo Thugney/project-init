@@ -6,9 +6,9 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {
  initProject,selectFramework,statePath,readJson,recordReview,approve,checkBaseline,
- status,sourceSnapshot,runChecks,validateChecks,establishBaseline
+ status,sourceSnapshot,runChecks,validateChecks,establishBaseline,readState,projectRoot
 } from '../lib/core.mjs';
-import {prepareProject,preparationPlan,featureReadiness} from '../lib/prepare.mjs';
+import {prepareProject,preparationPlan,featureReadiness,worktreeContext} from '../lib/prepare.mjs';
 import {semanticPlan,verifyGuard} from '../lib/guard.mjs';
 
 function write(root,file,text){fs.mkdirSync(path.dirname(path.join(root,file)),{recursive:true});fs.writeFileSync(path.join(root,file),typeof text==='string'?text:JSON.stringify(text,null,2));}
@@ -24,6 +24,13 @@ function fixture(t,{feature=true,initialized=true}={}){
  if(feature)addFeature(root,'001-example');
  if(initialized){initProject(root,{mode:'Existing',intent:'feature',ui:'no'});selectFramework(root,'spec-kit');}
  return root;
+}
+function directoryAlias(t,target){
+ const folder=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'pinit-directory-alias-'));
+ t.after(()=>fs.rmSync(folder,{recursive:true,force:true}));
+ const alias=path.join(folder,'checkout');
+ fs.symlinkSync(target,alias,process.platform==='win32'?'junction':'dir');
+ return alias;
 }
 function addFeature(root,id,{spec='- **FR-001**: Behave as specified. checks: test\n',tasks='- [x] T001 Establish synthetic fixture\n- [ ] T002 Implement FR-001 checks: test\n'}={}){
  write(root,`specs/${id}/spec.md`,'# Synthetic feature\n'+spec);
@@ -177,6 +184,38 @@ test('Factory runtime updates and linked worktrees do not invalidate the parent 
  write(root,'factory/board.json.unique.tmp','fixture temporary state');write(child,'test.mjs','// another worktree change\n');
  assert.equal(sourceSnapshot(root).hash,before);
  write(root,'test.mjs','// actual source change\n');assert.notEqual(sourceSnapshot(root).hash,before);
+});
+
+test('registered worktree aliases identify the same checkout without excluding unrelated source',t=>{
+ const root=fixture(t);git(root,'add','.');git(root,'commit','-qm','Synthetic alias baseline');
+ const child=path.join(root,'work','tutor-v2');git(root,'worktree','add','-qb','synthetic-alias-tutor',child);
+ const alias=directoryAlias(t,root);
+ const metadata=path.resolve(child,git(child,'rev-parse','--git-dir'));
+ // Model Git reporting another filesystem spelling of the same checkout, as
+ // short/long Windows paths do. The scanned checkout itself is not a link.
+ write(metadata,'gitdir',path.join(alias,'work','tutor-v2','.git')+'\n');
+ assert.ok(git(root,'worktree','list','--porcelain','-z').includes('worktree '));
+ const context=worktreeContext(child);
+ assert.equal(context.otherWorktrees.length,1,'the aliased current checkout must not be listed as another worktree');
+ const before=sourceSnapshot(root).hash;
+ write(child,'test.mjs','// registered checkout change\n');
+ assert.equal(sourceSnapshot(root).hash,before);
+ write(root,'components/embedded/.git','gitdir: synthetic-unregistered-repository');
+ write(root,'components/embedded/code.js','before');
+ const embeddedBefore=sourceSnapshot(root).hash;
+ write(root,'components/embedded/code.js','after');
+ assert.notEqual(sourceSnapshot(root).hash,embeddedBefore,'an unrelated nested repository is still application source');
+ assert.throws(()=>projectRoot(alias),/Symbolic-link\/reparse-point path refused/,'filesystem identity does not relax project-root link refusal');
+});
+
+test('state accepts another spelling of the same existing checkout and rejects an actual relocation',t=>{
+ const root=fixture(t),alias=directoryAlias(t,root),state=readState(root);
+ write(root,'.project-init/project.json',{...state,projectPath:alias});
+ assert.equal(readState(root).projectPath,alias);
+ const different=fixture(t);
+ write(different,'.project-init/project.json',{...state,projectPath:alias});
+ assert.throws(()=>readState(different),/Invalid or relocated Project Init/);
+ assert.throws(()=>projectRoot(alias),/Symbolic-link\/reparse-point path refused/);
 });
 
 test('ordinary nested repositories remain in the source fingerprint',t=>{

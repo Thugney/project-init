@@ -23,7 +23,12 @@ import sys
 import tempfile
 from datetime import datetime, timezone
 
-ROOT = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True).stdout.strip() or os.getcwd()
+# Git may report a short-name or junction alias on Windows. Derive every
+# runtime path from the existing filesystem identity of that checkout.
+ROOT = os.path.realpath(
+    subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True).stdout.strip()
+    or os.getcwd()
+)
 FACTORY = os.path.join(ROOT, "factory")
 JOBS = os.path.join(FACTORY, "jobs")
 BOARD = os.path.join(FACTORY, "board.json")

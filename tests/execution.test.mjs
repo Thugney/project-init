@@ -11,6 +11,7 @@ import {
 import {applyFactory} from '../lib/factory.mjs';
 import {factoryEvidence,verifyExisting,executionEvidence} from '../lib/execution.mjs';
 import {importSemanticReview,verifyGuard} from '../lib/guard.mjs';
+import {existingPathIdentity,sameExistingPath,isWithinExistingPath} from '../lib/paths.mjs';
 
 const py=process.platform==='win32'?'python':'python3';
 function childEnvironment(extra={}){const env={...process.env,...extra};delete env.NODE_TEST_CONTEXT;return env;}
@@ -68,6 +69,47 @@ console.log(JSON.stringify({type:'synthetic.fixture.completed'}));process.exit(0
 `);
  return childEnvironment({NODE_OPTIONS:`--require ${JSON.stringify(filename)}`});
 }
+
+test('filesystem identity resolves short/long aliases while preserving containment and distinct directories',t=>{
+ const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'pinit-path-identity-'));
+ t.after(()=>fs.rmSync(base,{recursive:true,force:true}));
+ const longHome=path.join(base,'Runner Account'),shortHome=path.join(base,'RUNNER~1');
+ const root=path.join(longHome,'repo','.project-init','worktrees'),inside=path.join(root,'001-job','integration');
+ const sibling=path.join(root,'001-other','integration'),outside=path.join(longHome,'repo','.project-init','worktrees-other','integration');
+ for(const file of [inside,sibling,outside])fs.mkdirSync(file,{recursive:true});
+ const realpath=fs.realpathSync.native;
+ // Model the OS expanding an existing Windows 8.3 alias. Lexical relative paths
+ // alone disagree; the production helper must use the filesystem's identity.
+ t.mock.method(fs.realpathSync,'native',(value,...args)=>{
+  const expanded=value===shortHome||value.startsWith(shortHome+path.sep)?longHome+value.slice(shortHome.length):value;
+  return realpath(expanded,...args);
+ });
+ const aliasInside=shortHome+inside.slice(longHome.length);
+ assert.notEqual(path.relative(root,aliasInside),path.relative(root,inside));
+ assert.equal(sameExistingPath(aliasInside,inside),true);
+ assert.equal(isWithinExistingPath(aliasInside,root),true);
+ assert.equal(isWithinExistingPath(aliasInside,shortHome+root.slice(longHome.length)),true);
+ assert.equal(sameExistingPath(inside,sibling),false);
+ assert.equal(isWithinExistingPath(outside,root),false);
+ assert.equal(sameExistingPath(path.join(base,'missing'),inside),false);
+});
+
+test('filesystem identity keeps bigint file IDs distinct and falls back safely when IDs are unavailable',t=>{
+ const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'pinit-file-identity-'));
+ t.after(()=>fs.rmSync(base,{recursive:true,force:true}));
+ const first=path.join(base,'first'),second=path.join(base,'second');fs.mkdirSync(first);fs.mkdirSync(second);
+ const stat=fs.statSync;let unavailable=false;
+ t.mock.method(fs,'statSync',(file,options)=>{
+  const result=stat(file,options);
+  if(!options?.bigint)return result;
+  return {...result,dev:unavailable?0n:1n,ino:unavailable?0n:path.basename(file)==='first'?9007199254740992n:9007199254740993n};
+ });
+ assert.notEqual(existingPathIdentity(first),existingPathIdentity(second));
+ assert.equal(sameExistingPath(first,second),false);
+ unavailable=true;
+ assert.equal(sameExistingPath(first,first),true);
+ assert.equal(sameExistingPath(first,second),false,'zero file IDs cannot make unrelated checkouts equal');
+});
 
 test('real Git Factory integration and synthetic worker produce evidence for integrated source',async t=>{
  const {base,root}=fixture(t,{factory:true,value:1}),j=job(root);
@@ -198,6 +240,25 @@ test('Factory execution rejects changed job identity and contract scope',async t
  await assert.rejects(factoryEvidence(root,{job:j.slug,allowed:['src/']}),/Job\/Source headers/);
  fs.writeFileSync(spec,original.replace('src/feature.mjs','src/different-feature.mjs'));
  await assert.rejects(factoryEvidence(root,{job:j.slug,allowed:['src/']}),/contract changed after dispatch/);
+});
+
+test('Factory path identity still rejects a different checkout and a symlink to the correct checkout',async t=>{
+ const {base,root}=fixture(t,{factory:true,value:1}),j=job(root);
+ command(root,py,[j.helper('codex_worker'),'build',j.slug],fakeWorker(base));
+ command(root,py,[j.helper('worktree'),'integrate',j.slug,'codex']);
+ const metadataFile=statePath(root,`factory-worktrees/${j.slug}.json`),original=readJson(metadataFile);
+ const changed=structuredClone(original);changed.paths.integration=changed.paths.claude;
+ fs.writeFileSync(metadataFile,JSON.stringify(changed));
+ await assert.rejects(factoryEvidence(root,{job:j.slug,allowed:['src/']}),/registered isolated checkout/);
+ const alias=statePath(root,`worktrees/${j.slug}/integration-alias`);
+ fs.symlinkSync(j.integration,alias,process.platform==='win32'?'junction':'dir');
+ changed.paths.integration=alias;fs.writeFileSync(metadataFile,JSON.stringify(changed));
+ await assert.rejects(factoryEvidence(root,{job:j.slug,allowed:['src/']}),/Symbolic-link\/reparse-point path refused/);
+ fs.writeFileSync(metadataFile,JSON.stringify(original));
+ const recorded=await factoryEvidence(root,{job:j.slug,allowed:['src/'],execute:true});assert.equal(recorded.passed,true);
+ recorded.receipt.factory.integrationProject=original.paths.claude;
+ fs.writeFileSync(statePath(j.integration,'evidence/latest-run.json'),JSON.stringify(recorded.receipt));
+ assert.equal(executionEvidence(j.integration).valid,false,'another worker checkout cannot use integration evidence');
 });
 
 test('existing-code verification does not fabricate implementation and retains all other gates',async t=>{

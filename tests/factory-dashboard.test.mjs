@@ -31,6 +31,19 @@ function fixtureJob(){
 function boardBytes(jobs=[]){return JSON.stringify({updated:'2026-01-01T00:00:00Z',jobs,fixture:'synthetic regression data'},null,4)+'\n';}
 function writeBoard(file,content){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,content);}
 function helper(root,...args){return spawnSync(python,[boardHelper,...args],{cwd:root,encoding:'utf8'});}
+function assertBoardLocation(stdout,root){
+ const reported=stdout.match(/^board=(.+?) state=(missing|empty) checkout=(.+)$/m);
+ assert.ok(reported,`Missing board/checkout location in status output: ${stdout}`);
+ const reportedBoard=reported[1],reportedRoot=reported[3];
+ const expectedRoot=fs.realpathSync(root);
+ const detail=JSON.stringify({reportedRoot,reportedBoard,expectedRoot,stdout});
+ assert.equal(path.isAbsolute(reportedRoot),true,detail);
+ assert.equal(path.isAbsolute(reportedBoard),true,detail);
+ assert.equal(path.relative(expectedRoot,fs.realpathSync(reportedRoot)),'',`Status identifies a different checkout: ${detail}`);
+ assert.equal(path.relative(expectedRoot,reportedRoot),'',`Status must report the canonical checkout path: ${detail}`);
+ assert.equal(path.relative(reportedRoot,reportedBoard),path.join('factory','board.json'),`Board is not under the reported checkout: ${detail}`);
+ if(fs.existsSync(reportedBoard))assert.equal(path.relative(fs.realpathSync(path.join(root,'factory','board.json')),fs.realpathSync(reportedBoard)),'',`Status identifies a different board file: ${detail}`);
+}
 
 test('Factory preview and runtime inspection identify an absent board without writing state',t=>{
  const {root,boardPath}=fixture(t);
@@ -116,14 +129,31 @@ test('board helper status reports the local path without creating or changing bo
  assert.equal(missing.status,0,missing.stderr||missing.error?.message);
  assert.match(missing.stdout,/no jobs/);
  assert.match(missing.stdout,/state=missing/);
- assert.ok(missing.stdout.replaceAll('\\','/').includes(boardPath.replaceAll('\\','/')));
+ assertBoardLocation(missing.stdout,root);
  assert.equal(fs.existsSync(boardPath),false);
  applyFactory(root,{apply:true});
  const bytes=fs.readFileSync(boardPath,'utf8');
  const empty=helper(root,'status');
  assert.equal(empty.status,0,empty.stderr);
  assert.match(empty.stdout,/state=empty/);
+ assertBoardLocation(empty.stdout,root);
  assert.equal(fs.readFileSync(boardPath,'utf8'),bytes);
+});
+
+test('board helper canonicalizes a filesystem alias returned by Git before reporting state',t=>{
+ const {root,boardPath}=fixture(t);
+ const alias=path.join(path.dirname(root),'checkout-alias');
+ fs.symlinkSync(root,alias,process.platform==='win32'?'junction':'dir');
+ const probe=`import runpy, subprocess, sys
+from unittest.mock import patch
+with patch('subprocess.run', return_value=subprocess.CompletedProcess([], 0, stdout=sys.argv[2] + '\\n', stderr='')):
+    module = runpy.run_path(sys.argv[1], run_name='factory_board_fixture')
+module['cmd_status']([])
+`;
+ const result=spawnSync(python,['-c',probe,boardHelper,alias],{cwd:root,encoding:'utf8'});
+ assert.equal(result.status,0,result.stderr||result.error?.message);
+ assertBoardLocation(result.stdout,root);
+ assert.equal(fs.existsSync(boardPath),false,'status remains read-only while resolving the checkout identity');
 });
 
 test('board helper registers a real fixture job and refuses corrupt existing state',t=>{
