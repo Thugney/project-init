@@ -2,7 +2,7 @@
 
 Build: 2026-10-25  
 Artifact: GitHub source candidate + `npm pack --dry-run` package inspection  
-Version: `2.1.0-preview.7`  
+Version: `2.1.0-preview.8`  
 **Status: FUNCTIONAL PREVIEW — NOT PRODUCTION ACCEPTED**
 
 ## Delivered and checked
@@ -15,7 +15,7 @@ Version: `2.1.0-preview.7`
 | Framework recommendation/selection | OpenSpec, Spec Kit, BMAD or none, pin + human choice; native setup dry-run by default | Core unit tests; live vendor installers untested |
 | High-fidelity review UI | Offline HTML preview with real navigation, labels, buttons, states, desktop/mobile, light/dark, with no imaginary project data | Real Playwright screenshot render via HTML injection + visual inspection; native browser CLI capture on Windows untested |
 | Lean Kit bundled | Original Lean Kit source included in `vendor/lean-kit/` and invoked with `lean --execute` | Real local render + 8 standalone Lean Kit tests |
-| Factory bundled | Full Claude orchestrator/agents/bridge, Codex backend/audit skills, dashboard and backlog ship in `vendor/factory/`; normal install requires no external Factory path | Cross-platform install/idempotence regression + `npm pack --dry-run` confirms all Factory files are packaged |
+| Factory bundled | Orchestrator/reviewers, generic Codex + Claude workers, isolated Codex/Claude/integration Git worktree tooling, dashboard and backlog ship in `vendor/factory/`; no external Factory path | Cross-platform install/migration regression plus real Git worktree creation and `npm pack --dry-run` package inspection |
 | Codex and Claude skill menu integration | Seven descriptive local/user-level skills per agent, optional Claude plugin namespace | Skill file generation, correct personal directory paths, safe backup migration and no-overwrite tests; UI discovery in installed clients untested |
 | Source/spec drift guard | Approved baseline, recorded source review, required command evidence; change invalidates | Regression and synthetic whole-cycle tests |
 | Screenshot fidelity gate | Strict PNG decoder, viewport dimensions, per-pixel comparison with configurable thresholds, visual diff report, theme/state matrix | Synthetic screenshot mutation tests and real-browser PNG decode; direct actual Chrome/Edge CLI capture untested |
@@ -33,6 +33,7 @@ Version: `2.1.0-preview.7`
 - Dirty-existing-repo regressions passed on Windows: Project Init init, Spec Kit preserve-merge apply, ECC apply and bundled Factory install all preserve unrelated modified/untracked files.
 - Guided Factory bootstrap regressions passed: one `init` selects/plans the full Spec Kit + ECC + Factory stack, `init --apply` executes it and resumes idempotently, and a missing new project path is correctly recorded as `New`.
 - Self-update regressions passed: preview version comparison, read-only `update --check`, and pinned GitHub-source installation with post-update CLI verification.
+- Parallel Factory worktree regressions create distinct Codex, Claude and integration branches/checkouts from one base; Codex/Claude are general workers and legacy backend-only config/skills migrate safely.
 - Synthetic positive whole lifecycle reached `readyForHumanReleaseReview: true` and `releaseApproved: false`, then failed correctly after modified source.
 - Screenshot drift after a green cached gate correctly made `status.releaseCandidateReady: false`.
 - At least one genuine Playwright-rendered browser PNG decoded and compared successfully by the new strict PNG comparator.
@@ -51,4 +52,4 @@ Version: `2.1.0-preview.7`
 1. Use `project-init init --project .` to preview the complete guided Factory bootstrap on a real Windows project, then run the same command with `--apply` after reviewing the plan.
 2. Verify real Spec Kit/ECC installation plus actual Codex/Claude command discovery and one complete Factory job.
 3. Re-run `project-init init --project . --apply` to verify resume/idempotence and preservation of existing Factory config/backlog.
-4. For rollback, revert the preview.6 merge or reinstall the previous reviewed commit; inspect `.project-init`, `.agents/skills`, `.claude/skills`, `.specify/` and `factory/` before removing only files created by Project Init. Never reset unrelated source automatically.
+4. For rollback, reinstall the previous reviewed Project Init commit; inspect `.project-init/worktrees`, `.project-init/factory-worktrees`, `.agents/skills`, `.claude/skills`, `.specify/` and `factory/` before removing only Project Init-managed artifacts. Never reset unrelated source automatically.

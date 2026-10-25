@@ -7,25 +7,26 @@ This is the recommended factory profile for projects that use both Claude Code a
 ```text
 Project Init
   ├─ inspects a new/existing repo
-  ├─ selects + installs one spec methodology
-  ├─ installs ECC for the coding harnesses
-  └─ installs/validates the factory wiring
+  ├─ installs one spec methodology
+  ├─ installs ECC for both coding harnesses
+  └─ installs/validates the Factory wiring
 
 Spec Kit (default)
   └─ owns requirements -> spec -> plan -> tasks in specs/NNN-x/
 
 Factory
-  ├─ converts approved Spec Kit work into factory/jobs/<slug>/spec.md
-  ├─ routes [BACKEND] -> Codex by default
-  ├─ routes [FRONTEND] -> Claude by default
-  ├─ runs security/code/UX/UI review rounds
-  └─ stops for contract issues, high risk, failed review, or human approval
-
-ECC
-  └─ provides reusable engineering/security/review capabilities to both harnesses
+  ├─ converts approved Spec Kit work into an execution contract
+  ├─ splits independent work units by dependency/file boundaries
+  ├─ runs Codex and Claude concurrently in separate Git worktrees
+  ├─ integrates both branches in a third integration worktree
+  ├─ runs security/code/UX/UI review rounds on the integrated result
+  └─ stops for conflicts, high risk, failed review, or human approval
 
 Codex / Claude
-  └─ write and test application code; neither owns the product specification
+  └─ general implementation workers; neither owns frontend or backend
+
+ECC
+  └─ reusable engineering/security/review capabilities for both workers
 ```
 
 ## Why Spec Kit is the default
@@ -50,36 +51,50 @@ project-init init --project . --apply
 
 Project Init owns the sequence: detect New/Existing → ensure Git when needed → install Spec Kit for both agents → install ECC for both agents → install/update the bundled Factory.
 
-Factory includes the reviewed Claude orchestrator, factory-prefixed agents, dashboard/backlog templates, Codex bridge, and:
+Factory includes the reviewed orchestrator, worktree manager, generic Claude worker/review agents, Codex worker bridge, dashboard/backlog templates, and:
 
-- `.agents/skills/backend-factory/SKILL.md`
-- `.agents/skills/backend-audit/SKILL.md`
+- `.agents/skills/factory-worker/SKILL.md`
+- `.agents/skills/factory-audit/SKILL.md`
 
-Existing `.claude/skills/factory/config.json` and `factory/backlog.md` are preserved. Runtime job state is ignored from Git. The lower-level component commands remain available for debugging or custom setups, but are not the normal Factory bootstrap.
+Existing `factory/backlog.md` is preserved. Legacy Factory config is migrated to the parallel-worktree schema while retaining user settings such as test commands. Runtime job/worktree state is ignored from Git. The lower-level component commands remain available for debugging or custom setups, but are not the normal Factory bootstrap.
 
 ## Normal workflow
 
-1. Use either Claude or Codex with the installed Spec Kit skills to create/refine the feature specification.
-2. Keep the approved feature in `specs/NNN-x/`.
+1. Use either Claude or Codex with Spec Kit to create/refine the approved feature specification.
+2. Keep the approved source of truth in `specs/NNN-x/`.
 3. Run Claude's `/factory spec specs/NNN-x` orchestration.
-4. The factory creates its execution contract in `factory/jobs/<slug>/spec.md`.
-5. Codex receives `[BACKEND]`; Claude receives `[FRONTEND]`.
-6. Review findings are routed by `[BACKEND]` / `[FRONTEND]` tags.
-7. Low-risk, fully passing work may become a PR according to factory config; higher-risk or unresolved work stops for the human gate.
+4. Factory writes an execution contract that assigns independent tasks to `[CODEX]` and `[CLAUDE]` based on file/dependency boundaries—not frontend/backend categories.
+5. Factory creates three isolated worktrees from the same committed base: Codex, Claude, and integration.
+6. Codex and Claude implement their work units in parallel.
+7. Factory merges both worker branches into the integration worktree. Merge conflicts stop the run instead of allowing one worker to overwrite the other.
+8. Tests and reviewers inspect the integrated result. Findings route back to the worker that owns the affected task/file.
+9. Passing low-risk work reaches the human approval/release gate.
 
-## Interchangeability: current vs target
+## Parallelism and isolation
 
-Current supplied factory behavior is **asymmetric**:
+```text
+                 Factory job
+                     |
+          +----------+----------+
+          |                     |
+   Codex worktree          Claude worktree
+   any assigned work       any assigned work
+          |                     |
+          +----------+----------+
+                     |
+             integration worktree
+                     |
+              tests + reviewers
+                     |
+               human approval
+```
 
-- Claude can take backend work when Codex is missing/fails (`scope=BACKEND` fallback already exists).
-- Codex cannot take frontend work through the current orchestrator because `codex_backend.sh` and its parsed status protocol are backend-specific.
-
-Do not claim full interchangeability yet. The minimal future change is to generalize the bridge into a scope-aware Codex worker (for example `codex_worker.sh backend|frontend`) and add a matching Codex frontend skill/status contract. That change belongs to the Claude-owned factory orchestrator, not in `backend-factory`.
+**One worker = one worktree.** Worker tags are per-job ownership labels. They must never be interpreted as stack ownership.
 
 ## Boundaries
 
 - Project Init does not duplicate the Spec Kit PRD/spec/plan/tasks.
 - ECC does not own requirements or task status.
-- Codex backend skills do not edit `.claude/`, `CLAUDE.md`, frontend files, or factory orchestration state.
-- The API Contract in a factory job is binding for both sides.
+- Workers do not edit each other's assigned files or Factory orchestration state.
+- API/data/interface contracts in a Factory job are binding for both workers.
 - Factory runtime job files are evidence/state, not a second product backlog.

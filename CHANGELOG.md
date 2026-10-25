@@ -13,6 +13,25 @@ All notable changes to the public Project Init package are documented here. Ther
 - Updated package and lockfile SPDX metadata; the package stays `private: true` to explicitly prevent accidental npm publication while supporting reviewed GitHub release tarballs.
 - Updated release checks, documentation, and contributor terms. GitHub releases still require an explicitly created version tag; production acceptance remains pending.
 
+## [2.1.0-preview.8] — 2026-10-25 (parallel worktree Factory candidate)
+
+### Changed
+- Removed the fixed Codex=backend / Claude=frontend Factory ownership model.
+- Codex and Claude are now general implementation workers; Factory assigns independent work units by dependency and file boundaries.
+- Factory creates isolated Codex, Claude and integration Git worktrees from the same committed base so workers can execute concurrently without sharing a checkout.
+- Reviews run against the integrated result and findings route by actual worker ownership: `[CODEX]`, `[CLAUDE]`, or `[INTEGRATION]`.
+
+### Added
+- Added a cross-platform Python worktree manager for create/reuse, worker sync and deterministic integration.
+- Added generic Codex `factory-worker` and integrated-result `factory-audit` skills.
+- Added a generic Codex worker bridge that runs inside the Codex worktree and commits only that worker's changes.
+- Added real-Git regression coverage that creates three distinct worktrees/branches.
+
+### Migration
+- Unmodified Project Init-managed `backend-factory`, `backend-audit`, and `codex_backend.sh` files are removed during Factory upgrade.
+- Customized legacy files are preserved instead of deleted.
+- Legacy Factory config is migrated to the parallel-worktree schema while retaining user settings such as test commands and Codex arguments.
+
 ## [2.1.0-preview.7] — 2026-10-25 (self-update candidate)
 
 ### Added

@@ -1,8 +1,14 @@
-# Codex factory skills
+# Codex Factory skills
 
-Repo-local Codex skills for the Claude-owned software factory bridge.
+Repo-local Codex skills for the Project Init parallel-worktree Factory.
 
-- `.agents/skills/backend-factory/SKILL.md` — build/fix `[BACKEND]` tasks.
-- `.agents/skills/backend-audit/SKILL.md` — read-only backend audit.
+- `.agents/skills/factory-worker/SKILL.md` — implements tasks dynamically assigned `[CODEX]` in the Codex isolated worktree.
+- `.agents/skills/factory-audit/SKILL.md` — read-only audit of the integrated Codex + Claude result.
 
-Install through `project-init factory --project <repo> --apply` after the Claude factory bridge is present. Project Init validates the bridge contract before writing these skills.
+`[CODEX]` means worker ownership for a specific job. It does **not** mean backend. Codex may own frontend, backend, tests, docs, migrations, or full-stack work when the Factory spec assigns it.
+
+Install through the normal Project Init bootstrap:
+
+```powershell
+project-init init --project . --apply
+```

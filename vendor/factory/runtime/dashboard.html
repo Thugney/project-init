@@ -56,7 +56,7 @@ pre{margin:0;padding:14px;overflow:auto;flex:1;white-space:pre-wrap;font:12.5px/
   <pre id="pbody"></pre>
 </aside>
 <script>
-const COLS=[["spec","Spec"],["backend","Backend · Codex"],["frontend","Frontend · Claude"],["review","Review"],["fixing","Fixing"],["decision","Decision"],["done","Done / Human"]];
+const COLS=[["spec","Spec"],["building","Parallel build"],["integrating","Integration"],["review","Review"],["fixing","Fixing"],["decision","Decision"],["done","Done / Human"]];
 const DONE=new Set(["merged","needs-human","failed"]);
 let board={jobs:[]},openId=null;
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -79,8 +79,8 @@ function card(j){
   const hot=j.stage==="needs-human"||j.stage==="failed";
   const tags=[`<span class="tag">r${j.round}</span>`];
   if(j.risk) tags.push(`<span class="tag ${j.risk==="HIGH"?"high":""}">${esc(j.risk)}</span>`);
-  const eng=(j.notes&&j.notes.backend_engine)||j.backend_engine;
-  if(eng) tags.push(`<span class="tag ${eng==="codex"?"codex":""}">${esc(eng)}</span>`);
+  tags.push(`<span class="tag codex">Codex</span>`);
+  tags.push(`<span class="tag">Claude</span>`);
   if(DONE.has(j.stage)) tags.push(`<span class="tag ${hot?"high":""}">${esc(j.stage)}</span>`);
   const rounds=(j.rounds||[]).map(r=>`<div class="round">R${r.round}${Object.entries(r.reviews).map(([k,v])=>`<span class="chip ${v}">${esc(k)}</span>`).join("")}</div>`);
   if(j.stage==="review"&&!(j.rounds||[]).some(r=>r.round===j.round)){

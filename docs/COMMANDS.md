@@ -1,6 +1,6 @@
 # CLI command reference
 
-This documents **the shipped Project Init 2.1.0-preview.7 CLI**, not a speculative roadmap. Every command accepts `--json` for structured output. Use `project-init help` for canonical syntax and arguments; new commands are not available simply by installing agent skills.
+This documents **the shipped Project Init 2.1.0-preview.8 CLI**, not a speculative roadmap. Every command accepts `--json` for structured output. Use `project-init help` for canonical syntax and arguments; new commands are not available simply by installing agent skills.
 
 | Command | What it does | Side effect / safety |
 | --- | --- | --- |
@@ -13,7 +13,7 @@ This documents **the shipped Project Init 2.1.0-preview.7 CLI**, not a speculati
 | `wire` | Generate local/user-level Codex and Claude skills | Preview by default; `--apply` creates without clobbering; explicit `--backup-conflicts` allows backed-up migration |
 | `install` | Plan native framework installation for selected exact version | Preview by default; `--apply` executes vendor process with prerequisites/constraints |
 | `ecc` | Plan/install pinned ECC for Claude Code, Codex, or both | Preview by default; `--apply` runs the official `ecc-universal` guided installer with explicit harness choices |
-| `factory` | Install/update the bundled Claude + Codex Factory | Preview by default; `--apply`; preserves Factory config/backlog, refuses conflicting Codex skill content; `--kit PATH` is an optional developer override |
+| `factory` | Install/update the bundled parallel-worktree Claude + Codex Factory | Preview by default; `--apply`; migrates legacy managed Factory roles/config safely, preserves backlog/custom legacy files, and uses isolated worker/integration worktrees |
 | `handoff` | Produce next phase instructions for selected framework | Instructions only; does not run agent |
 | `render` | Generate offline HTML high-fidelity design review | Writes `.project-init/review.html` |
 | `lean` | Render Markdown/JSON report/board/diagram using bundled Lean Kit | Preview; `--execute` renders and audits |
