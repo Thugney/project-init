@@ -20,6 +20,9 @@ function selectAndSpec(root,{ui=false}={}) {
  selectFramework(root,'none');
  fs.mkdirSync(path.join(root,'specs'),{recursive:true});
  fs.writeFileSync(path.join(root,'specs','feature.md'),'# Accepted design v1\n');
+ // Synthetic scope tests still need configured verification and coverage.
+ fs.writeFileSync(statePath(root,'config.json'),JSON.stringify({schemaVersion:1,checks:[{name:'smoke',argv:['node','--version']}]}));
+ fs.writeFileSync(statePath(root,'requirements.json'),JSON.stringify({schemaVersion:1,requirements:[{id:'REQ-1',specPath:'specs/feature.md',checks:['smoke'],visualCases:[]}]}));
  if(ui){
   const demo=JSON.parse(fs.readFileSync(new URL('../examples/ui-design.example.json',import.meta.url),'utf8'));
   fs.writeFileSync(statePath(root,'ui-design.json'),JSON.stringify(demo,null,2));

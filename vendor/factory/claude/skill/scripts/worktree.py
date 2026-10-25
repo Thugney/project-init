@@ -12,9 +12,13 @@ Creates and manages one integration worktree plus one isolated worktree per work
 The caller remains responsible for review/approval. This helper never pushes or deletes branches.
 """
 import json
+import hashlib
 import os
+import re
 import subprocess
 import sys
+import uuid
+from datetime import datetime, timezone
 
 ROOT = subprocess.run(
     ["git", "rev-parse", "--show-toplevel"],
@@ -71,6 +75,35 @@ def branch_exists(branch):
     return run(["show-ref", "--verify", "--quiet", f"refs/heads/{branch}"]).returncode == 0
 
 
+def execution_context(slug):
+    """Bind evidence before dispatch. Standalone legacy worktrees stay usable but unverified."""
+    def optional(relative):
+        filename = os.path.join(ROOT, relative)
+        if not os.path.isfile(filename):
+            return {}
+        with open(filename, encoding="utf-8") as f:
+            return json.load(f)
+    baseline = optional(".project-init/baseline.json")
+    review = optional(".project-init/review.json")
+    approval = optional(".project-init/approval.json")
+    preparation = optional(".project-init/preparation.json")
+    board = optional("factory/board.json")
+    job = next((job for job in board.get("jobs", []) if job.get("id") == slug), {})
+    spec = os.path.join(ROOT, "factory", "jobs", slug, "spec.md")
+    contract_hash = None
+    if os.path.isfile(spec):
+        with open(spec, encoding="utf-8", newline="") as f:
+            content = f.read().replace("\r\n", "\n")
+        content = re.sub(r"^(\s*- )\[[ xX]\]( T\d+ \[(?:CODEX|CLAUDE)\])", r"\1[ ]\2", content, flags=re.M)
+        contract_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
+    approved = (baseline.get("hash") and review.get("verdict") == "pass"
+                and review.get("baselineHash") == baseline["hash"]
+                and approval.get("baselineHash") == baseline["hash"])
+    return {"baselineHash": baseline.get("hash") if approved else None,
+            "specPaths": baseline.get("specPaths", []), "feature": preparation.get("feature"),
+            "jobSource": job.get("source"), "jobContractHash": contract_hash}
+
+
 def ensure_worktree(path, branch, base):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     if os.path.exists(path):
@@ -123,6 +156,7 @@ def cmd_init(args):
         "base_branch": base_branch,
         "branches": branches,
         "paths": paths,
+        "executionContext": execution_context(slug),
     }
     save(slug, data)
     print(
@@ -139,8 +173,69 @@ def cmd_path(args):
 
 
 def clean(path):
-    r = run(["-C", path, "status", "--porcelain"], check=True)
+    r = run(["-C", path, "status", "--porcelain", "--", ".",
+             ":(exclude).project-init", ":(exclude).factory-context"], check=True)
     return not r.stdout.strip()
+
+
+def observed(path):
+    with open(path, "rb") as f:
+        digest = hashlib.sha256(f.read()).hexdigest()
+    return {"path": os.path.relpath(path, ROOT).replace(os.sep, "/"), "sha256": digest}
+
+
+def integration_receipt(slug, data, worker, before, worker_head, outcome, started, worker_evidence=None):
+    """Record the actual Git command, including failures; do not claim an agent ran."""
+    directory = os.path.join(ROOT, "factory", "jobs", slug, "integration")
+    os.makedirs(directory, exist_ok=True)
+    identifier = str(uuid.uuid4())
+    log = os.path.join(directory, identifier + ".log")
+    with open(log, "w", encoding="utf-8") as f:
+        f.write("stdout:\n" + (outcome.stdout or "") + "\nstderr:\n" + (outcome.stderr or ""))
+    receipt = {
+        "schemaVersion": 1, "job": slug, "worker": worker,
+        "command": ["git", "merge", "--no-ff", "--no-edit", data["branches"][worker]],
+        "cwd": data["paths"]["integration"], "beforeRevision": before,
+        "afterRevision": run(["-C", data["paths"]["integration"], "rev-parse", "HEAD"], check=True).stdout.strip(),
+        "workerRevision": worker_head, "exitCode": outcome.returncode,
+        "startedAt": started, "finishedAt": datetime.now(timezone.utc).isoformat(),
+        "log": observed(log),
+        "workerEvidenceKind": "interactive-commit" if worker == "claude" else "codex-process",
+    }
+    if worker_evidence:
+        receipt["workerEvidence"] = worker_evidence
+    filename = os.path.join(directory, identifier + ".json")
+    with open(filename, "x", encoding="utf-8") as f:
+        json.dump(receipt, f, indent=2)
+        f.write("\n")
+    relative = os.path.relpath(filename, ROOT).replace(os.sep, "/")
+    data.setdefault("integrationAttempts", []).append(relative)
+    data["latestIntegration"] = relative
+    if outcome.returncode == 0:
+        data.setdefault("integrations", []).append(relative)
+    save(slug, data)
+
+
+def successful_codex(slug, worker_head):
+    directory = os.path.abspath(os.path.join(ROOT, "factory", "jobs", slug, "codex"))
+    try:
+        with open(os.path.join(directory, "latest-execution.json"), encoding="utf-8") as f:
+            pointer = json.load(f)
+        filename = os.path.abspath(os.path.join(ROOT, pointer["path"]))
+        normalized_directory = os.path.normcase(directory)
+        normalized_filename = os.path.normcase(filename)
+        if os.path.commonpath([normalized_filename, normalized_directory]) != normalized_directory:
+            raise ValueError("receipt outside job")
+        with open(filename, encoding="utf-8") as f:
+            receipt = json.load(f)
+        if (receipt.get("job") != slug or receipt.get("worker") != "codex"
+                or receipt.get("status") != "done" or receipt.get("exitCode") != 0
+                or receipt.get("afterRevision") != worker_head):
+            raise ValueError("failed, blocked or stale worker result")
+        return observed(filename)
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        print(f"ERROR successful Codex process evidence required before integration: {error}")
+        sys.exit(4)
 
 
 def cmd_sync(args):
@@ -176,7 +271,12 @@ def cmd_integrate(args):
         print("ERROR integration worktree has uncommitted changes")
         sys.exit(4)
     branch = data["branches"][worker]
+    before = run(["-C", integration_path, "rev-parse", "HEAD"], check=True).stdout.strip()
+    worker_head = run(["-C", worker_path, "rev-parse", "HEAD"], check=True).stdout.strip()
+    worker_evidence = successful_codex(slug, worker_head) if worker == "codex" else None
+    started = datetime.now(timezone.utc).isoformat()
     r = run(["-C", integration_path, "merge", "--no-ff", "--no-edit", branch])
+    integration_receipt(slug, data, worker, before, worker_head, r, started, worker_evidence)
     if r.returncode:
         print(f"CONFLICT integrate worker={worker} integration={integration_path}")
         sys.exit(5)

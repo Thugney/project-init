@@ -13,14 +13,14 @@ Based on decisions through October 19, 2026 and the uploaded original `project-i
 | PI-007 | Approved screenshot baseline and theme/state coverage | Reference PNGs, visual case manifest, UI design and check config all hashed; changed mockup invalidates approval |
 | PI-008 | Independent review + user acceptance | Review/approval receipts enforced, but local actor names are unverified user input |
 | PI-009 | Source/spec drift invalidation | SHA-256 source/spec/visual/evidence fingerprints; cached guard status invalidates on altered screenshots |
-| PI-010 | Actual execution, not only reports | Codex foreground `run --execute` with actual Git delta and scoped paths; no unattended daemon and no programmatic Claude runner |
+| PI-010 | Actual implementation evidence, not only reports | Bounded Codex execution or real Factory process/Git integration receipts; separately labeled existing-code review never claims execution. No unattended daemon or programmatic Claude runner |
 | PI-011 | Real check results | `verify --execute` records exit code, timings/logs and source hash; empty checks cannot pass |
 | PI-012 | No automatic Git commit/push/merge/deploy | No automatic production release, no new paid API key, no unapproved source modification |
 | PI-013 | Original v1 rollback | Original PowerShell review scripts, tests and instructions copied unchanged under `legacy/v1/` |
 | PI-014 | Retired destructive setup/scaffold | Active v2.1 package excludes old overwrite/global scaffolder |
 | PI-015 | Lean Kit bundled | Actual prior Lean Kit source vendored; `lean --execute` renders with Node, auditable, no extra install |
 | PI-016 | Evidence-based semantic and visual drift guard | Real screenshot pixels/dimensions/diff coverage; every requirement maps to current specs, tests and independently supplied source evidence. Not infallible semantic AI proof |
-| PI-017 | Codex and Claude discoverable skills | Seven descriptive skill files per agent with explicit `wire --apply`, conflict refusal; Claude namespaced commands require plugin activation |
+| PI-017 | Codex and Claude discoverable skills | Seven descriptive skill files per agent through reviewed guided `init --apply` or explicit `wire --apply`, with conflict handling/backups; Claude namespaced commands require plugin activation |
 | PI-018 | Idempotency, rollback and audit | Local JSONL events, exact hashes, dry-run by default for external actions, v1 protected. No tamper-resistant identity signature |
 | PI-019 | Human release decision | `guard` may produce a human-review-ready candidate, but no automatic release approval is possible |
 
@@ -29,6 +29,8 @@ Based on decisions through October 19, 2026 and the uploaded original `project-i
 - `.project-init/project.json` — orchestrator state, pinned framework, local project path.
 - `.project-init/config.json` — deterministic verification command arrays.
 - `.project-init/requirements.json` — mapping stable requirement IDs to authoritative native specs, test names and visual cases; not a competing requirement document.
+- `.project-init/preparation.json` — selected native feature paths and task IDs for continuation; no second specification or approval.
+- `.project-init/factory-origin.json` — exact copied approval provenance and any verified UTF-8 native Markdown/text LF/CRLF checkout representations. Each representation is checked against the original baseline, native path, approved digest and current bytes; it never normalizes configuration, screenshot references or raw source evidence.
 - `.project-init/ui-design.json` — explicit screen mockup representation.
 - `.project-init/visual-cases.json` — required screenshot matrix.
 - `.project-init/visual/baselines/*.png` — exact approved mockup/reference images; hashed during baseline.
@@ -40,7 +42,7 @@ Based on decisions through October 19, 2026 and the uploaded original `project-i
 
 ## Fail closed
 
-Refuse incomplete/outdated specs, UI screen references, unapproved reference edits, missing screen state/theme/viewport comparisons, failed tests, incomplete requirement coverage, modified source since last independent review, missing Codex implementation receipts, out-of-scope changes and conflicting project framework selections. A green local report does not replace protected branches, authenticated reviewer identity, CI or a real release approval.
+Refuse incomplete/outdated specs, UI screen references, unapproved reference edits, missing screen state/theme/viewport comparisons, failed tests, incomplete requirement coverage, modified source since last independent review, missing supported implementation evidence, out-of-scope changes and conflicting project framework selections. Existing-code evidence must be explicitly labeled and must retain all other gates. A green local report does not replace protected branches, authenticated reviewer identity, CI or a real release approval.
 
 ## Validation still required
 

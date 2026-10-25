@@ -15,6 +15,8 @@ import {visualPlan,captureVisual,compareVisual} from '../lib/visual-gate.mjs';
 import {bootstrapProject} from '../lib/bootstrap.mjs';
 import {semanticPlan,importSemanticReview,verifyGuard} from '../lib/guard.mjs';
 import {updateProjectInit} from '../lib/update.mjs';
+import {prepareProject} from '../lib/prepare.mjs';
+import {factoryEvidence,verifyExisting} from '../lib/execution.mjs';
 
 const usage=`Project Init ${VERSION} — local-first development orchestrator (preview)
 
@@ -24,6 +26,7 @@ Commands:
   init         --project PATH [--mode New|Existing] [--intent ...] [--ui yes|no|auto] [--version X.Y.Z] [--ecc-version X.Y.Z] [--apply] [--yes]  Guided bootstrap; asks before installing missing prerequisites/components
   update       [--check] [--force]                                Update the global Project Init CLI from GitHub main; independent of any source clone
   status       --project PATH                                      Actual gate and evidence status
+  prepare      --project PATH [--feature NATIVE_DIR | --spec FILE] [--mapping FILE] [--apply]  Reuse the active native feature; prepare checks/mappings, then baseline; never approve automatically
   select       --project PATH --framework openspec|spec-kit|bmad|none
   wire         --project PATH [--agent both|codex|claude] [--scope project|user] [--plugin] [--backup-conflicts] [--apply]  Install 7 descriptive project skills per agent
   install      --project PATH --version X.Y.Z [--agent codex|claude|both] [--apply]             Install selected native spec framework
@@ -45,6 +48,8 @@ Commands:
   approve      --project PATH --actor NAME --evidence REF          Record explicit human design acceptance
   verify       --project PATH [--execute]                          Run configured deterministic checks
   run          --project PATH --phase PHASE --task TEXT [--allow PATH] [--execute]
+  execution factory --project PATH --job SLUG --allow PATH [--allow PATH] [--execute]  Verify real integrated Factory execution
+  execution existing --project PATH --task TEXT --actor NAME --evidence REF [--execute]  Record reviewed existing code without claiming an implementation run
 
 All commands accept --json for machine-readable output. A missing --execute/--apply means no external process is run.
 Real installation requires the selected native framework, the local prerequisites and an explicit version pin.
@@ -52,7 +57,7 @@ No automatic Git commit/push/merge/deployment. Audit records are local and not a
 `;
 function parseArgs(argv){
  const [base,...tail]=argv;
- const command=['visual','semantic'].includes(base)&&tail[0]&&!tail[0].startsWith('--')?`${base} ${tail.shift()}`:base;
+ const command=['visual','semantic','execution'].includes(base)&&tail[0]&&!tail[0].startsWith('--')?`${base} ${tail.shift()}`:base;
  const rest=tail;
  const options={};
  const multi=new Set(['spec','allow']);
@@ -61,7 +66,7 @@ function parseArgs(argv){
    if(!token.startsWith('--')) fail(`Unexpected argument: ${token}`);
    const key=token.slice(2);
    if(['json','execute','apply','plugin','backup-conflicts','check','force','yes'].includes(key)) {options[key]=true;continue;}
-   if(!['project','mode','intent','complexity','ui','framework','version','ecc-version','phase','task','actor','evidence','verdict','out','spec','allow','agent','scope','input','id','side','url','browser','file','kit'].includes(key)) fail(`Unknown option: ${key}`);
+   if(!['project','mode','intent','complexity','ui','framework','version','ecc-version','phase','task','actor','evidence','verdict','out','spec','allow','agent','scope','input','id','side','url','browser','file','kit','feature','mapping','job'].includes(key)) fail(`Unknown option: ${key}`);
    const value=rest[++i];
    if(value===undefined||value.startsWith('--')) fail(`Missing value after --${key}`);
    if(multi.has(key)){options[key]??=[];options[key].push(value);}
@@ -108,10 +113,11 @@ function presentBootstrap(data){
  }else if(data.status==='failed'){
   console.log(`Status: FAILED at ${data.failedStep||'unknown step'}`);
  }else if(data.applied){
-  console.log('Status: READY');
+  console.log('Status: TOOLING READY');
  }else{
   console.log('Status: PREVIEW');
  }
+ if(data.preparation)console.log(`Feature: ${data.preparation.status} · ${data.preparation.feature?.directory||data.preparation.feature?.id||'not selected'}`);
  if(data.next) console.log(`Next: ${data.next}`);
 }
 function present(data,json=false,command='') {
@@ -144,8 +150,9 @@ async function main(){
  switch(command){
  case 'inspect': result=discover(root);break;
  case 'recommend': result=recommendation(discover(root),options);break;
- case 'init': result=await bootstrapProject(root,{...options,eccVersion:options['ecc-version'],apply:!!options.apply,confirm:options.apply?(message=>confirmPrompt(message,!!options.yes)):undefined,progress:options.apply?(message=>console.log(message)):undefined});break;
+ case 'init': result=await bootstrapProject(root,{...options,specs:options.spec||[],eccVersion:options['ecc-version'],apply:!!options.apply,confirm:options.apply?(message=>confirmPrompt(message,!!options.yes)):undefined,progress:options.apply?(message=>console.log(message)):undefined});break;
  case 'status': result=status(root);break;
+ case 'prepare': result=prepareProject(root,{feature:options.feature,specs:options.spec||[],mapping:options.mapping,apply:!!options.apply});break;
  case 'select':
   if(!options.framework) fail('Pass --framework openspec|spec-kit|bmad|none.');
   result=selectFramework(root,options.framework);break;
@@ -172,6 +179,8 @@ async function main(){
  case 'approve':result=approve(root,{actor:options.actor,evidence:options.evidence});break;
  case 'verify':result=await runChecks(root,{execute:!!options.execute});break;
  case 'run':result=await runCodex(root,{phase:options.phase||'planning',task:options.task||'',allowed:options.allow||[],execute:!!options.execute});break;
+ case 'execution factory':result=await factoryEvidence(root,{job:options.job,allowed:options.allow||[],execute:!!options.execute});break;
+ case 'execution existing':result=verifyExisting(root,{task:options.task,actor:options.actor,evidence:options.evidence,execute:!!options.execute});break;
  default:fail(`Unknown command: ${command}. Use project-init help.`);
  }
  present(result,!!options.json,command);
@@ -182,5 +191,7 @@ async function main(){
  if(command==='run'&&options.execute&&['failed','blocked-review'].includes(result.status))process.exitCode=1;
  if(command==='install'&&options.apply&&result.results?.some(x=>x.exitCode!==0))process.exitCode=1;
  if(command==='ecc'&&options.apply&&(result.applied===false||result.results?.some(x=>x.exitCode!==0)))process.exitCode=1;
+ if(command.startsWith('execution ')&&options.execute&&!result.passed)process.exitCode=1;
+ if(command==='prepare'&&options.apply&&(!result.applied||!result.readyForBaseline))process.exitCode=1;
 }
 main().catch(error=>{console.error(`Project Init: ${error.message}`);process.exitCode=1;});

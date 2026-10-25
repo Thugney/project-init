@@ -1,187 +1,144 @@
-# Project Init Factory Stack — Cheat Sheet
+# Project Init cheat sheet
 
-Use this page when you forget which tool owns what. For step-by-step setup of a new or existing project, see [Getting started](GETTING-STARTED.md).
+Start with the task you have, in the checkout that owns it. Use the normal
+Project Init skills to carry existing specification and task context through
+preparation, implementation and verification.
 
-## The rule
+## Which command do I use?
 
-**Project Init sets the project up. Spec Kit defines the work. Factory executes the work. ECC improves how the agents work. Claude and Codex write/review code.**
+| Situation | Claude | Codex |
+|---|---|---|
+| Resume an existing project or feature | `/project-init` | `$project-init` |
+| New feature or an approved scope change | `/project-init-plan` | `$project-init-plan` |
+| Implement an approved task or bounded bug fix | `/project-init-build` | `$project-init-build` |
+| Verify an existing PR or completed implementation | `/project-init-verify` | `$project-init-verify` |
+| See current gates, evidence and worktree context | `/project-init-status` | `$project-init-status` |
+| Coordinate an approved feature through Factory | `/factory spec <actual-native-feature-directory>` | Runs as a worker when dispatched by Factory |
+| Inspect actual Factory jobs | `/factory status` | Read the reported orchestration state |
+| Review or rework a Factory job | `/factory review <actual-slug>` / `/factory rework <actual-slug> <feedback>` | `$factory-audit` provides an additional read-only audit of the integrated result |
 
-```text
-Project Init
-  |
-  +-- Spec Kit  -> requirements / plan / tasks (single source of truth)
-  +-- ECC       -> reusable engineering, security and review skills
-  +-- Factory   -> splits independent work, isolated worktrees, integration/review
-                    |
-                    +-- [CODEX]  -> Codex worktree (any assigned stack)
-                    +-- [CLAUDE] -> Claude worktree (any assigned stack)
-```
+A PR does not automatically require Factory. A small repair can stay in the
+normal build/verify workflow and retain its existing PR. An existing Factory
+job must be resumed using its real slug; never invent one to satisfy a gate.
 
-## What each component owns
+## Who owns what?
 
-| Component | Owns | Does not own |
-| --- | --- | --- |
-| **Project Init** | Inspect, select, install, wire, verify | Feature implementation |
-| **Spec Kit** | Requirements, spec, plan, implementation tasks | Coding-agent routing |
-| **Factory** | Task routing, build/review/fix loop, job state | Product/spec authority |
-| **ECC** | Reusable coding/security/testing capabilities | Specs or Factory state |
-| **Codex** | General implementation worker + integrated audit skill | Factory orchestration |
-| **Claude Code** | General implementation worker + Factory orchestration/review agents | Project Init state |
+| Component | Responsibility |
+|---|---|
+| Project Init | Discover and prepare the feature, preserve its baseline/approval state, coordinate handoffs and validate evidence. |
+| Spec Kit | Native feature requirements, plan and task progress. Reuse existing artifacts for work already underway. |
+| Factory | Optional worker assignment, isolated worktrees, integration, review/fix loop and job state. |
+| ECC | Reusable engineering, security and review capabilities selected when useful. Installation does not mean every capability ran. |
+| Claude and Codex | Actual implementation and review work with real source changes and check results. |
+| Human | Real scope/approval decisions and the separate merge/release decision. |
 
-## Start a new or existing repository
+Factory's job contract translates approved native work into execution
+assignments. It is not a second product specification. `[CODEX]` and
+`[CLAUDE]` identify workers, not frontend/backend ownership.
+
+## Setup, preparation and acceptance are different
+
+| State | What it means |
+|---|---|
+| Tooling ready | Required tools and installed workflow files passed setup checks. |
+| Feature preparation required | The selected native feature, checks, requirement mappings or applicable design references need work. |
+| Review/approval required | The current baseline still needs actual review or human acceptance. |
+| Prepared | The feature configuration, baseline, review and approval agree. Execution and verification are still separate. |
+| Verification blocked | Current checks, source/semantic review, visual evidence or execution evidence is missing, stale or failing. |
+| Ready for human release review | The guard passed for the current source. Release is still a separate human decision. |
+
+The normal skills invoke preparation and ask the agent to resolve check and
+mapping gaps from the existing specification and tests. They preserve valid
+approval and do not invent review evidence. Direct inspection is available:
 
 ```powershell
-cd C:\Work\MyProject
+project-init status --project .
+project-init prepare --project .
+```
 
-# Preview the complete bootstrap.
+Both are read-only. Authorized `prepare --apply` configures discovered checks,
+records mappings and registers a complete baseline. It does not implement
+application code or record approval on your behalf. If several native
+features are plausible, select the actual one with `--feature`; use
+`--spec` for an existing authoritative document outside the usual folder.
+
+## First use or tool update
+
+From the exact repository/worktree root:
+
+```powershell
 project-init init --project .
-
-# Apply the same bootstrap.
 project-init init --project . --apply
 ```
 
-That is the normal workflow. Project Init automatically detects **New vs Existing**, resumes prior Project Init state when present, uses **Spec Kit** as the Factory profile's single spec owner, prepares **ECC** for both coding agents, and installs the bundled **Factory**.
+Preview is read-only. Apply installs/resumes the guided Spec Kit/ECC/Factory
+tooling, refreshes managed Project Init skills with reviewed backups, prepares
+unambiguous existing work and creates a missing empty Factory board. An
+existing board is preserved. Existing BMAD/OpenSpec ownership is not silently
+replaced.
 
-For an **existing** repo, you do not need to stash or commit unrelated work first. Project Init records the dirty state and preserves unrelated files. Spec Kit uses preserve-merge (no `--force`), ECC performs its own collision preflight, and Factory writes only its managed paths.
-
-For a new path, Project Init creates the project directory and initializes Git during `--apply`.
-
-## Update Project Init itself
-
-This updates the CLI, not the current application project:
+The CLI itself is checked/updated separately:
 
 ```powershell
 project-init update --check
 project-init update
 ```
 
-No `cd C:\Tools\project-init`, `git pull`, or clean source checkout is required.
+Keep other clones, worktrees and their state. Identify the correct checkout
+instead of deleting copies. For Factory dispatch, the necessary setup and
+approved native artifacts must be committed so worker worktrees receive them;
+unrelated local changes remain yours to preserve. Setup does not require a
+blanket stash, commit, push or checkout of `main`.
 
-## ECC channel selection
+Factory execution requires the terminal Codex and Claude Code clients.
+Desktop-app presence alone does not establish CLI readiness. Guided bootstrap
+checks the required clients, authentication and platform runtime.
 
-Project Init chooses one ECC install channel per harness:
+## Recognize these files
 
-```text
-Claude: native-plugin | managed-project
-Codex:  native-plugin | managed-home | legacy-sync (custom CODEX_HOME)
+| Path | Meaning |
+|---|---|
+| `.specify/` | Spec Kit configuration/templates. |
+| `specs/<feature>/` | Native specification, plan and task progress. |
+| `.claude/skills/factory/` | Installed Claude Factory instructions/helpers. |
+| `.agents/skills/factory-worker/` and `factory-audit/` | Codex worker/audit instructions. |
+| `.project-init/config.json` | Actual check commands; an empty checks array means none are configured. |
+| `.project-init/requirements.json` | Requirement-to-evidence mappings; file existence does not prove coverage. |
+| `.project-init/preparation.json` | Recorded native feature/task handoff context. |
+| `.project-init/evidence/` | Actual receipts; inspect their results and currentness. |
+| `factory/board.json` and `factory/jobs/` | Registered Factory jobs and runtime evidence in the orchestration checkout. |
+| `.project-init/worktrees/` | Factory's isolated worker and integration checkouts. |
+
+A linked worktree has its own source and verification state. A new session
+must carry the feature path, task IDs, branch/worktree, checks and actual
+Factory slug when one exists.
+
+## Dashboard and CI
+
+Confirm the board location with `/factory status`, then serve the exact
+orchestration checkout's `factory` folder:
+
+```powershell
+Set-Location 'J:\Projects\MyApp\factory'
+python -m http.server 8765 --bind 127.0.0.1
 ```
 
-Missing Codex plugin commands are a compatibility signal, not a reason to reinstall the same CLI.
+Open `http://127.0.0.1:8765/dashboard.html`. Use `python3` if appropriate.
+A missing board/404 means the server responded but that file is absent in
+the served checkout. Confirm the worktree, then preview
+`project-init init --project .` and run
+`project-init init --project . --apply` at its repository root to initialize
+missing state. Do not replace an existing or malformed board with a
+placeholder. Ctrl+C stops only the viewing server.
 
-## Desktop app vs CLI
-On Windows, **PowerShell success does not by itself prove ECC can launch the CLI**: Project Init also verifies a native `codex.exe` runtime for shell-less vendor execution.
+The board tracks registered Factory work, not all PRs or coding sessions.
+Application CI configuration, actual CI runs and required-check enforcement
+are separate facts. Neither a workflow file nor an empty PR checks list is
+proof of a passing build. Project Init's own CI validates this tool.
 
+Preserve runtime evidence during upgrades and rollback. Review managed-file
+backups/diffs; no setup command automatically pushes, merges or deploys.
 
-Factory workers require terminal executables:
-
-```text
-Codex desktop/app   ≠ codex CLI readiness
-Claude desktop/app  ≠ Claude Code CLI readiness
-```
-
-Project Init checks/installs/authenticates both CLIs during guided bootstrap.
-
-## What `init --apply` does
-
-```text
-check prerequisite
-    |
-missing? -> ask Y/n
-              |
-        +-----+-----+
-        |           |
-       Yes          No
-        |           |
- install+verify    STOPPED
-        |
- next prerequisite/component
-        |
- Spec Kit -> ECC -> Factory
-        |
- ✓ PROJECT READY
-```
-
-Do not manually install `uv` first during the normal workflow. Project Init should ask for permission and handle it.
-
-## Day-to-day feature flow
-
-```text
-1. Describe the feature
-2. Spec Kit creates/updates the spec and tasks
-3. Approve the spec
-4. Factory creates the job
-5. Factory creates isolated Codex + Claude worktrees
-6. Independent work units run in parallel
-7. Worker branches merge into the integration worktree
-8. Reviewers/tests inspect the integrated result
-9. Findings go back to the worker that owns the affected task/file
-10. Human approves merge/release
-```
-
-### Factory job contract
-
-The Factory job is authoritative during execution:
-
-```text
-factory/jobs/<slug>/spec.md
-```
-
-- `[CODEX]` = task assigned to the Codex worker (any layer).
-- `[CLAUDE]` = task assigned to the Claude worker (any layer).
-- `API Contract` = binding. Workers do not rewrite it.
-- Review findings tagged `[CODEX]` / `[CLAUDE]` go back to that worker; `[INTEGRATION]` findings stop for a resolution plan.
-- Job/report files are execution evidence, not a second product spec.
-
-## Which command do I use?
-
-| I want to... | Use |
-| --- | --- |
-| Bootstrap/resume a repository | `project-init init --project .` then the same command with `--apply` |
-| Inspect only | `project-init inspect --project .` |
-| Advanced: manage Spec Kit directly | `project-init select` / `project-init install` |
-| Advanced: manage ECC directly | `project-init ecc ...` |
-| Advanced: manage Factory directly | `project-init factory ...` |
-| See Project Init skills | `project-init wire ...` |
-| Check evidence/status | `project-init status` / `project-init verify` workflow |
-| Build a `[CODEX]` Factory task | Codex `factory-worker` skill (run by `/factory` via `codex_worker.py`) |
-| Build a `[CLAUDE]` Factory task | Claude `factory-builder` agent (run by `/factory`) |
-| Audit the integrated result | Codex `factory-audit` skill (manual, read-only) |
-
-## Spec Kit vs BMAD
-
-**Default: Spec Kit.** It is the single spec owner for this Factory profile and supports both Claude Code and Codex.
-
-Use **BMAD instead** only when a project intentionally needs BMAD's deeper product/UX methodology. Do not run Spec Kit and BMAD as competing sources of truth for the same change.
-
-## Worker assignment
-
-Codex and Claude are peers for implementation. Factory assigns work from **parallelism, dependency and file boundaries**, not frontend/backend ownership.
-
-```text
-Codex  -> isolated worktree -> assigned work unit
-Claude -> isolated worktree -> assigned work unit
-                     \\       /
-                  integration
-```
-
-If the feature cannot be split safely, Factory may assign one indivisible unit to one worker rather than fabricating parallelism.
-
-## Files you should recognize
-
-```text
-.specify/                        Spec Kit runtime/config
-specs/NNN-feature/               Spec Kit feature artifacts
-.claude/skills/factory/          Claude Factory orchestrator
-.claude/agents/                  Claude Factory workers/reviewers
-.agents/skills/factory-worker/   Codex generic Factory worker skill
-.agents/skills/factory-audit/    Codex integrated-result audit skill
-.project-init/worktrees/          Isolated Codex/Claude/integration worktrees
-factory/jobs/                    Factory runtime jobs/evidence
-.project-init/                   Project Init local state/evidence
-```
-
-## One sentence to remember
-
-> **Project Init bootstraps it; Spec Kit specifies it; Factory isolates and coordinates it; ECC strengthens it; Claude and Codex build it in parallel.**
-
-Factory itself ships with Project Init. `--kit PATH` is only an advanced developer override for testing a different Factory source.
+Details: [Getting started](GETTING-STARTED.md) ·
+[Preparation](FEATURE-PREPARATION.md) · [Evidence](FACTORY-EVIDENCE.md) ·
+[Dashboard](FACTORY-DASHBOARD.md) · [Check discovery](CHECK-DISCOVERY.md)

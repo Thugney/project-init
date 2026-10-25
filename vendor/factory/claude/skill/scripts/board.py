@@ -20,9 +20,15 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 
-ROOT = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True).stdout.strip() or os.getcwd()
+# Git may report a short-name or junction alias on Windows. Derive every
+# runtime path from the existing filesystem identity of that checkout.
+ROOT = os.path.realpath(
+    subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True).stdout.strip()
+    or os.getcwd()
+)
 FACTORY = os.path.join(ROOT, "factory")
 JOBS = os.path.join(FACTORY, "jobs")
 BOARD = os.path.join(FACTORY, "board.json")
@@ -41,20 +47,72 @@ def load_config():
         return json.load(f)
 
 
+def validate_board(board):
+    if not isinstance(board, dict) or not isinstance(board.get("jobs"), list):
+        return False
+    if "updated" in board and not isinstance(board["updated"], str):
+        return False
+
+    def reviews(value):
+        return isinstance(value, dict) and all(
+            re.fullmatch(r"[a-zA-Z0-9_-]+", key)
+            and verdict in ("pending", "PASS", "CHANGES")
+            for key, verdict in value.items()
+        )
+
+    ids = set()
+    for item in board["jobs"]:
+        if not isinstance(item, dict):
+            return False
+        slug = item.get("id")
+        if (not isinstance(slug, str) or not re.fullmatch(r"\d+-[a-z0-9]+(?:-[a-z0-9]+)*", slug)
+                or slug in ids or not isinstance(item.get("title"), str)
+                or item.get("stage") not in STAGES
+                or type(item.get("round")) is not int or item["round"] < 0
+                or not reviews(item.get("reviews")) or not isinstance(item.get("rounds"), list)):
+            return False
+        if any(not isinstance(rec, dict) or type(rec.get("round")) is not int
+               or rec["round"] < 0 or not reviews(rec.get("reviews")) for rec in item["rounds"]):
+            return False
+        ids.add(slug)
+    return True
+
+
+def assert_runtime_paths():
+    for target in (FACTORY, BOARD):
+        if os.path.islink(target) or (hasattr(os.path, "isjunction") and os.path.isjunction(target)):
+            die(f"Factory runtime link refused: {target}; existing state was preserved")
+
+
 def load():
+    assert_runtime_paths()
     if not os.path.exists(BOARD):
         return {"updated": now(), "jobs": []}
-    with open(BOARD, encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(BOARD, encoding="utf-8") as f:
+            board = json.load(f)
+    except (OSError, ValueError) as error:
+        die(f"Cannot read Factory board {BOARD}: {error}; existing state was preserved")
+    if not validate_board(board):
+        die(f"Invalid Factory board jobs schema: {BOARD}; preserve the file and inspect the orchestration checkout")
+    return board
 
 
 def save(board):
+    assert_runtime_paths()
+    if not validate_board(board):
+        die(f"Refused invalid Factory board update: {BOARD}; existing state was preserved")
     board["updated"] = now()
     os.makedirs(FACTORY, exist_ok=True)
-    tmp = BOARD + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(board, f, indent=2)
-    os.replace(tmp, BOARD)
+    fd, tmp = tempfile.mkstemp(prefix="board.json.", suffix=".tmp", dir=FACTORY)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(board, f, indent=2)
+            f.write("\n")
+        os.replace(tmp, BOARD)
+    finally:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
 
 
 def job(board, slug):
@@ -254,10 +312,15 @@ def cmd_status(_):
     board = load()
     if not board["jobs"]:
         print("no jobs")
+        state = "empty" if os.path.exists(BOARD) else "missing"
+        print(f"board={BOARD} state={state} checkout={ROOT}")
+        if state == "missing":
+            print("No board in this checkout. Check the orchestration worktree; status does not create or recover jobs.")
         return
+    print(f"board={BOARD} jobs={len(board['jobs'])} checkout={ROOT}")
     for j in board["jobs"][-15:]:
         rv = " ".join(f"{k}:{v}" for k, v in j["reviews"].items()) or "-"
-        print(f"{j['id']:<36} {j['stage']:<12} r{j['round']} risk={j['risk'] or '-':<4} {rv}")
+        print(f"{j['id']:<36} {j['stage']:<12} r{j['round']} risk={j.get('risk') or '-':<4} {rv}")
 
 
 def backlog_items():
