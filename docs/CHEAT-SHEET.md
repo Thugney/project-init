@@ -58,6 +58,8 @@ project-init update
 No `cd C:\Tools\project-init`, `git pull`, or clean source checkout is required.
 
 ## Desktop app vs CLI
+On Windows, **PowerShell success does not by itself prove ECC can launch the CLI**: Project Init also verifies a native `codex.exe` runtime for shell-less vendor execution.
+
 
 Factory workers require terminal executables:
 
