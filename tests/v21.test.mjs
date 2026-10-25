@@ -217,6 +217,7 @@ test('guided init detects and creates a brand-new repository before Git exists',
  const tempRoot=fs.realpathSync(os.tmpdir()); const base=fs.mkdtempSync(path.join(tempRoot,'pinit-bootstrap-new-')),root=path.join(base,'repo');
  const result=await bootstrapProject(root,{intent:'new-product',ui:'yes'});
  assert.equal(result.initialized,true);assert.equal(result.initialization.state.mode,'New');assert.equal(result.framework.id,'spec-kit');assert.equal(result.plan.git.action,'init');assert.equal(result.plan.factory.deferredUntilGitInit,true);
+ assert.equal(result.plan.specKit.mode,'New');const init=result.plan.specKit.steps.find(x=>x.cmd==='specify'&&x.args[0]==='init');assert.ok(init);assert.ok(init.args.includes('--non-interactive'));assert.equal(init.args.includes('--force'),false);assert.equal(init.input,undefined);
  assert.equal(fs.existsSync(root),true);
 });
 
