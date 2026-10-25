@@ -34,6 +34,29 @@ Run `inspect`, `recommend`, `init`, `select`, `install` in that order. `install`
 
 Never use a version placeholder with `--apply`. Native install runs third-party code; inspect command and repository state first. Existing project instruction files, Git changes, and framework-owned artifacts are preserved.
 
+## Recommended dual-agent factory profile
+
+For the Claude + Codex software factory, use **Spec Kit** as the single spec owner, **ECC** as the shared engineering toolbox, and **Factory** as the execution/review loop. Do not install BMAD in parallel for the same workflow.
+
+Current reviewed pins for this preview are Spec Kit `1.2.3` and ECC `2.2.3`. Preview before apply:
+
+```powershell
+project-init select --project $project --framework spec-kit
+project-init install --project $project --version 1.2.3 --agent both
+project-init ecc --project $project --version 2.2.3 --agent both --scope local
+project-init factory --project $project --kit C:\Tools\factory-kit
+```
+
+Apply only after reviewing the plans and starting from a clean Git worktree:
+
+```powershell
+project-init install --project $project --version 1.2.3 --agent both --apply
+project-init ecc --project $project --version 2.2.3 --agent both --scope local --apply
+project-init factory --project $project --kit C:\Tools\factory-kit --apply
+```
+
+The factory command validates the supplied `codex_backend.sh` output/write contract before installing `.agents/skills/backend-factory` and `.agents/skills/backend-audit`. If the factory is already present, omit `--kit`. See [Factory stack](FACTORY-STACK.md).
+
 ## First verification loop
 
 - Use `project-init handoff --phase ...` to find the next native step, then approved mockup via `render`.
