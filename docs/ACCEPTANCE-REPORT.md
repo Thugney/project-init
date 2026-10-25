@@ -2,7 +2,7 @@
 
 Build: 2026-10-25  
 Artifact: GitHub source candidate + `npm pack --dry-run` package inspection  
-Version: `2.1.0-preview.11`  
+Version: `2.1.0-preview.12`  
 **Status: FUNCTIONAL PREVIEW — NOT PRODUCTION ACCEPTED**
 
 ## Delivered and checked
@@ -37,6 +37,7 @@ Version: `2.1.0-preview.11`
 - Guided-installer regressions passed: apply prompts can be accepted to continue through the stack or declined to return `STOPPED` cleanly without starting the declined component.
 - Agent-runtime readiness regressions passed: Project Init distinguishes desktop apps from terminal clients, requires the `codex` and `claude` executables plus authentication status, and Spec Kit init uses `--ignore-agent-tools` so Project Init remains the prerequisite owner.
 - Authentication-command regressions passed on Windows/Linux: Codex uses `codex login` -> `codex login status`; Claude Code uses `claude auth login` -> `claude auth status`. Unexpected auth argv fails the regression.
+- ECC dual-harness regression passed: Claude+Codex guided setup contains both harnesses plus Claude local/standard choices and explicitly rejects the Kimi-only `--profile` option.
 - Synthetic positive whole lifecycle reached `readyForHumanReleaseReview: true` and `releaseApproved: false`, then failed correctly after modified source.
 - Screenshot drift after a green cached gate correctly made `status.releaseCandidateReady: false`.
 - At least one genuine Playwright-rendered browser PNG decoded and compared successfully by the new strict PNG comparator.
