@@ -11,10 +11,10 @@ Project Init
   |
   +-- Spec Kit  -> requirements / plan / tasks (single source of truth)
   +-- ECC       -> reusable engineering, security and review skills
-  +-- Factory   -> routes tasks, runs review/fix loops
+  +-- Factory   -> splits independent work, isolated worktrees, integration/review
                     |
-                    +-- [BACKEND]  -> Codex by default
-                    +-- [FRONTEND] -> Claude by default
+                    +-- [CODEX]  -> Codex worktree (any assigned stack)
+                    +-- [CLAUDE] -> Claude worktree (any assigned stack)
 ```
 
 ## What each component owns
@@ -25,8 +25,8 @@ Project Init
 | **Spec Kit** | Requirements, spec, plan, implementation tasks | Coding-agent routing |
 | **Factory** | Task routing, build/review/fix loop, job state | Product/spec authority |
 | **ECC** | Reusable coding/security/testing capabilities | Specs or Factory state |
-| **Codex** | Backend implementation + backend audit by default | Factory orchestration |
-| **Claude Code** | Frontend implementation + UX/UI review by default | Project Init state |
+| **Codex** | General implementation worker + integrated audit skill | Factory orchestration |
+| **Claude Code** | General implementation worker + Factory orchestration/review agents | Project Init state |
 
 ## Start a new or existing repository
 
@@ -64,11 +64,11 @@ No `cd C:\Tools\project-init`, `git pull`, or clean source checkout is required.
 2. Spec Kit creates/updates the spec and tasks
 3. Approve the spec
 4. Factory creates the job
-5. [BACKEND] tasks -> Codex
-6. [FRONTEND] tasks -> Claude
-7. Reviewers run
-8. Findings go back to the responsible worker
-9. Tests + Project Init verification
+5. Factory creates isolated Codex + Claude worktrees
+6. Independent work units run in parallel
+7. Worker branches merge into the integration worktree
+8. Reviewers/tests inspect the integrated result
+9. Findings go back to the worker that owns the affected task/file
 10. Human approves merge/release
 ```
 
@@ -107,16 +107,18 @@ factory/jobs/<slug>/spec.md
 
 Use **BMAD instead** only when a project intentionally needs BMAD's deeper product/UX methodology. Do not run Spec Kit and BMAD as competing sources of truth for the same change.
 
-## Interchangeability
+## Worker assignment
 
-The architecture allows either coding agent to implement code, but the current Factory routing is intentionally opinionated:
+Codex and Claude are peers for implementation. Factory assigns work from **parallelism, dependency and file boundaries**, not frontend/backend ownership.
 
 ```text
-Backend:  Codex primary -> Claude can be fallback
-Frontend: Claude primary -> Codex frontend fallback is not wired yet
+Codex  -> isolated worktree -> assigned work unit
+Claude -> isolated worktree -> assigned work unit
+                     \\       /
+                  integration
 ```
 
-Do not remove the Codex backend-only guard until the Factory gains an explicit Codex frontend worker/route. That future change belongs in the Factory orchestration, not Project Init.
+If the feature cannot be split safely, Factory may assign one indivisible unit to one worker rather than fabricating parallelism.
 
 ## Files you should recognize
 
@@ -125,14 +127,15 @@ Do not remove the Codex backend-only guard until the Factory gains an explicit C
 specs/NNN-feature/               Spec Kit feature artifacts
 .claude/skills/factory/          Claude Factory orchestrator
 .claude/agents/                  Claude Factory workers/reviewers
-.agents/skills/backend-factory/  Codex backend worker skill
-.agents/skills/backend-audit/    Codex backend audit skill
+.agents/skills/factory-worker/   Codex generic Factory worker skill
+.agents/skills/factory-audit/    Codex integrated-result audit skill
+.project-init/worktrees/          Isolated Codex/Claude/integration worktrees
 factory/jobs/                    Factory runtime jobs/evidence
 .project-init/                   Project Init local state/evidence
 ```
 
 ## One sentence to remember
 
-> **Project Init bootstraps it; Spec Kit specifies it; Factory runs it; ECC strengthens it; Claude and Codex build it.**
+> **Project Init bootstraps it; Spec Kit specifies it; Factory isolates and coordinates it; ECC strengthens it; Claude and Codex build it in parallel.**
 
 Factory itself ships with Project Init. `--kit PATH` is only an advanced developer override for testing a different Factory source.
