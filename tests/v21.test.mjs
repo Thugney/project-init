@@ -316,33 +316,51 @@ test('ECC plan is pinned, dual-harness, and dry-run by default',()=>{
  assert.ok(plan.command.includes('claude'));assert.ok(plan.command.includes('codex'));assert.ok(plan.command.includes('--profile'));assert.ok(plan.dryRunCommand.includes('--dry-run'));
 });
 
-test('Factory installs bundled Claude and Codex sides without an external kit path',async()=>{
+test('Factory installs generic Codex and Claude parallel-worktree stack and preserves user config',async()=>{
  const {spawnSync}=await import('node:child_process');
  const tempRoot=fs.realpathSync(os.tmpdir()); const base=fs.mkdtempSync(path.join(tempRoot,'pinit-factory-')),root=path.join(base,'repo');fs.mkdirSync(root);
- const git=(...args)=>{const r=spawnSync('git',args,{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr);};
+ const git=(...args)=>{const r=spawnSync('git',args,{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr);return r;};
  git('init');git('config','user.name','Fixture');git('config','user.email','fixture@example.invalid');fs.writeFileSync(path.join(root,'README.md'),'factory\n');git('add','.');git('commit','-m','baseline');
  initProject(root,{mode:'Existing',intent:'feature',ui:'no'});
  fs.writeFileSync(path.join(root,'README.md'),'factory local work\n');fs.writeFileSync(path.join(root,'LOCAL-NOTES.md'),'do not touch\n');
- const plan=factoryPlan(root);assert.equal(plan.ready,true);assert.equal(plan.source,'project-init-bundled-factory');assert.equal(plan.override,false);assert.equal(plan.codexSkills.length,2);assert.ok(plan.factoryFiles.length>=10);assert.equal(plan.interchangeability.codexFrontendBridge,false);
+ const plan=factoryPlan(root);
+ assert.equal(plan.ready,true);assert.equal(plan.source,'project-init-bundled-factory');assert.equal(plan.override,false);assert.equal(plan.codexSkills.length,2);assert.ok(plan.factoryFiles.length>=12);
+ assert.equal(plan.workers.parallel,true);assert.equal(plan.workers.codex.role,'general');assert.equal(plan.workers.claude.role,'general');assert.equal(plan.workers.codex.worktree,'isolated');assert.equal(plan.workers.claude.worktree,'isolated');
  const applied=applyFactory(root,{apply:true});assert.equal(applied.applied,true);assert.equal(applied.installedBridgeCheck.ok,true);
  assert.equal(fs.readFileSync(path.join(root,'README.md'),'utf8'),'factory local work\n');assert.equal(fs.readFileSync(path.join(root,'LOCAL-NOTES.md'),'utf8'),'do not touch\n');
  for(const rel of [
   '.claude/skills/factory/SKILL.md',
   '.claude/skills/factory/scripts/board.py',
-  '.claude/skills/factory/scripts/codex_backend.sh',
+  '.claude/skills/factory/scripts/worktree.py',
+  '.claude/skills/factory/scripts/codex_worker.py',
   '.claude/agents/factory-builder.md',
-  '.agents/skills/backend-factory/SKILL.md',
-  '.agents/skills/backend-audit/SKILL.md',
+  '.agents/skills/factory-worker/SKILL.md',
+  '.agents/skills/factory-audit/SKILL.md',
   'factory/dashboard.html',
   'factory/backlog.md'
  ]) assert.ok(fs.existsSync(path.join(root,rel)),rel);
- assert.match(fs.readFileSync(path.join(root,'.claude/skills/factory/SKILL.md'),'utf8'),/project-init factory --project \. --apply/);
- assert.match(fs.readFileSync(path.join(root,'.agents/skills/backend-factory/SKILL.md'),'utf8'),/BACKEND: BLOCKED CONTRACT_ISSUE/);
+ assert.equal(fs.existsSync(path.join(root,'.agents/skills/backend-factory/SKILL.md')),false);
+ assert.equal(fs.existsSync(path.join(root,'.agents/skills/backend-audit/SKILL.md')),false);
+ assert.match(fs.readFileSync(path.join(root,'.claude/skills/factory/SKILL.md'),'utf8'),/One worker = one isolated worktree/);
+ assert.match(fs.readFileSync(path.join(root,'.agents/skills/factory-worker/SKILL.md'),'utf8'),/Neither worker owns frontend or backend/);
+ assert.match(fs.readFileSync(path.join(root,'.agents/skills/factory-worker/SKILL.md'),'utf8'),/\[CODEX\].*worker assignment/is);
  git('add','.');git('commit','-m','factory install');
- fs.writeFileSync(path.join(root,'factory/backlog.md'),'# My backlog\n');
- const cfg=JSON.parse(fs.readFileSync(path.join(root,'.claude/skills/factory/config.json'),'utf8'));cfg.test_command='npm test';fs.writeFileSync(path.join(root,'.claude/skills/factory/config.json'),JSON.stringify(cfg,null,2)+'\n');
- git('add','factory/backlog.md','.claude/skills/factory/config.json');git('commit','-m','local factory config');
- const reapplied=applyFactory(root,{apply:true});assert.equal(reapplied.applied,true);
- assert.equal(fs.readFileSync(path.join(root,'factory/backlog.md'),'utf8'),'# My backlog\n');
- assert.equal(JSON.parse(fs.readFileSync(path.join(root,'.claude/skills/factory/config.json'),'utf8')).test_command,'npm test');
+
+ // Simulate a legacy config with a user customization, then verify migration keeps the customization.
+ const cfgPath=path.join(root,'.claude/skills/factory/config.json');
+ const legacy=JSON.parse(fs.readFileSync(cfgPath,'utf8'));legacy.test_command='npm test';legacy.backend_engine='codex';delete legacy.workers;delete legacy.worktrees;legacy.codex.fallback_to_claude_after_failures=2;
+ fs.writeFileSync(cfgPath,JSON.stringify(legacy,null,2)+'\n');
+ git('add','.claude/skills/factory/config.json');git('commit','-m','legacy local config');
+ const reapplied=applyFactory(root,{apply:true});assert.equal(reapplied.applied,true);assert.equal(reapplied.configMigration.action,'migrated-legacy');
+ const migrated=JSON.parse(fs.readFileSync(cfgPath,'utf8'));assert.equal(migrated.test_command,'npm test');assert.equal(migrated.workers.mode,'parallel-worktrees');assert.equal(migrated.backend_engine,undefined);assert.equal(migrated.codex.fallback_to_claude_after_failures,undefined);
+
+ // Real Git worktree isolation: three distinct branches/checkouts from the same base.
+ git('add','.');git('commit','-m','factory migrated');
+ const py=process.platform==='win32'?'python':'python3';
+ const wt=path.join(root,'.claude/skills/factory/scripts/worktree.py');
+ const created=spawnSync(py,[wt,'init','001-parallel-test'],{cwd:root,encoding:'utf8'});assert.equal(created.status,0,created.stderr||created.stdout);
+ for(const name of ['integration','codex','claude']){
+  const p=path.join(root,'.project-init','worktrees','001-parallel-test',name);assert.equal(fs.existsSync(p),true,p);
+  const branch=spawnSync('git',['-C',p,'rev-parse','--abbrev-ref','HEAD'],{encoding:'utf8'});assert.equal(branch.status,0,branch.stderr);assert.equal(branch.stdout.trim(),`factory/001-parallel-test/${name}`);
+ }
 });
