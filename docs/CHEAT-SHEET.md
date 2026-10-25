@@ -57,6 +57,17 @@ project-init update
 
 No `cd C:\Tools\project-init`, `git pull`, or clean source checkout is required.
 
+## ECC channel selection
+
+Project Init chooses one ECC install channel per harness:
+
+```text
+Claude: native-plugin | managed-project
+Codex:  native-plugin | managed-home | legacy-sync (custom CODEX_HOME)
+```
+
+Missing Codex plugin commands are a compatibility signal, not a reason to reinstall the same CLI.
+
 ## Desktop app vs CLI
 On Windows, **PowerShell success does not by itself prove ECC can launch the CLI**: Project Init also verifies a native `codex.exe` runtime for shell-less vendor execution.
 
