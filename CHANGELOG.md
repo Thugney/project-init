@@ -13,6 +13,20 @@ All notable changes to the public Project Init package are documented here. Ther
 - Updated package and lockfile SPDX metadata; the package stays `private: true` to explicitly prevent accidental npm publication while supporting reviewed GitHub release tarballs.
 - Updated release checks, documentation, and contributor terms. GitHub releases still require an explicitly created version tag; production acceptance remains pending.
 
+## [2.1.0-preview.7] — 2026-10-25 (self-update candidate)
+
+### Added
+- Added `project-init update --check` for a read-only comparison against GitHub `main`.
+- Added `project-init update` to install the exact GitHub commit discovered by the update check into the global npm location and verify the resulting CLI version.
+- Added `--force` for deliberately reinstalling the current remote version.
+
+### Fixed
+- Normal Project Init upgrades no longer depend on the cleanliness or state of `C:\\Tools\\project-init` (or any other source checkout).
+
+### Compatibility
+- Existing `project-init init --project .` Factory bootstrap behavior is unchanged.
+- A source clone remains useful for developing Project Init itself, but is not required for normal CLI updates after preview.7 is installed.
+
 ## [2.1.0-preview.6] — 2026-10-25 (guided Factory bootstrap candidate)
 
 ### Fixed
