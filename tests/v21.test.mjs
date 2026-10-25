@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import {initProject,selectFramework,establishBaseline,recordReview,approve,checkBaseline,status,statePath,runChecks,installPlan,eccInstallPlan} from '../lib/core.mjs';
+import {initProject,selectFramework,establishBaseline,recordReview,approve,checkBaseline,status,statePath,runChecks,installPlan,applyInstall,eccInstallPlan,applyEcc} from '../lib/core.mjs';
 import {skillPlan} from '../lib/skills.mjs';
 import {renderLean} from '../lib/lean.mjs';
 import {comparePng,readPng,writePng} from '../lib/png.mjs';
@@ -161,16 +161,64 @@ test('explicit conflict backups preserve old skills and do not touch unrelated o
 });
 
 
-test('Spec Kit plan uses pinned GitHub release and installs Codex plus Claude integrations on an existing repo',async()=>{
+test('dirty existing repo initializes and Spec Kit plan uses preserve-merge without force',async()=>{
  const {spawnSync}=await import('node:child_process');
  const tempRoot=fs.realpathSync(os.tmpdir()); const base=fs.mkdtempSync(path.join(tempRoot,'pinit-speckit-')),root=path.join(base,'repo');fs.mkdirSync(root);
  const git=(...args)=>{const r=spawnSync('git',args,{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr);};
  git('init');git('config','user.name','Fixture');git('config','user.email','fixture@example.invalid');fs.writeFileSync(path.join(root,'README.md'),'existing\n');git('add','.');git('commit','-m','baseline');
- initProject(root,{mode:'Existing',intent:'feature',ui:'no'});selectFramework(root,'spec-kit');
- const plan=installPlan(root,'1.2.3','both');assert.equal(plan.safeToApply,true);
+ fs.writeFileSync(path.join(root,'README.md'),'existing local work\n');fs.writeFileSync(path.join(root,'AGENTS.md'),'LOCAL AGENT RULES\n');
+ const initialized=initProject(root,{mode:'Existing',intent:'feature',ui:'no'});assert.equal(initialized.state.initialSource.gitClean,false);
+ assert.equal(fs.readFileSync(path.join(root,'README.md'),'utf8'),'existing local work\n');assert.equal(fs.readFileSync(path.join(root,'AGENTS.md'),'utf8'),'LOCAL AGENT RULES\n');
+ selectFramework(root,'spec-kit');
+ const plan=installPlan(root,'1.2.3','both');assert.equal(plan.safeToApply,true);assert.equal(plan.preflight.gitClean,false);
  const tool=plan.steps.find(x=>x.kind==='tool');if(tool){assert.equal(tool.cmd,'uv');assert.ok(tool.args.includes('git+https://github.com/github/spec-kit.git@v1.2.3'));}
- const init=plan.steps.find(x=>x.cmd==='specify'&&x.args[0]==='init');assert.ok(init);assert.ok(init.args.includes('--force'));assert.ok(init.args.includes('--non-interactive'));assert.ok(init.args.includes('codex'));
+ const init=plan.steps.find(x=>x.cmd==='specify'&&x.args[0]==='init');assert.ok(init);assert.equal(init.input,'y\n');assert.equal(init.preservesExisting,true);assert.equal(init.args.includes('--force'),false);assert.equal(init.args.includes('--non-interactive'),false);assert.ok(init.args.includes('codex'));
  const claude=plan.steps.find(x=>x.cmd==='specify'&&x.args[0]==='integration'&&x.args.includes('claude'));assert.ok(claude);assert.equal(claude.interactive,undefined);
+});
+
+test('Spec Kit apply preserves dirty existing files while scaffolding missing paths',async()=>{
+ const {spawnSync}=await import('node:child_process');
+ const tempRoot=fs.realpathSync(os.tmpdir()); const base=fs.mkdtempSync(path.join(tempRoot,'pinit-speckit-apply-')),root=path.join(base,'repo'),bin=path.join(base,'bin');fs.mkdirSync(root);fs.mkdirSync(bin);
+ const git=(...args)=>{const r=spawnSync('git',args,{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr);};
+ git('init');git('config','user.name','Fixture');git('config','user.email','fixture@example.invalid');fs.writeFileSync(path.join(root,'README.md'),'baseline\n');git('add','.');git('commit','-m','baseline');
+ fs.writeFileSync(path.join(root,'README.md'),'dirty local work\n');fs.writeFileSync(path.join(root,'AGENTS.md'),'LOCAL AGENTS\n');
+ initProject(root,{mode:'Existing',intent:'feature',ui:'no'});selectFramework(root,'spec-kit');
+ const fake=path.join(bin,'specify');
+ fs.writeFileSync(fake,`#!/usr/bin/env node
+const fs=require('fs'),path=require('path');const a=process.argv.slice(2);
+if(a[0]==='version'){console.log('specify 1.2.3');process.exit(0);}
+if(a[0]==='init'){let input='';try{input=fs.readFileSync(0,'utf8')}catch{};if(input.trim()!=='y')process.exit(8);fs.mkdirSync('.specify',{recursive:true});fs.writeFileSync('.specify/fixture.txt','installed\\n');fs.mkdirSync('.agents/skills/speckit-fixture',{recursive:true});fs.writeFileSync('.agents/skills/speckit-fixture/SKILL.md','fixture\\n');process.exit(0);}
+if(a[0]==='integration'&&a[1]==='install'&&a[2]==='claude'){fs.mkdirSync('.claude/skills/speckit-fixture',{recursive:true});fs.writeFileSync('.claude/skills/speckit-fixture/SKILL.md','fixture\\n');process.exit(0);}
+process.exit(9);
+`);fs.chmodSync(fake,0o755);
+ if(process.platform==='win32')fs.writeFileSync(path.join(bin,'specify.cmd'),'@echo off\r\nnode "%~dp0specify" %*\r\n');
+ const prior=process.env.PATH;process.env.PATH=bin+path.delimiter+prior;
+ try{
+  const result=await applyInstall(root,'1.2.3',{apply:true,agent:'both'});assert.equal(result.applied,true,JSON.stringify(result));
+ }finally{process.env.PATH=prior;}
+ assert.equal(fs.readFileSync(path.join(root,'README.md'),'utf8'),'dirty local work\n');
+ assert.equal(fs.readFileSync(path.join(root,'AGENTS.md'),'utf8'),'LOCAL AGENTS\n');
+ assert.ok(fs.existsSync(path.join(root,'.specify/fixture.txt')));
+ assert.ok(fs.existsSync(path.join(root,'.claude/skills/speckit-fixture/SKILL.md')));
+});
+
+test('ECC apply is allowed on a dirty existing repo and preserves unrelated files',async()=>{
+ const {spawnSync}=await import('node:child_process');
+ const tempRoot=fs.realpathSync(os.tmpdir()); const base=fs.mkdtempSync(path.join(tempRoot,'pinit-ecc-apply-')),root=path.join(base,'repo'),bin=path.join(base,'bin');fs.mkdirSync(root);fs.mkdirSync(bin);
+ const git=(...args)=>{const r=spawnSync('git',args,{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr);};
+ git('init');git('config','user.name','Fixture');git('config','user.email','fixture@example.invalid');fs.writeFileSync(path.join(root,'README.md'),'baseline\n');git('add','.');git('commit','-m','baseline');
+ initProject(root,{mode:'Existing',intent:'feature',ui:'no'});
+ fs.writeFileSync(path.join(root,'README.md'),'dirty ecc work\n');fs.writeFileSync(path.join(root,'LOCAL.txt'),'keep me\n');
+ const fake=path.join(bin,'npx');fs.writeFileSync(fake,`#!/usr/bin/env node
+const fs=require('fs');fs.mkdirSync('.claude/ecc-fixture',{recursive:true});fs.writeFileSync('.claude/ecc-fixture/installed','yes\\n');process.exit(0);
+`);fs.chmodSync(fake,0o755);
+ if(process.platform==='win32')fs.writeFileSync(path.join(bin,'npx.cmd'),'@echo off\r\nnode "%~dp0npx" %*\r\n');
+ const prior=process.env.PATH;process.env.PATH=bin+path.delimiter+prior;
+ try{
+  const result=await applyEcc(root,'2.2.3',{apply:true,agent:'both',scope:'local'});assert.equal(result.applied,true,JSON.stringify(result));
+ }finally{process.env.PATH=prior;}
+ assert.equal(fs.readFileSync(path.join(root,'README.md'),'utf8'),'dirty ecc work\n');
+ assert.equal(fs.readFileSync(path.join(root,'LOCAL.txt'),'utf8'),'keep me\n');
 });
 
 test('ECC plan is pinned, dual-harness, and dry-run by default',()=>{
@@ -186,8 +234,10 @@ test('Factory installs bundled Claude and Codex sides without an external kit pa
  const git=(...args)=>{const r=spawnSync('git',args,{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr);};
  git('init');git('config','user.name','Fixture');git('config','user.email','fixture@example.invalid');fs.writeFileSync(path.join(root,'README.md'),'factory\n');git('add','.');git('commit','-m','baseline');
  initProject(root,{mode:'Existing',intent:'feature',ui:'no'});
+ fs.writeFileSync(path.join(root,'README.md'),'factory local work\n');fs.writeFileSync(path.join(root,'LOCAL-NOTES.md'),'do not touch\n');
  const plan=factoryPlan(root);assert.equal(plan.ready,true);assert.equal(plan.source,'project-init-bundled-factory');assert.equal(plan.override,false);assert.equal(plan.codexSkills.length,2);assert.ok(plan.factoryFiles.length>=10);assert.equal(plan.interchangeability.codexFrontendBridge,false);
  const applied=applyFactory(root,{apply:true});assert.equal(applied.applied,true);assert.equal(applied.installedBridgeCheck.ok,true);
+ assert.equal(fs.readFileSync(path.join(root,'README.md'),'utf8'),'factory local work\n');assert.equal(fs.readFileSync(path.join(root,'LOCAL-NOTES.md'),'utf8'),'do not touch\n');
  for(const rel of [
   '.claude/skills/factory/SKILL.md',
   '.claude/skills/factory/scripts/board.py',
