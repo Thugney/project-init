@@ -13,6 +13,7 @@ import {applyFactory} from '../lib/factory.mjs';
 import {visualPlan,captureVisual,compareVisual} from '../lib/visual-gate.mjs';
 import {bootstrapProject} from '../lib/bootstrap.mjs';
 import {semanticPlan,importSemanticReview,verifyGuard} from '../lib/guard.mjs';
+import {updateProjectInit} from '../lib/update.mjs';
 
 const usage=`Project Init ${VERSION} — local-first development orchestrator (preview)
 
@@ -20,6 +21,7 @@ Commands:
   inspect      --project PATH                                      Read-only source discovery
   recommend    --project PATH [--intent ...] [--complexity ...]   Rank OpenSpec / Spec Kit / BMAD / none
   init         --project PATH [--mode New|Existing] [--intent ...] [--ui yes|no|auto] [--version X.Y.Z] [--ecc-version X.Y.Z] [--apply]  Guided Factory bootstrap (Spec Kit + ECC + Factory)
+  update       [--check] [--force]                                Update the global Project Init CLI from GitHub main; independent of any source clone
   status       --project PATH                                      Actual gate and evidence status
   select       --project PATH --framework openspec|spec-kit|bmad|none
   wire         --project PATH [--agent both|codex|claude] [--scope project|user] [--plugin] [--backup-conflicts] [--apply]  Install 7 descriptive project skills per agent
@@ -57,7 +59,7 @@ function parseArgs(argv){
    const token=rest[i];
    if(!token.startsWith('--')) fail(`Unexpected argument: ${token}`);
    const key=token.slice(2);
-   if(['json','execute','apply','plugin','backup-conflicts'].includes(key)) {options[key]=true;continue;}
+   if(['json','execute','apply','plugin','backup-conflicts','check','force'].includes(key)) {options[key]=true;continue;}
    if(!['project','mode','intent','complexity','ui','framework','version','ecc-version','phase','task','actor','evidence','verdict','out','spec','allow','agent','scope','input','id','side','url','browser','file','kit'].includes(key)) fail(`Unknown option: ${key}`);
    const value=rest[++i];
    if(value===undefined||value.startsWith('--')) fail(`Missing value after --${key}`);
@@ -99,6 +101,20 @@ async function main(){
  const {command,options}=parseArgs(process.argv.slice(2));
  if(!command||command==='help'||command==='--help'||command==='-h'){console.log(usage);return;}
  if(command==='version'){console.log(VERSION);return;}
+ if(command==='update'){
+  const result=await updateProjectInit({check:!!options.check,force:!!options.force});
+  if(options.json) console.log(JSON.stringify(result,null,2));
+  else {
+   console.log(`Project Init update — ${result.channel}`);
+   console.log(`Current: ${result.currentVersion}`);
+   console.log(`Remote:  ${result.remoteVersion} (${result.remoteCommit.slice(0,8)})`);
+   if(result.status==='updated') console.log(`Status: UPDATED -> ${result.installedVersion}`);
+   else if(result.status==='current') console.log('Status: CURRENT');
+   else if(result.status==='ahead') console.log('Status: LOCAL VERSION IS NEWER THAN REMOTE');
+   else console.log(`Status: ${result.status.toUpperCase()}`);
+  }
+  return;
+ }
  const raw=options.project||process.cwd();
  const root=projectRoot(raw,command==='init');
  let result;
