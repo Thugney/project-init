@@ -59,7 +59,7 @@ test('Factory prerequisites require Codex and Claude CLIs plus authentication, n
   assert.equal(codex.ready,true);assert.equal(claude.ready,true);
   assert.equal(plan.checks.find(x=>x.id==='codex-auth').ready,false);
   assert.equal(plan.checks.find(x=>x.id==='claude-auth').ready,false);
-  assert.ok(plan.missing.includes('codex-auth'));assert.ok(plan.missing.includes('claude-auth'));assert.equal(plan.checks.find(x=>x.id==='codex-ecc-capability').ready,true);assert.equal(plan.checks.find(x=>x.id==='claude-ecc-capability').ready,true);if(process.platform==='win32')assert.equal(plan.checks.find(x=>x.id==='codex-native-runtime').ready,true);
+  assert.ok(plan.missing.includes('codex-auth'));assert.ok(plan.missing.includes('claude-auth'));if(process.platform==='win32')assert.equal(plan.checks.find(x=>x.id==='codex-native-runtime').ready,true);
  }finally{process.env.PATH=prior;if(priorNative===undefined)delete process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE;else process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE=priorNative;}
 });
 
@@ -405,10 +405,16 @@ test('ECC apply is allowed on a dirty existing repo and preserves unrelated file
  fs.writeFileSync(path.join(root,'README.md'),'dirty ecc work\n');fs.writeFileSync(path.join(root,'LOCAL.txt'),'keep me\n');
  const fake=path.join(bin,'npx');fs.writeFileSync(fake,`#!/usr/bin/env node
 const fs=require('fs');const a=process.argv.slice(2);
-if(a.includes('--profile')){console.error('Kimi-only profile must not be sent for Claude+Codex');process.exit(23);}
-const hs=a.flatMap((v,i)=>v==='--harness'?[a[i+1]]:[]);
-if(!hs.includes('claude')||!hs.includes('codex')){console.error('missing dual harness');process.exit(24);}
-if(!a.includes('--claude-scope')||!a.includes('local')||!a.includes('--claude-hooks')||!a.includes('standard')){console.error('missing Claude choices');process.exit(25);}
+if(a.includes('--harness')) {
+  const h=a[a.indexOf('--harness')+1];
+  if(h!=='claude'&&h!=='codex'){console.error('unexpected guided harness '+h);process.exit(24);}
+  if(h==='claude'&&(!a.includes('--claude-scope')||!a.includes('local')||!a.includes('--claude-hooks')||!a.includes('standard'))){console.error('missing Claude choices');process.exit(25);}
+} else {
+  const target=a[a.indexOf('--target')+1];
+  if(!a.includes('--profile')||!a.includes('core')){console.error('managed fallback requires core profile');process.exit(26);}
+  if(target!=='claude-project'&&target!=='codex'){console.error('unexpected managed target '+target);process.exit(27);}
+}
+const log='ecc-calls.log';fs.appendFileSync(log,JSON.stringify(a)+'\\n');
 fs.mkdirSync('.claude/ecc-fixture',{recursive:true});fs.writeFileSync('.claude/ecc-fixture/installed','yes\\n');process.exit(0);
 `);fs.chmodSync(fake,0o755);
  if(process.platform==='win32')fs.writeFileSync(path.join(bin,'npx.cmd'),'@echo off\r\nnode "%~dp0npx" %*\r\n');
@@ -418,17 +424,31 @@ fs.mkdirSync('.claude/ecc-fixture',{recursive:true});fs.writeFileSync('.claude/e
  }finally{process.env.PATH=prior;}
  assert.equal(fs.readFileSync(path.join(root,'README.md'),'utf8'),'dirty ecc work\n');
  assert.equal(fs.readFileSync(path.join(root,'LOCAL.txt'),'utf8'),'keep me\n');
+ const calls=fs.readFileSync(path.join(root,'ecc-calls.log'),'utf8').trim().split(/\\r?\\n/).map(JSON.parse);
+ assert.equal(calls.length,2);assert.ok(calls.some(a=>a.includes('--target')&&a.includes('codex')));
 });
 
-test('ECC plan is pinned, dual-harness, and dry-run by default',()=>{
- const {root}=fixture('ecc');
- const plan=eccInstallPlan(root,'2.2.3',{agent:'both',scope:'local'});
- assert.deepEqual(plan.command.slice(0,4),['npx','--yes','ecc-universal@2.2.3','install']);
- assert.ok(plan.command.includes('--guided'));assert.ok(plan.command.includes('claude'));assert.ok(plan.command.includes('codex'));
- assert.ok(plan.command.includes('--claude-scope'));assert.ok(plan.command.includes('local'));assert.ok(plan.command.includes('--claude-hooks'));assert.ok(plan.command.includes('standard'));
- assert.equal(plan.command.includes('--profile'),false,'--profile is Kimi-only and must not be sent for Claude+Codex');
- assert.equal(plan.command.filter(x=>x==='--harness').length,2);
- assert.ok(plan.dryRunCommand.includes('--dry-run'));
+test('ECC plan chooses one supported channel per harness and never stacks them',()=>{
+ const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'pinit-ecc-channel-')),root=path.join(base,'repo'),bin=path.join(base,'bin');fs.mkdirSync(root);fs.mkdirSync(bin);
+ initProject(root,{mode:'Existing',intent:'feature',ui:'no'});
+ const write=(name,body)=>{const file=path.join(bin,name);fs.writeFileSync(file,`#!${process.execPath}\\n${body}\\n`);fs.chmodSync(file,0o755);return file;};
+ write('codex',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('codex-test');process.exit(0)}if(a[0]==='plugin'){process.exit(2)}process.exit(0)");
+ write('claude',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-test');process.exit(0)}if(a[0]==='plugin'&&a.includes('--json')){console.log('[]');process.exit(0)}process.exit(0)");
+ if(process.platform==='win32'){for(const name of ['codex','claude'])fs.writeFileSync(path.join(bin,name+'.cmd'),`@echo off\\r\\n"${process.execPath}" "%~dp0${name}" %*\\r\\n`);}
+ const prior=process.env.PATH,priorNative=process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE;process.env.PATH=bin+path.delimiter+prior;
+ if(process.platform==='win32')process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE=process.execPath;
+ try{
+  const plan=eccInstallPlan(root,'2.2.3',{agent:'both',scope:'local'});
+  assert.equal(plan.channels.claude,'native-plugin');
+  assert.equal(plan.channels.codex,'managed-home');
+  assert.equal(plan.steps.length,2);
+  const claude=plan.steps.find(x=>x.id==='claude'),codex=plan.steps.find(x=>x.id==='codex');
+  assert.ok(claude.command.includes('--guided'));assert.ok(claude.command.includes('--harness'));assert.ok(claude.command.includes('claude'));
+  assert.equal(claude.command.includes('--profile'),false);
+  assert.ok(codex.command.includes('--profile'));assert.ok(codex.command.includes('core'));assert.ok(codex.command.includes('--target'));assert.ok(codex.command.includes('codex'));
+  assert.equal(codex.command.includes('--guided'),false);assert.equal(codex.command.includes('--harness'),false);
+  assert.ok(plan.dryRunCommands.every(cmd=>cmd.includes('--dry-run')));
+ }finally{process.env.PATH=prior;if(priorNative===undefined)delete process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE;else process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE=priorNative;}
 });
 
 test('Factory installs generic Codex and Claude parallel-worktree stack and preserves user config',async()=>{
