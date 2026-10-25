@@ -83,6 +83,7 @@ Typical Windows flow:
 Spec Kit requires uv 0.13.5. Install a Project Init-managed user copy now? [Y/n]
 Install Spec Kit 1.2.3 for Codex + Claude now? [Y/n]
 Install ECC 2.2.3 for Codex + Claude now? [Y/n]
+
 Install/update the bundled Factory for parallel Codex + Claude isolated worktrees now? [Y/n]
 ✓ PROJECT READY for Codex + Claude
 ```
@@ -116,7 +117,7 @@ The apply order is managed by Project Init:
 3. install ECC for both agents;
 4. install/update the bundled Factory (orchestrator/reviewers + generic Codex/Claude workers + isolated worktree/integration tooling).
 
-Current reviewed pins are Spec Kit `1.2.3` and ECC `2.2.3`. Existing Project Init state is resumed rather than overwritten. Existing repos use Spec Kit preserve-merge without `--force`; ECC retains its own collision/ownership checks; Factory preserves the backlog, migrates legacy Factory config while retaining user settings, removes unchanged legacy backend-only managed skills, and refuses conflicting current Codex skill content.
+Current reviewed pins are Spec Kit `1.2.3` and ECC `2.2.3`. ECC `--profile` is not used for the Claude + Codex guided path; ECC reserves that option for Kimi managed-project installs. Existing Project Init state is resumed rather than overwritten. Existing repos use Spec Kit preserve-merge without `--force`; ECC retains its own collision/ownership checks; Factory preserves the backlog, migrates legacy Factory config while retaining user settings, removes unchanged legacy backend-only managed skills, and refuses conflicting current Codex skill content.
 
 The lower-level `select`, `install`, `ecc`, `factory`, and `wire` commands remain available for debugging, custom/non-Factory methodologies, or component-level maintenance. They are not the normal setup sequence.
 

@@ -24,7 +24,7 @@ test('self-update version comparison handles preview releases',()=>{
 
 test('self-update check never invokes npm when current',async()=>{
  const sha='a'.repeat(40);
- const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.11'}});
+ const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.12'}});
  let calls=0;
  const result=await updateProjectInit({check:true,fetcher,runner:()=>{calls++;throw new Error('runner should not execute');}});
  assert.equal(result.status,'current');assert.equal(result.updated,false);assert.equal(calls,0);assert.equal(result.remoteCommit,sha);
@@ -32,11 +32,11 @@ test('self-update check never invokes npm when current',async()=>{
 
 test('self-update installs pinned GitHub source and verifies replacement CLI',async()=>{
  const sha='b'.repeat(40);
- const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.12'}});
+ const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.13'}});
  const calls=[];
- const runner=(command,args)=>{calls.push([command,...args]);if(command==='npm')return {status:0,stdout:'updated',stderr:''};return {status:0,stdout:'2.1.0-preview.12\n',stderr:''};};
+ const runner=(command,args)=>{calls.push([command,...args]);if(command==='npm')return {status:0,stdout:'updated',stderr:''};return {status:0,stdout:'2.1.0-preview.13\n',stderr:''};};
  const result=await updateProjectInit({fetcher,runner});
- assert.equal(result.status,'updated');assert.equal(result.installedVersion,'2.1.0-preview.12');
+ assert.equal(result.status,'updated');assert.equal(result.installedVersion,'2.1.0-preview.13');
  assert.deepEqual(calls[0],['npm','install','--global','--force',`git+https://github.com/Thugney/project-init.git#${sha}`]);
  assert.deepEqual(calls[1],['project-init','version']);
 });
@@ -381,7 +381,12 @@ test('ECC apply is allowed on a dirty existing repo and preserves unrelated file
  initProject(root,{mode:'Existing',intent:'feature',ui:'no'});
  fs.writeFileSync(path.join(root,'README.md'),'dirty ecc work\n');fs.writeFileSync(path.join(root,'LOCAL.txt'),'keep me\n');
  const fake=path.join(bin,'npx');fs.writeFileSync(fake,`#!/usr/bin/env node
-const fs=require('fs');fs.mkdirSync('.claude/ecc-fixture',{recursive:true});fs.writeFileSync('.claude/ecc-fixture/installed','yes\\n');process.exit(0);
+const fs=require('fs');const a=process.argv.slice(2);
+if(a.includes('--profile')){console.error('Kimi-only profile must not be sent for Claude+Codex');process.exit(23);}
+const hs=a.flatMap((v,i)=>v==='--harness'?[a[i+1]]:[]);
+if(!hs.includes('claude')||!hs.includes('codex')){console.error('missing dual harness');process.exit(24);}
+if(!a.includes('--claude-scope')||!a.includes('local')||!a.includes('--claude-hooks')||!a.includes('standard')){console.error('missing Claude choices');process.exit(25);}
+fs.mkdirSync('.claude/ecc-fixture',{recursive:true});fs.writeFileSync('.claude/ecc-fixture/installed','yes\\n');process.exit(0);
 `);fs.chmodSync(fake,0o755);
  if(process.platform==='win32')fs.writeFileSync(path.join(bin,'npx.cmd'),'@echo off\r\nnode "%~dp0npx" %*\r\n');
  const prior=process.env.PATH;process.env.PATH=bin+path.delimiter+prior;
@@ -396,7 +401,11 @@ test('ECC plan is pinned, dual-harness, and dry-run by default',()=>{
  const {root}=fixture('ecc');
  const plan=eccInstallPlan(root,'2.2.3',{agent:'both',scope:'local'});
  assert.deepEqual(plan.command.slice(0,4),['npx','--yes','ecc-universal@2.2.3','install']);
- assert.ok(plan.command.includes('claude'));assert.ok(plan.command.includes('codex'));assert.ok(plan.command.includes('--profile'));assert.ok(plan.dryRunCommand.includes('--dry-run'));
+ assert.ok(plan.command.includes('--guided'));assert.ok(plan.command.includes('claude'));assert.ok(plan.command.includes('codex'));
+ assert.ok(plan.command.includes('--claude-scope'));assert.ok(plan.command.includes('local'));assert.ok(plan.command.includes('--claude-hooks'));assert.ok(plan.command.includes('standard'));
+ assert.equal(plan.command.includes('--profile'),false,'--profile is Kimi-only and must not be sent for Claude+Codex');
+ assert.equal(plan.command.filter(x=>x==='--harness').length,2);
+ assert.ok(plan.dryRunCommand.includes('--dry-run'));
 });
 
 test('Factory installs generic Codex and Claude parallel-worktree stack and preserves user config',async()=>{

@@ -13,6 +13,20 @@ All notable changes to the public Project Init package are documented here. Ther
 - Updated package and lockfile SPDX metadata; the package stays `private: true` to explicitly prevent accidental npm publication while supporting reviewed GitHub release tarballs.
 - Updated release checks, documentation, and contributor terms. GitHub releases still require an explicitly created version tag; production acceptance remains pending.
 
+## [2.1.0-preview.12] — 2026-10-25 (ECC dual-harness fix)
+
+### Fixed
+- ECC Claude + Codex guided installation no longer passes `--profile core`.
+- ECC 2.2.3 reserves `--profile` for Kimi managed-project installs; sending it without Kimi caused `The managed install profile requires Kimi to be selected.`.
+- Project Init now invokes ECC for the intended stack with explicit Claude + Codex harnesses, Claude local scope, standard hooks, and `--yes` only.
+
+### Added
+- Regression coverage now fails if `--profile` appears in a Claude+Codex-only ECC plan and validates both harnesses plus Claude scope/hook choices.
+
+### Compatibility
+- Spec Kit, Codex/Claude CLI readiness, authentication, and parallel Factory worktree behavior are unchanged.
+- A failed preview.11 ECC attempt needs no cleanup; update Project Init and rerun the same guided bootstrap.
+
 ## [2.1.0-preview.11] — 2026-10-25 (Codex login command fix)
 
 ### Fixed

@@ -1,6 +1,6 @@
 # Versioning and release channels
 
-Project Init follows **Semantic Versioning** once accepted, including standard `-preview.N` pre-release identifiers. The current package and code identify themselves as **`2.1.0-preview.11`**. This number is carried from the pre-existing locally tested artifact; it is **not** a statement that a prior public v2.0/v2.1 release exists.
+Project Init follows **Semantic Versioning** once accepted, including standard `-preview.N` pre-release identifiers. The current package and code identify themselves as **`2.1.0-preview.12`**. This number is carried from the pre-existing locally tested artifact; it is **not** a statement that a prior public v2.0/v2.1 release exists.
 
 | Channel | Tag format | GitHub Release flag | Distribution / promise |
 | --- | --- | --- | --- |
