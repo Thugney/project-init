@@ -101,15 +101,16 @@ Project Init
   -> Spec Kit (single requirements/spec/tasks owner)
   -> ECC (engineering/security/testing capabilities)
   -> Factory
-       -> Codex backend by default
-       -> Claude frontend/UX/UI by default
+       -> Codex isolated worktree (general worker)
+       -> Claude isolated worktree (general worker)
+       -> integration worktree
   -> tests/reviewers
   -> human approval
 ```
 
 `inspect`, `recommend`, `select`, `install`, `ecc`, `factory`, and `wire` remain available as advanced/debug controls, but they are not required for the normal Factory bootstrap.
 
-For this factory stack, **Spec Kit is the default** because it natively installs into both Codex and Claude and the factory already consumes `specs/NNN-x/`. BMAD remains an optional alternative for projects that need its deeper product/UX workflow; do not install both planning methodologies for the same change. ECC is a toolbox, not a second spec owner. Factory is the execution/review loop. Start with the [Factory stack cheat sheet](docs/CHEAT-SHEET.md), then see [Factory stack](docs/FACTORY-STACK.md) for boundaries and details.
+For this factory stack, **Spec Kit is the default** because it natively installs into both Codex and Claude and the factory already consumes `specs/NNN-x/`. BMAD remains an optional alternative for projects that need its deeper product/UX workflow; do not install both planning methodologies for the same change. ECC is a toolbox, not a second spec owner. Factory is the isolated parallel execution/integration/review loop. Start with the [Factory stack cheat sheet](docs/CHEAT-SHEET.md), then see [Factory stack](docs/FACTORY-STACK.md) for boundaries and details.
 
 ## Discoverable skills in Codex and Claude Code
 
