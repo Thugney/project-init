@@ -13,6 +13,19 @@ All notable changes to the public Project Init package are documented here. Ther
 - Updated package and lockfile SPDX metadata; the package stays `private: true` to explicitly prevent accidental npm publication while supporting reviewed GitHub release tarballs.
 - Updated release checks, documentation, and contributor terms. GitHub releases still require an explicitly created version tag; production acceptance remains pending.
 
+## [2.1.0-preview.11] — 2026-10-25 (Codex login command fix)
+
+### Fixed
+- Codex CLI authentication now launches the current official subcommand `codex login` instead of the invalid `codex --login`.
+- Post-login readiness is still verified with `codex login status`.
+- Claude Code authentication remains `claude auth login` followed by `claude auth status`.
+
+### Added
+- Added executable cross-platform regressions that reject unexpected auth argv and only pass when Project Init invokes the exact current Codex and Claude authentication subcommands.
+
+### Compatibility
+- No project cleanup is required after a preview.10 auth failure. Re-run the guided bootstrap after updating Project Init; verified prerequisites are re-detected and the flow resumes.
+
 ## [2.1.0-preview.10] — 2026-10-25 (agent CLI readiness candidate)
 
 ### Fixed
