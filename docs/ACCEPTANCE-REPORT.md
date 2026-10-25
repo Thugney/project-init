@@ -2,7 +2,7 @@
 
 Build: 2026-10-25  
 Artifact: GitHub source candidate + `npm pack --dry-run` package inspection  
-Version: `2.1.0-preview.8`  
+Version: `2.1.0-preview.9`  
 **Status: FUNCTIONAL PREVIEW — NOT PRODUCTION ACCEPTED**
 
 ## Delivered and checked
@@ -26,14 +26,15 @@ Version: `2.1.0-preview.8`
 ## Validation results
 
 - GitHub CI matrix: **6/6 jobs passed** on Windows, Ubuntu and macOS with Node 22 and Node 24.
-- Windows Node 24: **46/46 Project Init regression tests passed**, 0 failed/skipped; JavaScript syntax and CLI smoke passed.
-- Ubuntu Node 24: **42/42 applicable Project Init tests passed**, 4 Windows-only tests skipped, 0 failed.
+- Windows Node 24: **47/47 Project Init regression tests passed**, 0 failed/skipped; JavaScript syntax and CLI smoke passed.
+- Ubuntu Node 24: **43/43 applicable Project Init tests passed**, 4 Windows-only tests skipped, 0 failed.
 - `node --test vendor/lean-kit/tests/render.test.mjs`: **8/8 Lean Kit tests passed** across the CI matrix.
 - `npm pack --dry-run` includes the complete `vendor/factory/` Claude, Codex and runtime distribution.
 - Dirty-existing-repo regressions passed on Windows: Project Init init, Spec Kit preserve-merge apply, ECC apply and bundled Factory install all preserve unrelated modified/untracked files.
 - Guided Factory bootstrap regressions passed: one `init` selects/plans the full Spec Kit + ECC + Factory stack, `init --apply` executes it and resumes idempotently, and a missing new project path is correctly recorded as `New`.
 - Self-update regressions passed: preview version comparison, read-only `update --check`, and pinned GitHub-source installation with post-update CLI verification.
 - Parallel Factory worktree regressions create distinct Codex, Claude and integration branches/checkouts from one base; Codex/Claude are general workers and legacy backend-only config/skills migrate safely.
+- Guided-installer regressions passed: apply prompts can be accepted to continue through the stack or declined to return `STOPPED` cleanly without starting the declined component.
 - Synthetic positive whole lifecycle reached `readyForHumanReleaseReview: true` and `releaseApproved: false`, then failed correctly after modified source.
 - Screenshot drift after a green cached gate correctly made `status.releaseCandidateReady: false`.
 - At least one genuine Playwright-rendered browser PNG decoded and compared successfully by the new strict PNG comparator.
@@ -44,7 +45,7 @@ Version: `2.1.0-preview.8`
 - Semantic review `actor`, `evidence` and `verdict` are unverified local attestations. Machine checks verify existence, mapping and freshness of evidence, **not an agent's ability to understand semantics**. Real semantic review remains a separately required operation.
 - Screenshot comparison is pixel-based. It does not validate working links, keyboard operation, ARIA, API permissions, functional flows or hidden states. Those require genuine browser/functional tests configured per app.
 - Browser was rendered in Python Playwright with HTML directly injected because file/local server navigation was blocked by this container. The direct Chrome/Edge screenshot capture command has not passed a Windows acceptance test.
-- Live upstream Spec Kit/ECC installs, native command discovery in real Codex/Claude clients, old v1 PowerShell Pester, authenticated user approval and end-to-end Factory behavior in a real user project are **not yet acceptance-tested**. Synthetic execution now validates the dirty-existing-repo contract, but the user's real Trace repository remains the next acceptance test.
+- Live upstream Spec Kit/ECC installs, the real network download/extraction path for managed uv, native command discovery in real Codex/Claude clients, old v1 PowerShell Pester, authenticated user approval and end-to-end Factory behavior in a real user project are **not yet acceptance-tested**. Synthetic execution now validates the dirty-existing-repo contract, but the user's real Trace repository remains the next acceptance test.
 - No continuous autonomous task runner, automatic Claude programmatic executor, production release or live vendor setup is claimed.
 
 ## Operations / rollback
