@@ -57,6 +57,28 @@ project-init update
 
 No `cd C:\Tools\project-init`, `git pull`, or clean source checkout is required.
 
+## What `init --apply` does
+
+```text
+check prerequisite
+    |
+missing? -> ask Y/n
+              |
+        +-----+-----+
+        |           |
+       Yes          No
+        |           |
+ install+verify    STOPPED
+        |
+ next prerequisite/component
+        |
+ Spec Kit -> ECC -> Factory
+        |
+ ✓ PROJECT READY
+```
+
+Do not manually install `uv` first during the normal workflow. Project Init should ask for permission and handle it.
+
 ## Day-to-day feature flow
 
 ```text
