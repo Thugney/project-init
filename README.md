@@ -224,6 +224,7 @@ Before migrating from an older personal skill, read [the skill installation and 
 
 | For | Read |
 | --- | --- |
+| New vs existing project, step by step | [Getting started](docs/GETTING-STARTED.md) |
 | Start here / daily workflow | [Factory stack cheat sheet](docs/CHEAT-SHEET.md) |
 | Installation and platform caveats | [Install](docs/INSTALL.md) |
 | All CLI operations | [Commands](docs/COMMANDS.md) |

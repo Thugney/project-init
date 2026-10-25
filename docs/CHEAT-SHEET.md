@@ -1,6 +1,6 @@
 # Project Init Factory Stack — Cheat Sheet
 
-Use this page when you forget which tool owns what.
+Use this page when you forget which tool owns what. For step-by-step setup of a new or existing project, see [Getting started](GETTING-STARTED.md).
 
 ## The rule
 
