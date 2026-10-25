@@ -22,14 +22,14 @@ For a **single per-user installation**, use `--scope user` instead of installing
 - Optional Claude namespaced commands `/project-init:design` etc.: `project-init wire --agent claude --plugin --apply` creates a **local plugin** that must be actively loaded using the returned `claude --plugin-dir "..."` launch command. Plain local skill folders do **not** automatically expose that namespace.
 - Claude automatic execution parity is not provided: only Codex has a programmatic `project-init run --execute` path today. Claude skills can perform work in their interactive client and retain actual evidence.
 
-## Vendor methodology selection
+## Advanced methodology controls
 
-Run `inspect`, `recommend`, `init`, `select`, `install` in that order. `install` previews by default; its `--apply` executes native third-party installers or project initialization only where the repository is safe for unattended setup.
+The normal Factory workflow does **not** require a manual `inspect → recommend → select → install` sequence. `project-init init --project .` owns that bootstrap. The commands below remain available when intentionally using a non-Factory methodology or debugging one component.
 
 | Framework | Intended pinned tool installation | Limitation |
 |---|---|---|
 | OpenSpec | `npm install -g @fission-ai/openspec@<published-version>` followed by `openspec init --tools codex,claude` for both agents | Not live-validated; inspect upstream changes and generated files |
-| Spec Kit | `uv tool install specify-cli==<published-version>` and native `specify init ...` | Multiple agent integration may need interactive/supervised steps; a nonempty existing repo blocks unattended scaffolding |
+| Spec Kit | pinned GitHub release via `uv tool install ... --from git+https://github.com/github/spec-kit.git@v<version>` and native `specify init ...` | Guided Factory bootstrap uses preserve-merge for existing repos and non-interactive initialization for recorded New projects |
 | BMAD | `npx bmad-method@<published-version> install` | Interactive installer must be supervised; structural detection not runtime proof |
 
 Never use a version placeholder with `--apply`. Native install runs third-party code; inspect command and repository state first. Existing project instruction files, Git changes, and framework-owned artifacts are preserved.
