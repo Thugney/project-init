@@ -52,4 +52,4 @@ Version: `2.1.0-preview.8`
 1. Use `project-init init --project .` to preview the complete guided Factory bootstrap on a real Windows project, then run the same command with `--apply` after reviewing the plan.
 2. Verify real Spec Kit/ECC installation plus actual Codex/Claude command discovery and one complete Factory job.
 3. Re-run `project-init init --project . --apply` to verify resume/idempotence and preservation of existing Factory config/backlog.
-4. For rollback, revert the preview.6 merge or reinstall the previous reviewed commit; inspect `.project-init`, `.agents/skills`, `.claude/skills`, `.specify/` and `factory/` before removing only files created by Project Init. Never reset unrelated source automatically.
+4. For rollback, reinstall the previous reviewed Project Init commit; inspect `.project-init/worktrees`, `.project-init/factory-worktrees`, `.agents/skills`, `.claude/skills`, `.specify/` and `factory/` before removing only Project Init-managed artifacts. Never reset unrelated source automatically.
