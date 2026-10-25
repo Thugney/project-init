@@ -39,24 +39,26 @@ BMAD remains supported by Project Init, but it is intentionally **not** installe
 Preview every external change first.
 
 ```powershell
-project-init init --project C:\Work\App --mode Existing --intent feature --ui auto
-project-init select --project C:\Work\App --framework spec-kit
-project-init install --project C:\Work\App --version 1.2.3 --agent both
-project-init install --project C:\Work\App --version 1.2.3 --agent both --apply
+cd C:\Work\App
 
-project-init ecc --project C:\Work\App --version 2.2.3 --agent both --scope local
-project-init ecc --project C:\Work\App --version 2.2.3 --agent both --scope local --apply
+project-init init --project . --mode Existing --intent feature --ui auto
+project-init select --project . --framework spec-kit
+project-init install --project . --version 1.2.3 --agent both
+project-init install --project . --version 1.2.3 --agent both --apply
 
-project-init factory --project C:\Work\App --kit C:\Tools\factory-kit
-project-init factory --project C:\Work\App --kit C:\Tools\factory-kit --apply
+project-init ecc --project . --version 2.2.3 --agent both --scope local
+project-init ecc --project . --version 2.2.3 --agent both --scope local --apply
+
+project-init factory --project .
+project-init factory --project . --apply
 ```
 
-`factory --kit` copies the reviewed Claude factory files using Project Init's Node process, preserves an existing factory `config.json` and backlog, creates the runtime jobs directory, updates only the factory runtime ignore entries, validates `codex_backend.sh`, and installs:
+Factory is bundled with Project Init. The normal command installs/updates the reviewed Claude orchestrator, its factory-prefixed agents, dashboard/backlog templates, the Codex bridge, and:
 
 - `.agents/skills/backend-factory/SKILL.md`
 - `.agents/skills/backend-audit/SKILL.md`
 
-If the Claude factory is already installed, omit `--kit`; Project Init validates the existing bridge and only installs/verifies the Codex skills.
+Existing project `.claude/skills/factory/config.json` and `factory/backlog.md` are preserved. Runtime job state is ignored from Git. `--kit PATH` remains only as an explicit developer override for testing another Claude Factory source; normal users do not need a Factory source path.
 
 ## Normal workflow
 
