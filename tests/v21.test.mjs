@@ -23,7 +23,7 @@ test('self-update version comparison handles preview releases',()=>{
 
 test('self-update check never invokes npm when current',async()=>{
  const sha='a'.repeat(40);
- const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.9'}});
+ const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.8'}});
  let calls=0;
  const result=await updateProjectInit({check:true,fetcher,runner:()=>{calls++;throw new Error('runner should not execute');}});
  assert.equal(result.status,'current');assert.equal(result.updated,false);assert.equal(calls,0);assert.equal(result.remoteCommit,sha);
