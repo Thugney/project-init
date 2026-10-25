@@ -13,7 +13,7 @@ import {renderVisualReview} from '../lib/visual.mjs';
 import {factoryPlan,applyFactory} from '../lib/factory.mjs';
 import {bootstrapProject} from '../lib/bootstrap.mjs';
 import {compareVersions,updateDecision,updateProjectInit} from '../lib/update.mjs';
-import {prerequisitePlan} from '../lib/prerequisites.mjs';
+import {prerequisitePlan,authenticateCodexCli,authenticateClaudeCodeCli} from '../lib/prerequisites.mjs';
 test('self-update version comparison handles preview releases',()=>{
  assert.equal(compareVersions('2.1.0-preview.6','2.1.0-preview.7')<0,true);
  assert.equal(compareVersions('2.1.0-preview.7','2.1.0-preview.7'),0);
@@ -24,7 +24,7 @@ test('self-update version comparison handles preview releases',()=>{
 
 test('self-update check never invokes npm when current',async()=>{
  const sha='a'.repeat(40);
- const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.10'}});
+ const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.11'}});
  let calls=0;
  const result=await updateProjectInit({check:true,fetcher,runner:()=>{calls++;throw new Error('runner should not execute');}});
  assert.equal(result.status,'current');assert.equal(result.updated,false);assert.equal(calls,0);assert.equal(result.remoteCommit,sha);
@@ -32,11 +32,11 @@ test('self-update check never invokes npm when current',async()=>{
 
 test('self-update installs pinned GitHub source and verifies replacement CLI',async()=>{
  const sha='b'.repeat(40);
- const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.11'}});
+ const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.12'}});
  const calls=[];
- const runner=(command,args)=>{calls.push([command,...args]);if(command==='npm')return {status:0,stdout:'updated',stderr:''};return {status:0,stdout:'2.1.0-preview.11\n',stderr:''};};
+ const runner=(command,args)=>{calls.push([command,...args]);if(command==='npm')return {status:0,stdout:'updated',stderr:''};return {status:0,stdout:'2.1.0-preview.12\n',stderr:''};};
  const result=await updateProjectInit({fetcher,runner});
- assert.equal(result.status,'updated');assert.equal(result.installedVersion,'2.1.0-preview.11');
+ assert.equal(result.status,'updated');assert.equal(result.installedVersion,'2.1.0-preview.12');
  assert.deepEqual(calls[0],['npm','install','--global','--force',`git+https://github.com/Thugney/project-init.git#${sha}`]);
  assert.deepEqual(calls[1],['project-init','version']);
 });
@@ -59,6 +59,30 @@ test('Factory prerequisites require Codex and Claude CLIs plus authentication, n
   assert.equal(plan.checks.find(x=>x.id==='codex-auth').ready,false);
   assert.equal(plan.checks.find(x=>x.id==='claude-auth').ready,false);
   assert.ok(plan.missing.includes('codex-auth'));assert.ok(plan.missing.includes('claude-auth'));
+ }finally{process.env.PATH=prior;}
+});
+
+test('agent authentication helpers use current Codex and Claude CLI subcommands',()=>{
+ const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'pinit-agent-auth-')),bin=path.join(base,'bin');fs.mkdirSync(bin);
+ const codexState=path.join(base,'codex-authenticated'),claudeState=path.join(base,'claude-authenticated');
+ const write=(name,body)=>{const file=path.join(bin,name);fs.writeFileSync(file,`#!${process.execPath}\n${body}\n`);fs.chmodSync(file,0o755);return file;};
+ write('codex',`const fs=require('fs');const a=process.argv.slice(2);
+if(a[0]==='--version'){console.log('codex-test');process.exit(0);}
+if(a[0]==='login'&&a.length===1){fs.writeFileSync(${JSON.stringify(codexState)},'yes');process.exit(0);}
+if(a[0]==='login'&&a[1]==='status'){process.exit(fs.existsSync(${JSON.stringify(codexState)})?0:1);}
+console.error('unexpected codex args '+JSON.stringify(a));process.exit(9);`);
+ write('claude',`const fs=require('fs');const a=process.argv.slice(2);
+if(a[0]==='--version'){console.log('claude-test');process.exit(0);}
+if(a[0]==='auth'&&a[1]==='login'&&a.length===2){fs.writeFileSync(${JSON.stringify(claudeState)},'yes');process.exit(0);}
+if(a[0]==='auth'&&a[1]==='status'){process.exit(fs.existsSync(${JSON.stringify(claudeState)})?0:1);}
+console.error('unexpected claude args '+JSON.stringify(a));process.exit(9);`);
+ if(process.platform==='win32'){
+  for(const name of ['codex','claude'])fs.writeFileSync(path.join(bin,name+'.cmd'),`@echo off\r\n"${process.execPath}" "%~dp0${name}" %*\r\n`);
+ }
+ const prior=process.env.PATH;process.env.PATH=bin;
+ try{
+  const codex=authenticateCodexCli();assert.equal(codex.authenticated,true);assert.equal(codex.already,false);assert.equal(fs.existsSync(codexState),true);
+  const claude=authenticateClaudeCodeCli();assert.equal(claude.authenticated,true);assert.equal(claude.already,false);assert.equal(fs.existsSync(claudeState),true);
  }finally{process.env.PATH=prior;}
 });
 

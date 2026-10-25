@@ -2,7 +2,7 @@
 
 Build: 2026-10-25  
 Artifact: GitHub source candidate + `npm pack --dry-run` package inspection  
-Version: `2.1.0-preview.10`  
+Version: `2.1.0-preview.11`  
 **Status: FUNCTIONAL PREVIEW — NOT PRODUCTION ACCEPTED**
 
 ## Delivered and checked
@@ -26,8 +26,8 @@ Version: `2.1.0-preview.10`
 ## Validation results
 
 - GitHub CI matrix: **6/6 jobs passed** on Windows, Ubuntu and macOS with Node 22 and Node 24.
-- Windows Node 24: **48/48 Project Init regression tests passed**, 0 failed/skipped; JavaScript syntax and CLI smoke passed.
-- Ubuntu Node 24: **44/44 applicable Project Init tests passed**, 4 Windows-only tests skipped, 0 failed.
+- Windows Node 24: **49/49 Project Init regression tests passed**, 0 failed/skipped; JavaScript syntax and CLI smoke passed.
+- Ubuntu Node 24: **45/45 applicable Project Init tests passed**, 4 Windows-only tests skipped, 0 failed.
 - `node --test vendor/lean-kit/tests/render.test.mjs`: **8/8 Lean Kit tests passed** across the CI matrix.
 - `npm pack --dry-run` includes the complete `vendor/factory/` Claude, Codex and runtime distribution.
 - Dirty-existing-repo regressions passed on Windows: Project Init init, Spec Kit preserve-merge apply, ECC apply and bundled Factory install all preserve unrelated modified/untracked files.
@@ -36,6 +36,7 @@ Version: `2.1.0-preview.10`
 - Parallel Factory worktree regressions create distinct Codex, Claude and integration branches/checkouts from one base; Codex/Claude are general workers and legacy backend-only config/skills migrate safely.
 - Guided-installer regressions passed: apply prompts can be accepted to continue through the stack or declined to return `STOPPED` cleanly without starting the declined component.
 - Agent-runtime readiness regressions passed: Project Init distinguishes desktop apps from terminal clients, requires the `codex` and `claude` executables plus authentication status, and Spec Kit init uses `--ignore-agent-tools` so Project Init remains the prerequisite owner.
+- Authentication-command regressions passed on Windows/Linux: Codex uses `codex login` -> `codex login status`; Claude Code uses `claude auth login` -> `claude auth status`. Unexpected auth argv fails the regression.
 - Synthetic positive whole lifecycle reached `readyForHumanReleaseReview: true` and `releaseApproved: false`, then failed correctly after modified source.
 - Screenshot drift after a green cached gate correctly made `status.releaseCandidateReady: false`.
 - At least one genuine Playwright-rendered browser PNG decoded and compared successfully by the new strict PNG comparator.
