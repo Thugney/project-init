@@ -47,6 +47,26 @@ The normal Factory workflow does **not** require a manual `inspect → recommend
 
 Never use a version placeholder with `--apply`. Native install runs third-party code; inspect command and repository state first. Existing project instruction files, Git changes, and framework-owned artifacts are preserved.
 
+## Coding-agent runtime prerequisites
+
+The Factory runs terminal workers in isolated Git worktrees, so desktop apps alone are not sufficient. Project Init owns these runtime checks:
+
+```text
+Codex CLI:       codex --version
+Codex auth:      codex login status
+Claude Code CLI: claude --version
+Claude auth:     claude auth status
+```
+
+When approved, Project Init installs missing clients using the vendors' official npm packages:
+
+```text
+@openai/codex
+@anthropic-ai/claude-code
+```
+
+If authentication is missing, Project Init offers to launch the official interactive sign-in flow and verifies the resulting status before moving on. Spec Kit is initialized with `--ignore-agent-tools` because Project Init, not Spec Kit, owns these readiness checks.
+
 ## Guided prerequisite bootstrap
 
 Normal users do not separately prepare Spec Kit/ECC/Factory prerequisites. During:
