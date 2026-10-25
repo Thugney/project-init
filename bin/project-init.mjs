@@ -79,7 +79,7 @@ function presentBootstrap(data){
  console.log(`Git: ${git.available?'ready':'will initialize on --apply'}${git.available&&git.clean===false?' · dirty working tree allowed':''}`);
  console.log(`Spec owner: Spec Kit ${data.versions?.specKit||''} · ${spec.installed?'already installed':'planned for Codex + Claude'}`);
  console.log(`ECC: ${data.versions?.ecc||''} · both agents · local scope`);
- console.log(`Factory: ${factory.source||'project-init-bundled-factory'} · backend=Codex · frontend=Claude`);
+ console.log(`Factory: ${factory.source||'project-init-bundled-factory'} · Codex + Claude · isolated worktrees · parallel workers`);
  console.log(`Human approval: required`);
  console.log('');
  if(data.status==='failed'){
