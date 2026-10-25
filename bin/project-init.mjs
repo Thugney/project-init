@@ -11,6 +11,7 @@ import {skillPlan} from '../lib/skills.mjs';
 import {renderLean} from '../lib/lean.mjs';
 import {applyFactory} from '../lib/factory.mjs';
 import {visualPlan,captureVisual,compareVisual} from '../lib/visual-gate.mjs';
+import {bootstrapProject} from '../lib/bootstrap.mjs';
 import {semanticPlan,importSemanticReview,verifyGuard} from '../lib/guard.mjs';
 
 const usage=`Project Init ${VERSION} — local-first development orchestrator (preview)
@@ -18,7 +19,7 @@ const usage=`Project Init ${VERSION} — local-first development orchestrator (p
 Commands:
   inspect      --project PATH                                      Read-only source discovery
   recommend    --project PATH [--intent ...] [--complexity ...]   Rank OpenSpec / Spec Kit / BMAD / none
-  init         --project PATH [--mode New|Existing] [--intent ...] [--ui yes|no|auto]
+  init         --project PATH [--mode New|Existing] [--intent ...] [--ui yes|no|auto] [--version X.Y.Z] [--ecc-version X.Y.Z] [--apply]  Guided Factory bootstrap (Spec Kit + ECC + Factory)
   status       --project PATH                                      Actual gate and evidence status
   select       --project PATH --framework openspec|spec-kit|bmad|none
   wire         --project PATH [--agent both|codex|claude] [--scope project|user] [--plugin] [--backup-conflicts] [--apply]  Install 7 descriptive project skills per agent
@@ -57,7 +58,7 @@ function parseArgs(argv){
    if(!token.startsWith('--')) fail(`Unexpected argument: ${token}`);
    const key=token.slice(2);
    if(['json','execute','apply','plugin','backup-conflicts'].includes(key)) {options[key]=true;continue;}
-   if(!['project','mode','intent','complexity','ui','framework','version','phase','task','actor','evidence','verdict','out','spec','allow','agent','scope','input','id','side','url','browser','file','kit'].includes(key)) fail(`Unknown option: ${key}`);
+   if(!['project','mode','intent','complexity','ui','framework','version','ecc-version','phase','task','actor','evidence','verdict','out','spec','allow','agent','scope','input','id','side','url','browser','file','kit'].includes(key)) fail(`Unknown option: ${key}`);
    const value=rest[++i];
    if(value===undefined||value.startsWith('--')) fail(`Missing value after --${key}`);
    if(multi.has(key)){options[key]??=[];options[key].push(value);}
@@ -80,7 +81,7 @@ async function main(){
  switch(command){
  case 'inspect': result=discover(root);break;
  case 'recommend': result=recommendation(discover(root),options);break;
- case 'init': result=initProject(root,options);break;
+ case 'init': result=await bootstrapProject(root,{...options,eccVersion:options['ecc-version'],apply:!!options.apply});break;
  case 'status': result=status(root);break;
  case 'select':
   if(!options.framework) fail('Pass --framework openspec|spec-kit|bmad|none.');
