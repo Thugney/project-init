@@ -2,7 +2,7 @@
 
 ## One local installation; no separate Lean Kit or Drift Guard
 
-Extract into a **new** local directory, run Node >=20.19 and `npm install -g .`, then `project-init help`. Git is required for automated Codex execution. `vendor/lean-kit/` and `lib/guard.mjs`/`lib/visual-gate.mjs` ship within the package; there is no extra installer or API-key requirement for them. Native OpenSpec, Spec Kit and BMAD are separate *optional* dependencies installed only when selected and explicitly authorized.
+Extract into a **new** local directory, run Node >=20.19 and `npm install -g .`, then `project-init help`. Git is required for automated Codex execution. `vendor/lean-kit/`, `vendor/factory/` and `lib/guard.mjs`/`lib/visual-gate.mjs` ship within the package; there is no extra Factory or Lean Kit download. Native OpenSpec, Spec Kit and BMAD are separate *optional* dependencies installed only when selected and explicitly authorized.
 
 ## Discoverable commands
 
@@ -55,7 +55,7 @@ project-init ecc --project $project --version 2.2.3 --agent both --scope local -
 project-init factory --project $project --kit C:\Tools\factory-kit --apply
 ```
 
-The factory command validates the supplied `codex_backend.sh` output/write contract before installing `.agents/skills/backend-factory` and `.agents/skills/backend-audit`. If the factory is already present, omit `--kit`. See [Factory stack](FACTORY-STACK.md).
+The factory command uses Project Init's bundled Factory by default, validates the bundled and installed `codex_backend.sh` contract, preserves an existing Factory config/backlog, and installs both Claude and Codex sides. `--kit PATH` is only an advanced developer override for testing another Claude Factory source. See [Factory stack](FACTORY-STACK.md).
 
 ## First verification loop
 
