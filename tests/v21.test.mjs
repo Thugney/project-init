@@ -458,7 +458,7 @@ test('ECC plan chooses one supported channel per harness and never stacks them',
  const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'pinit-ecc-channel-')),root=path.join(base,'repo'),bin=path.join(base,'bin');fs.mkdirSync(root);fs.mkdirSync(bin);
  fs.writeFileSync(path.join(root,'README.md'),'existing app\n');
  initProject(root,{mode:'Existing',intent:'feature',ui:'no'});
- const write=(name,body)=>{const file=path.join(bin,name);fs.writeFileSync(file,`#!${process.execPath}\\n${body}\\n`);fs.chmodSync(file,0o755);return file;};
+ const write=(name,body)=>{const file=path.join(bin,name);fs.writeFileSync(file,`#!${process.execPath}\n${body}\n`);fs.chmodSync(file,0o755);return file;};
  write('codex',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('codex-test');process.exit(0)}if(a[0]==='plugin'){process.exit(2)}process.exit(0)");
  write('claude',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-test');process.exit(0)}if(a[0]==='plugin'&&a.includes('--json')){console.log('[]');process.exit(0)}process.exit(0)");
  if(process.platform==='win32'){for(const name of ['codex','claude'])fs.writeFileSync(path.join(bin,name+'.cmd'),`@echo off\\r\\n"${process.execPath}" "%~dp0${name}" %*\\r\\n`);}
