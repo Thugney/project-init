@@ -13,6 +13,24 @@ All notable changes to the public Project Init package are documented here. Ther
 - Updated package and lockfile SPDX metadata; the package stays `private: true` to explicitly prevent accidental npm publication while supporting reviewed GitHub release tarballs.
 - Updated release checks, documentation, and contributor terms. GitHub releases still require an explicitly created version tag; production acceptance remains pending.
 
+## [2.1.0-preview.9] — 2026-10-25 (guided prerequisite installer candidate)
+
+### Added
+- `project-init init --project . --apply` now acts as a guided installer: missing prerequisites and external stack components are presented one at a time for Y/N approval.
+- Added a Project Init-managed pinned `uv 0.13.5` bootstrap for Spec Kit, including SHA-256 verification and immediate tool-bin activation.
+- Added Windows user-scoped Git/Python prerequisite installation through `winget` after explicit approval.
+- Added npm/npx repair when ECC needs `npx` but the installed npm distribution is incomplete.
+- Added `--yes` for reviewed non-interactive automation.
+
+### Changed
+- Accepted steps install, verify and automatically continue through Spec Kit -> ECC -> Factory until final readiness verification.
+- A declined step returns `STOPPED` cleanly and preserves already verified progress for a later resume.
+- Bootstrap preview now reports missing prerequisites explicitly.
+
+### Compatibility
+- The parallel isolated-worktree Factory model from preview.8 is unchanged.
+- Advanced component commands remain available, but normal users should not manually pre-install `uv` before the guided bootstrap.
+
 ## [2.1.0-preview.8] — 2026-10-25 (parallel worktree Factory candidate)
 
 ### Changed
