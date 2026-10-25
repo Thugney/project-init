@@ -13,6 +13,7 @@ import {renderVisualReview} from '../lib/visual.mjs';
 import {factoryPlan,applyFactory} from '../lib/factory.mjs';
 import {bootstrapProject} from '../lib/bootstrap.mjs';
 import {compareVersions,updateDecision,updateProjectInit} from '../lib/update.mjs';
+import {prerequisitePlan} from '../lib/prerequisites.mjs';
 test('self-update version comparison handles preview releases',()=>{
  assert.equal(compareVersions('2.1.0-preview.6','2.1.0-preview.7')<0,true);
  assert.equal(compareVersions('2.1.0-preview.7','2.1.0-preview.7'),0);
@@ -23,7 +24,7 @@ test('self-update version comparison handles preview releases',()=>{
 
 test('self-update check never invokes npm when current',async()=>{
  const sha='a'.repeat(40);
- const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.9'}});
+ const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.10'}});
  let calls=0;
  const result=await updateProjectInit({check:true,fetcher,runner:()=>{calls++;throw new Error('runner should not execute');}});
  assert.equal(result.status,'current');assert.equal(result.updated,false);assert.equal(calls,0);assert.equal(result.remoteCommit,sha);
@@ -31,13 +32,34 @@ test('self-update check never invokes npm when current',async()=>{
 
 test('self-update installs pinned GitHub source and verifies replacement CLI',async()=>{
  const sha='b'.repeat(40);
- const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.10'}});
+ const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.11'}});
  const calls=[];
- const runner=(command,args)=>{calls.push([command,...args]);if(command==='npm')return {status:0,stdout:'updated',stderr:''};return {status:0,stdout:'2.1.0-preview.10\n',stderr:''};};
+ const runner=(command,args)=>{calls.push([command,...args]);if(command==='npm')return {status:0,stdout:'updated',stderr:''};return {status:0,stdout:'2.1.0-preview.11\n',stderr:''};};
  const result=await updateProjectInit({fetcher,runner});
- assert.equal(result.status,'updated');assert.equal(result.installedVersion,'2.1.0-preview.10');
+ assert.equal(result.status,'updated');assert.equal(result.installedVersion,'2.1.0-preview.11');
  assert.deepEqual(calls[0],['npm','install','--global','--force',`git+https://github.com/Thugney/project-init.git#${sha}`]);
  assert.deepEqual(calls[1],['project-init','version']);
+});
+
+test('Factory prerequisites require Codex and Claude CLIs plus authentication, not desktop apps',()=>{
+ const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'pinit-agent-cli-')),bin=path.join(base,'bin');fs.mkdirSync(bin);
+ const node=process.execPath.replaceAll('\\','\\\\');
+ const js=(name,body)=>{const file=path.join(bin,name);fs.writeFileSync(file,`#!${process.execPath}\n${body}\n`);fs.chmodSync(file,0o755);return file;};
+ js('npm',"if(process.argv[2]==='--version'){console.log('10.0.0');process.exit(0)}process.exit(0)");
+ js('codex',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('codex-test');process.exit(0)}if(a[0]==='login'&&a[1]==='status')process.exit(1);process.exit(0)");
+ js('claude',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-test');process.exit(0)}if(a[0]==='auth'&&a[1]==='status')process.exit(1);process.exit(0)");
+ if(process.platform==='win32'){
+  for(const name of ['npm','codex','claude'])fs.writeFileSync(path.join(bin,name+'.cmd'),`@echo off\r\n"${process.execPath}" "%~dp0${name}" %*\r\n`);
+ }
+ const prior=process.env.PATH;process.env.PATH=bin;
+ try{
+  const plan=prerequisitePlan({needUv:false,needEcc:false,needFactory:true});
+  const codex=plan.checks.find(x=>x.id==='codex-cli'),claude=plan.checks.find(x=>x.id==='claude-code');
+  assert.equal(codex.ready,true);assert.equal(claude.ready,true);
+  assert.equal(plan.checks.find(x=>x.id==='codex-auth').ready,false);
+  assert.equal(plan.checks.find(x=>x.id==='claude-auth').ready,false);
+  assert.ok(plan.missing.includes('codex-auth'));assert.ok(plan.missing.includes('claude-auth'));
+ }finally{process.env.PATH=prior;}
 });
 
 function fixture(label,ui='no'){
@@ -223,9 +245,17 @@ process.exit(9);
  fs.writeFileSync(npx,`#!/usr/bin/env node
 const fs=require('fs');fs.mkdirSync('.claude/ecc-fixture',{recursive:true});fs.writeFileSync('.claude/ecc-fixture/installed','yes\\n');process.exit(0);
 `);fs.chmodSync(npx,0o755);
+ const codex=path.join(bin,'codex');fs.writeFileSync(codex,`#!/usr/bin/env node
+const a=process.argv.slice(2);if(a[0]==='--version'){console.log('codex-cli test');process.exit(0);}if(a[0]==='login'&&a[1]==='status')process.exit(0);process.exit(0);
+`);fs.chmodSync(codex,0o755);
+ const claude=path.join(bin,'claude');fs.writeFileSync(claude,`#!/usr/bin/env node
+const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-code test');process.exit(0);}if(a[0]==='auth'&&a[1]==='status')process.exit(0);process.exit(0);
+`);fs.chmodSync(claude,0o755);
  if(process.platform==='win32'){
   fs.writeFileSync(path.join(bin,'specify.cmd'),'@echo off\r\nnode "%~dp0specify" %*\r\n');
   fs.writeFileSync(path.join(bin,'npx.cmd'),'@echo off\r\nnode "%~dp0npx" %*\r\n');
+  fs.writeFileSync(path.join(bin,'codex.cmd'),'@echo off\r\nnode "%~dp0codex" %*\r\n');
+  fs.writeFileSync(path.join(bin,'claude.cmd'),'@echo off\r\nnode "%~dp0claude" %*\r\n');
  }
  const prior=process.env.PATH;process.env.PATH=bin+path.delimiter+prior;
  try{
@@ -251,7 +281,18 @@ test('guided init stops cleanly when a component install is declined',async()=>{
 const a=process.argv.slice(2);if(a[0]==='version'){console.log('specify 1.2.3');process.exit(0);}process.exit(9);
 `);fs.chmodSync(specify,0o755);
  const npx=path.join(bin,'npx');fs.writeFileSync(npx,'#!/usr/bin/env node\nprocess.exit(0);\n');fs.chmodSync(npx,0o755);
- if(process.platform==='win32'){fs.writeFileSync(path.join(bin,'specify.cmd'),'@echo off\r\nnode "%~dp0specify" %*\r\n');fs.writeFileSync(path.join(bin,'npx.cmd'),'@echo off\r\nnode "%~dp0npx" %*\r\n');}
+ const codex=path.join(bin,'codex');fs.writeFileSync(codex,`#!/usr/bin/env node
+const a=process.argv.slice(2);if(a[0]==='--version'){console.log('codex-cli test');process.exit(0);}if(a[0]==='login'&&a[1]==='status')process.exit(0);process.exit(0);
+`);fs.chmodSync(codex,0o755);
+ const claude=path.join(bin,'claude');fs.writeFileSync(claude,`#!/usr/bin/env node
+const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-code test');process.exit(0);}if(a[0]==='auth'&&a[1]==='status')process.exit(0);process.exit(0);
+`);fs.chmodSync(claude,0o755);
+ if(process.platform==='win32'){
+  fs.writeFileSync(path.join(bin,'specify.cmd'),'@echo off\r\nnode "%~dp0specify" %*\r\n');
+  fs.writeFileSync(path.join(bin,'npx.cmd'),'@echo off\r\nnode "%~dp0npx" %*\r\n');
+  fs.writeFileSync(path.join(bin,'codex.cmd'),'@echo off\r\nnode "%~dp0codex" %*\r\n');
+  fs.writeFileSync(path.join(bin,'claude.cmd'),'@echo off\r\nnode "%~dp0claude" %*\r\n');
+ }
  const prior=process.env.PATH;process.env.PATH=bin+path.delimiter+prior;
  try{
   const result=await bootstrapProject(root,{mode:'Existing',intent:'feature',ui:'no',apply:true,confirm:async message=>!message.includes('Spec Kit')});
@@ -278,7 +319,7 @@ test('dirty existing repo initializes and Spec Kit plan uses preserve-merge with
  selectFramework(root,'spec-kit');
  const plan=installPlan(root,'1.2.3','both');assert.equal(plan.safeToApply,true);assert.equal(plan.preflight.gitClean,false);
  const tool=plan.steps.find(x=>x.kind==='tool');if(tool){assert.equal(tool.cmd,'uv');assert.ok(tool.args.includes('git+https://github.com/github/spec-kit.git@v1.2.3'));}
- const init=plan.steps.find(x=>x.cmd==='specify'&&x.args[0]==='init');assert.ok(init);assert.equal(init.input,'y\n');assert.equal(init.preservesExisting,true);assert.equal(init.args.includes('--force'),false);assert.equal(init.args.includes('--non-interactive'),false);assert.ok(init.args.includes('codex'));
+ const init=plan.steps.find(x=>x.cmd==='specify'&&x.args[0]==='init');assert.ok(init);assert.equal(init.input,'y\n');assert.equal(init.preservesExisting,true);assert.equal(init.args.includes('--force'),false);assert.equal(init.args.includes('--non-interactive'),false);assert.ok(init.args.includes('codex'));assert.ok(init.args.includes('--ignore-agent-tools'));
  const claude=plan.steps.find(x=>x.cmd==='specify'&&x.args[0]==='integration'&&x.args.includes('claude'));assert.ok(claude);assert.equal(claude.interactive,undefined);
 });
 

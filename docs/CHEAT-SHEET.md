@@ -57,6 +57,17 @@ project-init update
 
 No `cd C:\Tools\project-init`, `git pull`, or clean source checkout is required.
 
+## Desktop app vs CLI
+
+Factory workers require terminal executables:
+
+```text
+Codex desktop/app   ≠ codex CLI readiness
+Claude desktop/app  ≠ Claude Code CLI readiness
+```
+
+Project Init checks/installs/authenticates both CLIs during guided bootstrap.
+
 ## What `init --apply` does
 
 ```text

@@ -13,6 +13,24 @@ All notable changes to the public Project Init package are documented here. Ther
 - Updated package and lockfile SPDX metadata; the package stays `private: true` to explicitly prevent accidental npm publication while supporting reviewed GitHub release tarballs.
 - Updated release checks, documentation, and contributor terms. GitHub releases still require an explicitly created version tag; production acceptance remains pending.
 
+## [2.1.0-preview.10] — 2026-10-25 (agent CLI readiness candidate)
+
+### Fixed
+- Spec Kit initialization now uses its official `--ignore-agent-tools` option because Project Init owns Codex/Claude runtime readiness.
+- Guided Spec Kit setup no longer exposes a second nested confirmation that users cannot answer; Project Init's own Y/N approval authorizes the safe existing-repo preserve-merge and raw vendor output remains in the install log.
+- Failed/stopped bootstrap summaries refresh prerequisite state, so already-installed tools no longer appear as still missing.
+
+### Added
+- Factory prerequisites now require the actual Codex CLI and Claude Code CLI executables, not desktop applications.
+- Missing Codex CLI is installed from the official `@openai/codex` npm package after approval and verified with `codex --version`.
+- Missing Claude Code CLI is installed from the official `@anthropic-ai/claude-code` npm package after approval and verified with `claude --version`.
+- Project Init checks `codex login status` and `claude auth status`; when unauthenticated it offers the official interactive sign-in flow and verifies the resulting status before continuing.
+- Regression coverage distinguishes installed CLIs from authenticated CLIs and asserts that Spec Kit skips its own agent executable check.
+
+### Compatibility
+- The preview.9 guided prerequisite installer and preview.8 parallel isolated-worktree Factory model remain unchanged.
+- Existing authenticated CLIs are reused and are not reinstalled.
+
 ## [2.1.0-preview.9] — 2026-10-25 (guided prerequisite installer candidate)
 
 ### Added

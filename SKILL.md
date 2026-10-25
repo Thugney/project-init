@@ -1,6 +1,6 @@
 ---
 name: project-init
-version: 2.1.0-preview.9
+version: 2.1.0-preview.10
 description: Local development orchestrator with native spec-framework selection, high-fidelity review, bundled Lean Kit and independent evidence-based drift gates for Codex and Claude Code.
 ---
 
