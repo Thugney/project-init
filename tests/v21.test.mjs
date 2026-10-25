@@ -424,12 +424,13 @@ fs.mkdirSync('.claude/ecc-fixture',{recursive:true});fs.writeFileSync('.claude/e
  }finally{process.env.PATH=prior;}
  assert.equal(fs.readFileSync(path.join(root,'README.md'),'utf8'),'dirty ecc work\n');
  assert.equal(fs.readFileSync(path.join(root,'LOCAL.txt'),'utf8'),'keep me\n');
- const calls=fs.readFileSync(path.join(root,'ecc-calls.log'),'utf8').trim().split(/\\r?\\n/).map(JSON.parse);
+ const calls=fs.readFileSync(path.join(root,'ecc-calls.log'),'utf8').trim().split(/\r?\n/).map(JSON.parse);
  assert.equal(calls.length,2);assert.ok(calls.some(a=>a.includes('--target')&&a.includes('codex')));
 });
 
 test('ECC Codex fallback honors custom CODEX_HOME by choosing legacy sync, not default managed home',()=>{
  const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'pinit-ecc-custom-home-')),root=path.join(base,'repo'),bin=path.join(base,'bin'),codexHome=path.join(base,'CodexHome');fs.mkdirSync(root);fs.mkdirSync(bin);fs.mkdirSync(codexHome);
+ fs.writeFileSync(path.join(root,'README.md'),'existing app\n');
  initProject(root,{mode:'Existing',intent:'feature',ui:'no'});
  fs.writeFileSync(path.join(codexHome,'config.toml'),'# test config\n');
  const write=(name,body)=>{const file=path.join(bin,name);fs.writeFileSync(file,`#!${process.execPath}\n${body}\n`);fs.chmodSync(file,0o755);return file;};
@@ -455,6 +456,7 @@ test('ECC Codex fallback honors custom CODEX_HOME by choosing legacy sync, not d
 
 test('ECC plan chooses one supported channel per harness and never stacks them',()=>{
  const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'pinit-ecc-channel-')),root=path.join(base,'repo'),bin=path.join(base,'bin');fs.mkdirSync(root);fs.mkdirSync(bin);
+ fs.writeFileSync(path.join(root,'README.md'),'existing app\n');
  initProject(root,{mode:'Existing',intent:'feature',ui:'no'});
  const write=(name,body)=>{const file=path.join(bin,name);fs.writeFileSync(file,`#!${process.execPath}\\n${body}\\n`);fs.chmodSync(file,0o755);return file;};
  write('codex',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('codex-test');process.exit(0)}if(a[0]==='plugin'){process.exit(2)}process.exit(0)");
