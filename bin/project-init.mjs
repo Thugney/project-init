@@ -93,7 +93,10 @@ function presentBootstrap(data){
  console.log(`Mode: ${state.mode||'unknown'} · ${data.resumed?'resumed existing Project Init state':'initialized'}`);
  console.log(`Git: ${git.available?'ready':'will initialize on --apply'}${git.available&&git.clean===false?' · dirty working tree allowed':''}`);
  console.log(`Spec owner: Spec Kit ${data.versions?.specKit||''} · ${spec.installed?'already installed':'planned for Codex + Claude'}`);
- console.log(`ECC: ${data.versions?.ecc||''} · both agents · local scope`);
+ const eccChannels=data.plan?.ecc?.channels;
+ console.log(eccChannels
+  ? `ECC: ${data.versions?.ecc||''} · Claude=${eccChannels.claude||'n/a'} · Codex=${eccChannels.codex||'n/a'}`
+  : `ECC: ${data.versions?.ecc||''} · both agents · local scope`);
  const missing=data.plan?.prerequisites?.missing||[];
  console.log(`Prerequisites: ${missing.length?missing.join(', ')+' missing · Project Init will ask/install during --apply':'ready'}`);
  console.log(`Factory: ${factory.source||'project-init-bundled-factory'} · Codex + Claude · isolated worktrees · parallel workers`);
@@ -178,6 +181,6 @@ async function main(){
  if(command==='lean'&&options.execute&&!result.passed)process.exitCode=1;
  if(command==='run'&&options.execute&&['failed','blocked-review'].includes(result.status))process.exitCode=1;
  if(command==='install'&&options.apply&&result.results?.some(x=>x.exitCode!==0))process.exitCode=1;
- if(command==='ecc'&&options.apply&&result.result?.exitCode!==0)process.exitCode=1;
+ if(command==='ecc'&&options.apply&&(result.applied===false||result.results?.some(x=>x.exitCode!==0)))process.exitCode=1;
 }
 main().catch(error=>{console.error(`Project Init: ${error.message}`);process.exitCode=1;});
