@@ -33,24 +33,18 @@ Project Init
 ```powershell
 cd C:\Work\MyProject
 
-project-init inspect --project .
-project-init init --project . --mode Existing --intent feature --ui auto
-project-init select --project . --framework spec-kit
+# Preview the complete bootstrap.
+project-init init --project .
 
-# Preview first
-project-init install --project . --version 1.2.3 --agent both
-project-init ecc --project . --version 2.2.3 --agent both --scope local
-project-init factory --project .
-
-# Apply after reviewing the plans
-project-init install --project . --version 1.2.3 --agent both --apply
-project-init ecc --project . --version 2.2.3 --agent both --scope local --apply
-project-init factory --project . --apply
+# Apply the same bootstrap.
+project-init init --project . --apply
 ```
 
-For a brand-new empty repo, use `--mode New` instead of `Existing`.
+That is the normal workflow. Project Init automatically detects **New vs Existing**, resumes prior Project Init state when present, uses **Spec Kit** as the Factory profile's single spec owner, prepares **ECC** for both coding agents, and installs the bundled **Factory**.
 
-For an **existing** repo, you do not need to stash or commit unrelated work before `project-init init`. Project Init records the dirty state and preserves unrelated files. Spec Kit is installed through its preserve-merge path (no `--force`), ECC performs its own collision preflight, and Factory only writes its owned paths.
+For an **existing** repo, you do not need to stash or commit unrelated work first. Project Init records the dirty state and preserves unrelated files. Spec Kit uses preserve-merge (no `--force`), ECC performs its own collision preflight, and Factory writes only its managed paths.
+
+For a new path, Project Init creates the project directory and initializes Git during `--apply`.
 
 ## Day-to-day feature flow
 
@@ -85,11 +79,11 @@ factory/jobs/<slug>/spec.md
 
 | I want to... | Use |
 | --- | --- |
-| Start/check a repository | `project-init inspect` / `project-init init` |
-| Choose planning framework | `project-init select --framework spec-kit` |
-| Install Spec Kit | `project-init install ... --agent both` |
-| Install ECC for both agents | `project-init ecc ... --agent both` |
-| Install/update Factory | `project-init factory --project . --apply` |
+| Bootstrap/resume a repository | `project-init init --project .` then the same command with `--apply` |
+| Inspect only | `project-init inspect --project .` |
+| Advanced: manage Spec Kit directly | `project-init select` / `project-init install` |
+| Advanced: manage ECC directly | `project-init ecc ...` |
+| Advanced: manage Factory directly | `project-init factory ...` |
 | See Project Init skills | `project-init wire ...` |
 | Check evidence/status | `project-init status` / `project-init verify` workflow |
 | Build a backend Factory task | Codex `backend-factory` skill |

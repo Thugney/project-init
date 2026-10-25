@@ -22,50 +22,46 @@ For a **single per-user installation**, use `--scope user` instead of installing
 - Optional Claude namespaced commands `/project-init:design` etc.: `project-init wire --agent claude --plugin --apply` creates a **local plugin** that must be actively loaded using the returned `claude --plugin-dir "..."` launch command. Plain local skill folders do **not** automatically expose that namespace.
 - Claude automatic execution parity is not provided: only Codex has a programmatic `project-init run --execute` path today. Claude skills can perform work in their interactive client and retain actual evidence.
 
-## Vendor methodology selection
+## Advanced methodology controls
 
-Run `inspect`, `recommend`, `init`, `select`, `install` in that order. `install` previews by default; its `--apply` executes native third-party installers or project initialization only where the repository is safe for unattended setup.
+The normal Factory workflow does **not** require a manual `inspect → recommend → select → install` sequence. `project-init init --project .` owns that bootstrap. The commands below remain available when intentionally using a non-Factory methodology or debugging one component.
 
 | Framework | Intended pinned tool installation | Limitation |
 |---|---|---|
 | OpenSpec | `npm install -g @fission-ai/openspec@<published-version>` followed by `openspec init --tools codex,claude` for both agents | Not live-validated; inspect upstream changes and generated files |
-| Spec Kit | `uv tool install specify-cli==<published-version>` and native `specify init ...` | Multiple agent integration may need interactive/supervised steps; a nonempty existing repo blocks unattended scaffolding |
+| Spec Kit | pinned GitHub release via `uv tool install ... --from git+https://github.com/github/spec-kit.git@v<version>` and native `specify init ...` | Guided Factory bootstrap uses preserve-merge for existing repos and non-interactive initialization for recorded New projects |
 | BMAD | `npx bmad-method@<published-version> install` | Interactive installer must be supervised; structural detection not runtime proof |
 
 Never use a version placeholder with `--apply`. Native install runs third-party code; inspect command and repository state first. Existing project instruction files, Git changes, and framework-owned artifacts are preserved.
 
 ## Recommended dual-agent factory profile
 
-For the Claude + Codex software factory, use **Spec Kit** as the single spec owner, **ECC** as the shared engineering toolbox, and **Factory** as the execution/review loop. Do not install BMAD in parallel for the same workflow.
+For the Claude + Codex software factory, **Project Init is the only normal bootstrap entry point**. Spec Kit is the single spec owner, ECC is the shared engineering toolbox, and Factory is the execution/review loop.
 
-Current reviewed pins for this preview are Spec Kit `1.2.3` and ECC `2.2.3`. Preview before apply:
-
-```powershell
-project-init select --project $project --framework spec-kit
-project-init install --project $project --version 1.2.3 --agent both
-project-init ecc --project $project --version 2.2.3 --agent both --scope local
-project-init factory --project $project
-```
-
-Apply after reviewing the plans. Existing repositories may contain unrelated uncommitted work; Project Init no longer requires a blanket clean worktree:
+From the target repository:
 
 ```powershell
-project-init install --project $project --version 1.2.3 --agent both --apply
-project-init ecc --project $project --version 2.2.3 --agent both --scope local --apply
-project-init factory --project $project --apply
+project-init init --project .
 ```
 
-The factory command uses Project Init's bundled Factory by default, validates the bundled and installed `codex_backend.sh` contract, preserves an existing Factory config/backlog, and installs both Claude and Codex sides. `--kit PATH` is only an advanced developer override for testing another Claude Factory source. See [Factory stack](FACTORY-STACK.md).
+This inspects or resumes the repository and returns one combined plan covering Git (when needed), Spec Kit, ECC and the bundled Factory. It does not require a clean worktree for unrelated existing changes.
 
-### Existing repositories with local work
+After reviewing that plan:
 
-`project-init init --mode Existing` is intentionally non-destructive and may run on a dirty working tree. For the default Factory profile:
+```powershell
+project-init init --project . --apply
+```
 
-- Spec Kit is initialized without `--force`; Project Init supplies the explicit non-empty-directory confirmation so Spec Kit uses its preserve-merge behavior and skips existing files.
-- ECC uses its guided installer, which preflights collisions/ownership before writes.
-- Factory writes only its managed `.claude/skills/factory`, factory-prefixed agents, Codex Factory skills and runtime files; existing Factory config/backlog are preserved.
+The apply order is managed by Project Init:
 
-Unrelated modified/untracked files are not a reason to block setup. A real target-file conflict must still fail closed.
+1. ensure Git exists for the project;
+2. install/initialize Spec Kit for Codex + Claude using the safe new/existing-repo path;
+3. install ECC for both agents;
+4. install/update the bundled Factory (Claude orchestrator/reviewers + Codex backend/audit).
+
+Current reviewed pins are Spec Kit `1.2.3` and ECC `2.2.3`. Existing Project Init state is resumed rather than overwritten. Existing repos use Spec Kit preserve-merge without `--force`; ECC retains its own collision/ownership checks; Factory preserves its config/backlog and refuses conflicting Codex skill content.
+
+The lower-level `select`, `install`, `ecc`, `factory`, and `wire` commands remain available for debugging, custom/non-Factory methodologies, or component-level maintenance. They are not the normal setup sequence.
 
 ## First verification loop
 

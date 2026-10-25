@@ -11,7 +11,7 @@ Project Init is a **local-first development workflow orchestrator** for engineer
 
 It does **not** replace your coding agent or run an autonomous developer in the background. The selected framework owns its **native specifications and tasks**; Codex or Claude writes the code. Project Init coordinates and checks the handoffs.
 
-> **Status: `2.1.0-preview.5` — functional preview, not production-accepted.** The local suites pass, but live framework installs, real Codex/Claude command discovery, native Claude unattended execution, and Windows browser capture have not completed acceptance testing. A passing guard is not proof of full semantic correctness or release approval. See [verification limits](docs/VERIFICATION.md) and the [acceptance report](docs/ACCEPTANCE-REPORT.md).
+> **Status: `2.1.0-preview.6` — functional preview, not production-accepted.** The local suites pass, but live framework installs, real Codex/Claude command discovery, native Claude unattended execution, and Windows browser capture have not completed acceptance testing. A passing guard is not proof of full semantic correctness or release approval. See [verification limits](docs/VERIFICATION.md) and the [acceptance report](docs/ACCEPTANCE-REPORT.md).
 >
 > **Licensing:** Project Init, the bundled Lean Kit, bundled Factory templates, and preserved v1 sources are released under the [Apache License 2.0](LICENSE). External tools such as Spec Kit, ECC, OpenSpec and BMAD are installed separately and keep their own licenses. See [NOTICE](NOTICE.md).
 
@@ -76,22 +76,27 @@ Existing repositories do **not** need a clean working tree just to use Project I
 ```powershell
 cd C:\Work\ExampleRepo
 
-project-init inspect --project .
-project-init init --project . --mode Existing --intent feature --ui auto
+# One entry point: inspect/resume the repo and show the complete Factory bootstrap plan.
+project-init init --project .
 
-# Factory profile: Spec Kit is the recommended single spec owner.
-project-init select --project . --framework spec-kit
-project-init install --project . --version 1.2.3 --agent both
-project-init install --project . --version 1.2.3 --agent both --apply
-
-# Shared engineering toolbox for Claude Code + Codex.
-project-init ecc --project . --version 2.2.3 --agent both --scope local
-project-init ecc --project . --version 2.2.3 --agent both --scope local --apply
-
-# Factory is bundled with Project Init; no separate Factory path is needed.
-project-init factory --project .
-project-init factory --project . --apply
+# Apply the same plan after reviewing it.
+project-init init --project . --apply
 ```
+
+The guided Factory bootstrap handles the normal stack for both new and existing repositories:
+
+```text
+Project Init
+  -> Spec Kit (single requirements/spec/tasks owner)
+  -> ECC (engineering/security/testing capabilities)
+  -> Factory
+       -> Codex backend by default
+       -> Claude frontend/UX/UI by default
+  -> tests/reviewers
+  -> human approval
+```
+
+`inspect`, `recommend`, `select`, `install`, `ecc`, `factory`, and `wire` remain available as advanced/debug controls, but they are not required for the normal Factory bootstrap.
 
 For this factory stack, **Spec Kit is the default** because it natively installs into both Codex and Claude and the factory already consumes `specs/NNN-x/`. BMAD remains an optional alternative for projects that need its deeper product/UX workflow; do not install both planning methodologies for the same change. ECC is a toolbox, not a second spec owner. Factory is the execution/review loop. Start with the [Factory stack cheat sheet](docs/CHEAT-SHEET.md), then see [Factory stack](docs/FACTORY-STACK.md) for boundaries and details.
 

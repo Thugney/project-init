@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import {initProject,selectFramework,establishBaseline,recordReview,approve,checkBaseline,status,statePath,runChecks,installPlan,applyInstall,eccInstallPlan,applyEcc} from '../lib/core.mjs';
+import {initProject,readState,selectFramework,establishBaseline,recordReview,approve,checkBaseline,status,statePath,runChecks,installPlan,applyInstall,eccInstallPlan,applyEcc} from '../lib/core.mjs';
 import {skillPlan} from '../lib/skills.mjs';
 import {renderLean} from '../lib/lean.mjs';
 import {comparePng,readPng,writePng} from '../lib/png.mjs';
@@ -11,6 +11,7 @@ import {visualPlan,compareVisual,captureVisual} from '../lib/visual-gate.mjs';
 import {semanticPlan,importSemanticReview,verifyGuard} from '../lib/guard.mjs';
 import {renderVisualReview} from '../lib/visual.mjs';
 import {factoryPlan,applyFactory} from '../lib/factory.mjs';
+import {bootstrapProject} from '../lib/bootstrap.mjs';
 function fixture(label,ui='no'){
  const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),`pinit-v21-${label}-`)),root=path.join(base,'repo');
  initProject(root,{mode:'New',ui,intent:'automation'});selectFramework(root,'none');fs.mkdirSync(path.join(root,'specs'));fs.writeFileSync(path.join(root,'specs','feature.md'),'# Requirement\nMake a working feature.\n');return {base,root};
@@ -160,6 +161,65 @@ test('explicit conflict backups preserve old skills and do not touch unrelated o
  assert.equal(skillPlan(root,{agent:'both',scope:'user',userHome:home,backupConflicts:true,apply:true}).backedUp,0);
 });
 
+
+test('guided init selects Spec Kit and returns the complete Factory stack plan',async()=>{
+ const {spawnSync}=await import('node:child_process');
+ const tempRoot=fs.realpathSync(os.tmpdir()); const base=fs.mkdtempSync(path.join(tempRoot,'pinit-bootstrap-plan-')),root=path.join(base,'repo');fs.mkdirSync(root);
+ const git=(...args)=>{const r=spawnSync('git',args,{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr);};
+ git('init');git('config','user.name','Fixture');git('config','user.email','fixture@example.invalid');fs.writeFileSync(path.join(root,'README.md'),'baseline\n');git('add','.');git('commit','-m','baseline');
+ fs.writeFileSync(path.join(root,'LOCAL.txt'),'dirty existing work\n');
+ const first=await bootstrapProject(root,{mode:'Existing',intent:'feature',ui:'auto'});
+ assert.equal(first.initialized,true);assert.equal(first.resumed,false);assert.equal(first.profile,'factory');assert.equal(first.framework.id,'spec-kit');
+ assert.equal(first.plan.specKit.framework,'spec-kit');assert.equal(first.plan.specKit.agent,'both');assert.equal(first.plan.ecc.agent,'both');assert.equal(first.plan.ecc.scope,'local');
+ assert.equal(first.plan.factory.source,'project-init-bundled-factory');assert.equal(first.applied,false);assert.match(first.next,/same init command with --apply/i);
+ assert.equal(readState(root).framework,'spec-kit');assert.equal(fs.readFileSync(path.join(root,'LOCAL.txt'),'utf8'),'dirty existing work\n');
+ const resumed=await bootstrapProject(root,{mode:'Existing'});
+ assert.equal(resumed.initialized,false);assert.equal(resumed.resumed,true);assert.equal(resumed.framework.id,'spec-kit');
+});
+
+test('guided init --apply executes Spec Kit, ECC and Factory and resumes idempotently',async()=>{
+ const {spawnSync}=await import('node:child_process');
+ const tempRoot=fs.realpathSync(os.tmpdir()); const base=fs.mkdtempSync(path.join(tempRoot,'pinit-bootstrap-apply-')),root=path.join(base,'repo'),bin=path.join(base,'bin');fs.mkdirSync(root);fs.mkdirSync(bin);
+ const git=(...args)=>{const r=spawnSync('git',args,{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr);};
+ git('init');git('config','user.name','Fixture');git('config','user.email','fixture@example.invalid');fs.writeFileSync(path.join(root,'README.md'),'baseline\n');git('add','.');git('commit','-m','baseline');
+ fs.writeFileSync(path.join(root,'README.md'),'local dirty work\n');fs.writeFileSync(path.join(root,'LOCAL.txt'),'keep me\n');
+ const specify=path.join(bin,'specify');
+ fs.writeFileSync(specify,`#!/usr/bin/env node
+const fs=require('fs');const a=process.argv.slice(2);
+if(a[0]==='version'){console.log('specify 1.2.3');process.exit(0);}
+if(a[0]==='init'){let input='';try{input=fs.readFileSync(0,'utf8')}catch{};if(input.trim()!=='y')process.exit(8);fs.mkdirSync('.specify',{recursive:true});fs.writeFileSync('.specify/fixture.txt','installed\\n');fs.mkdirSync('.agents/skills/speckit-fixture',{recursive:true});fs.writeFileSync('.agents/skills/speckit-fixture/SKILL.md','fixture\\n');process.exit(0);}
+if(a[0]==='integration'&&a[1]==='install'&&a[2]==='claude'){fs.mkdirSync('.claude/skills/speckit-fixture',{recursive:true});fs.writeFileSync('.claude/skills/speckit-fixture/SKILL.md','fixture\\n');process.exit(0);}
+process.exit(9);
+`);fs.chmodSync(specify,0o755);
+ const npx=path.join(bin,'npx');
+ fs.writeFileSync(npx,`#!/usr/bin/env node
+const fs=require('fs');fs.mkdirSync('.claude/ecc-fixture',{recursive:true});fs.writeFileSync('.claude/ecc-fixture/installed','yes\\n');process.exit(0);
+`);fs.chmodSync(npx,0o755);
+ if(process.platform==='win32'){
+  fs.writeFileSync(path.join(bin,'specify.cmd'),'@echo off\r\nnode "%~dp0specify" %*\r\n');
+  fs.writeFileSync(path.join(bin,'npx.cmd'),'@echo off\r\nnode "%~dp0npx" %*\r\n');
+ }
+ const prior=process.env.PATH;process.env.PATH=bin+path.delimiter+prior;
+ try{
+  const result=await bootstrapProject(root,{mode:'Existing',intent:'feature',ui:'auto',apply:true});
+  assert.equal(result.status,'ready',JSON.stringify(result));assert.equal(result.applied,true);
+  assert.ok(fs.existsSync(path.join(root,'.specify/fixture.txt')));
+  assert.ok(fs.existsSync(path.join(root,'.claude/ecc-fixture/installed')));
+  assert.ok(fs.existsSync(path.join(root,'.claude/skills/factory/SKILL.md')));
+  assert.ok(fs.existsSync(path.join(root,'.agents/skills/backend-factory/SKILL.md')));
+  assert.equal(fs.readFileSync(path.join(root,'README.md'),'utf8'),'local dirty work\n');assert.equal(fs.readFileSync(path.join(root,'LOCAL.txt'),'utf8'),'keep me\n');
+  const state=JSON.parse(fs.readFileSync(statePath(root,'bootstrap.json'),'utf8'));assert.equal(state.steps.specKit.status,'completed');assert.equal(state.steps.ecc.status,'completed');assert.equal(state.steps.factory.status,'completed');
+  const resumed=await bootstrapProject(root,{mode:'Existing',apply:true});assert.equal(resumed.status,'ready');assert.equal(resumed.execution.ecc.skipped,true);
+ }finally{process.env.PATH=prior;}
+});
+
+test('guided init detects and creates a brand-new repository before Git exists',async()=>{
+ const tempRoot=fs.realpathSync(os.tmpdir()); const base=fs.mkdtempSync(path.join(tempRoot,'pinit-bootstrap-new-')),root=path.join(base,'repo');
+ const result=await bootstrapProject(root,{intent:'new-product',ui:'yes'});
+ assert.equal(result.initialized,true);assert.equal(result.initialization.state.mode,'New');assert.equal(result.framework.id,'spec-kit');assert.equal(result.plan.git.action,'init');assert.equal(result.plan.factory.deferredUntilGitInit,true);
+ assert.equal(result.plan.specKit.mode,'New');const init=result.plan.specKit.steps.find(x=>x.cmd==='specify'&&x.args[0]==='init');assert.ok(init);assert.ok(init.args.includes('--non-interactive'));assert.equal(init.args.includes('--force'),false);assert.equal(init.input,undefined);
+ assert.equal(fs.existsSync(root),true);
+});
 
 test('dirty existing repo initializes and Spec Kit plan uses preserve-merge without force',async()=>{
  const {spawnSync}=await import('node:child_process');

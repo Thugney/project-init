@@ -34,31 +34,28 @@ The factory already has a native entry point for `specs/NNN-x/`, and current Spe
 
 BMAD remains supported by Project Init, but it is intentionally **not** installed alongside Spec Kit for the same project workflow. Use BMAD instead when the project needs its broader product discovery, UX and architecture process and you are willing to let BMAD become the one spec owner.
 
-## Install sequence
+## Bootstrap
 
-Preview every external change first.
+The normal workflow has one entry point:
 
 ```powershell
 cd C:\Work\App
 
-project-init init --project . --mode Existing --intent feature --ui auto
-project-init select --project . --framework spec-kit
-project-init install --project . --version 1.2.3 --agent both
-project-init install --project . --version 1.2.3 --agent both --apply
+# Inspect/resume and preview the complete Factory bootstrap.
+project-init init --project .
 
-project-init ecc --project . --version 2.2.3 --agent both --scope local
-project-init ecc --project . --version 2.2.3 --agent both --scope local --apply
-
-project-init factory --project .
-project-init factory --project . --apply
+# Apply the same bootstrap.
+project-init init --project . --apply
 ```
 
-Factory is bundled with Project Init. The normal command installs/updates the reviewed Claude orchestrator, its factory-prefixed agents, dashboard/backlog templates, the Codex bridge, and:
+Project Init owns the sequence: detect New/Existing → ensure Git when needed → install Spec Kit for both agents → install ECC for both agents → install/update the bundled Factory.
+
+Factory includes the reviewed Claude orchestrator, factory-prefixed agents, dashboard/backlog templates, Codex bridge, and:
 
 - `.agents/skills/backend-factory/SKILL.md`
 - `.agents/skills/backend-audit/SKILL.md`
 
-Existing project `.claude/skills/factory/config.json` and `factory/backlog.md` are preserved. Runtime job state is ignored from Git. `--kit PATH` remains only as an explicit developer override for testing another Claude Factory source; normal users do not need a Factory source path.
+Existing `.claude/skills/factory/config.json` and `factory/backlog.md` are preserved. Runtime job state is ignored from Git. The lower-level component commands remain available for debugging or custom setups, but are not the normal Factory bootstrap.
 
 ## Normal workflow
 

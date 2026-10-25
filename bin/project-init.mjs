@@ -11,6 +11,7 @@ import {skillPlan} from '../lib/skills.mjs';
 import {renderLean} from '../lib/lean.mjs';
 import {applyFactory} from '../lib/factory.mjs';
 import {visualPlan,captureVisual,compareVisual} from '../lib/visual-gate.mjs';
+import {bootstrapProject} from '../lib/bootstrap.mjs';
 import {semanticPlan,importSemanticReview,verifyGuard} from '../lib/guard.mjs';
 
 const usage=`Project Init ${VERSION} — local-first development orchestrator (preview)
@@ -18,7 +19,7 @@ const usage=`Project Init ${VERSION} — local-first development orchestrator (p
 Commands:
   inspect      --project PATH                                      Read-only source discovery
   recommend    --project PATH [--intent ...] [--complexity ...]   Rank OpenSpec / Spec Kit / BMAD / none
-  init         --project PATH [--mode New|Existing] [--intent ...] [--ui yes|no|auto]
+  init         --project PATH [--mode New|Existing] [--intent ...] [--ui yes|no|auto] [--version X.Y.Z] [--ecc-version X.Y.Z] [--apply]  Guided Factory bootstrap (Spec Kit + ECC + Factory)
   status       --project PATH                                      Actual gate and evidence status
   select       --project PATH --framework openspec|spec-kit|bmad|none
   wire         --project PATH [--agent both|codex|claude] [--scope project|user] [--plugin] [--backup-conflicts] [--apply]  Install 7 descriptive project skills per agent
@@ -57,7 +58,7 @@ function parseArgs(argv){
    if(!token.startsWith('--')) fail(`Unexpected argument: ${token}`);
    const key=token.slice(2);
    if(['json','execute','apply','plugin','backup-conflicts'].includes(key)) {options[key]=true;continue;}
-   if(!['project','mode','intent','complexity','ui','framework','version','phase','task','actor','evidence','verdict','out','spec','allow','agent','scope','input','id','side','url','browser','file','kit'].includes(key)) fail(`Unknown option: ${key}`);
+   if(!['project','mode','intent','complexity','ui','framework','version','ecc-version','phase','task','actor','evidence','verdict','out','spec','allow','agent','scope','input','id','side','url','browser','file','kit'].includes(key)) fail(`Unknown option: ${key}`);
    const value=rest[++i];
    if(value===undefined||value.startsWith('--')) fail(`Missing value after --${key}`);
    if(multi.has(key)){options[key]??=[];options[key].push(value);}
@@ -65,8 +66,32 @@ function parseArgs(argv){
  }
  return {command,options};
 }
-function present(data,json=false) {
+function presentBootstrap(data){
+ const state=data.initialization?.state||{};
+ const git=data.inspection?.git||{};
+ const spec=data.plan?.specKit||{};
+ const factory=data.plan?.factory||{};
+ console.log(`Project Init ${VERSION} — Factory bootstrap`);
+ console.log(`Project: ${data.project}`);
+ console.log(`Mode: ${state.mode||'unknown'} · ${data.resumed?'resumed existing Project Init state':'initialized'}`);
+ console.log(`Git: ${git.available?'ready':'will initialize on --apply'}${git.available&&git.clean===false?' · dirty working tree allowed':''}`);
+ console.log(`Spec owner: Spec Kit ${data.versions?.specKit||''} · ${spec.installed?'already installed':'planned for Codex + Claude'}`);
+ console.log(`ECC: ${data.versions?.ecc||''} · both agents · local scope`);
+ console.log(`Factory: ${factory.source||'project-init-bundled-factory'} · backend=Codex · frontend=Claude`);
+ console.log(`Human approval: required`);
+ console.log('');
+ if(data.status==='failed'){
+  console.log(`Status: FAILED at ${data.failedStep||'unknown step'}`);
+ }else if(data.applied){
+  console.log('Status: READY');
+ }else{
+  console.log('Status: PREVIEW');
+ }
+ if(data.next) console.log(`Next: ${data.next}`);
+}
+function present(data,json=false,command='') {
  if(json){console.log(JSON.stringify(data,null,2));return;}
+ if(command==='init'&&data?.profile==='factory'){presentBootstrap(data);return;}
  if(typeof data==='string'){console.log(data);return;}
  console.log(JSON.stringify(data,null,2));
 }
@@ -80,7 +105,7 @@ async function main(){
  switch(command){
  case 'inspect': result=discover(root);break;
  case 'recommend': result=recommendation(discover(root),options);break;
- case 'init': result=initProject(root,options);break;
+ case 'init': result=await bootstrapProject(root,{...options,eccVersion:options['ecc-version'],apply:!!options.apply});break;
  case 'status': result=status(root);break;
  case 'select':
   if(!options.framework) fail('Pass --framework openspec|spec-kit|bmad|none.');
@@ -110,7 +135,7 @@ async function main(){
  case 'run':result=await runCodex(root,{phase:options.phase||'planning',task:options.task||'',allowed:options.allow||[],execute:!!options.execute});break;
  default:fail(`Unknown command: ${command}. Use project-init help.`);
  }
- present(result,!!options.json);
+ present(result,!!options.json,command);
  // Mutating/evidence commands return failure exit status when the attempted activity failed.
  if(command==='verify'&&options.execute&&!result.passed)process.exitCode=1;
  if(['visual compare','guard'].includes(command)&&!result.passed)process.exitCode=1;
