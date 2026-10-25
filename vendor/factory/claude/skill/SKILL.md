@@ -35,9 +35,10 @@ integration worktree
 
 ## Shortcuts
 
-- `B` = `python .claude/skills/factory/scripts/board.py`
-- `WT` = `python .claude/skills/factory/scripts/worktree.py`
-- `CX` = `python .claude/skills/factory/scripts/codex_worker.py`
+- On Windows use `python`; on macOS/Linux use `python3` for the Factory helper scripts.
+- `B` = `<python> .claude/skills/factory/scripts/board.py`
+- `WT` = `<python> .claude/skills/factory/scripts/worktree.py`
+- `CX` = `<python> .claude/skills/factory/scripts/codex_worker.py`
 - `J` = `factory/jobs/<slug>`
 
 Keep orchestrator context small. Agents read files; you consume their short status lines.
