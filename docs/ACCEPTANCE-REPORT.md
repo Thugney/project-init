@@ -2,7 +2,7 @@
 
 Build: 2026-10-25  
 Artifact: GitHub source candidate + `npm pack --dry-run` package inspection  
-Version: `2.1.0-preview.5`  
+Version: `2.1.0-preview.6`  
 **Status: FUNCTIONAL PREVIEW — NOT PRODUCTION ACCEPTED**
 
 ## Delivered and checked
@@ -26,11 +26,12 @@ Version: `2.1.0-preview.5`
 ## Validation results
 
 - GitHub CI matrix: **6/6 jobs passed** on Windows, Ubuntu and macOS with Node 22 and Node 24.
-- Windows Node 24: **40/40 Project Init regression tests passed**, 0 failed/skipped; JavaScript syntax and CLI smoke passed.
-- Ubuntu Node 24: **36/36 applicable Project Init tests passed**, 4 Windows-only tests skipped, 0 failed.
+- Windows Node 24: **43/43 Project Init regression tests passed**, 0 failed/skipped; JavaScript syntax and CLI smoke passed.
+- Ubuntu Node 24: **39/39 applicable Project Init tests passed**, 4 Windows-only tests skipped, 0 failed.
 - `node --test vendor/lean-kit/tests/render.test.mjs`: **8/8 Lean Kit tests passed** across the CI matrix.
 - `npm pack --dry-run` includes the complete `vendor/factory/` Claude, Codex and runtime distribution.
 - Dirty-existing-repo regressions passed on Windows: Project Init init, Spec Kit preserve-merge apply, ECC apply and bundled Factory install all preserve unrelated modified/untracked files.
+- Guided Factory bootstrap regressions passed: one `init` selects/plans the full Spec Kit + ECC + Factory stack, `init --apply` executes it and resumes idempotently, and a missing new project path is correctly recorded as `New`.
 - Synthetic positive whole lifecycle reached `readyForHumanReleaseReview: true` and `releaseApproved: false`, then failed correctly after modified source.
 - Screenshot drift after a green cached gate correctly made `status.releaseCandidateReady: false`.
 - At least one genuine Playwright-rendered browser PNG decoded and compared successfully by the new strict PNG comparator.
@@ -46,7 +47,7 @@ Version: `2.1.0-preview.5`
 
 ## Operations / rollback
 
-1. Test preview.4 in a disposable Windows repository before relying on it for a real project.
-2. Verify `project-init factory --project . --apply` installs both `.claude/` and `.agents/` Factory files without an external kit path, then rerun it to confirm idempotence and config/backlog preservation.
-3. Test real Spec Kit/ECC setup plus actual Codex/Claude command discovery and one complete Factory job.
-4. For rollback, revert the preview.4 merge or reinstall the previous reviewed commit; inspect `.project-init`, `.agents/skills`, `.claude/skills` and `factory/` before removing only files created by Project Init. Never reset unrelated source automatically.
+1. Use `project-init init --project .` to preview the complete guided Factory bootstrap on a real Windows project, then run the same command with `--apply` after reviewing the plan.
+2. Verify real Spec Kit/ECC installation plus actual Codex/Claude command discovery and one complete Factory job.
+3. Re-run `project-init init --project . --apply` to verify resume/idempotence and preservation of existing Factory config/backlog.
+4. For rollback, revert the preview.6 merge or reinstall the previous reviewed commit; inspect `.project-init`, `.agents/skills`, `.claude/skills`, `.specify/` and `factory/` before removing only files created by Project Init. Never reset unrelated source automatically.
