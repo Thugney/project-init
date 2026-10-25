@@ -50,6 +50,8 @@ project-init factory --project . --apply
 
 For a brand-new empty repo, use `--mode New` instead of `Existing`.
 
+For an **existing** repo, you do not need to stash or commit unrelated work before `project-init init`. Project Init records the dirty state and preserves unrelated files. Spec Kit is installed through its preserve-merge path (no `--force`), ECC performs its own collision preflight, and Factory only writes its owned paths.
+
 ## Day-to-day feature flow
 
 ```text
