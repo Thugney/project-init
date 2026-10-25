@@ -288,7 +288,9 @@ process.exit(9);
 `);fs.chmodSync(specify,0o755);
  const npx=path.join(bin,'npx');
  fs.writeFileSync(npx,`#!/usr/bin/env node
-const fs=require('fs');fs.mkdirSync('.claude/ecc-fixture',{recursive:true});fs.writeFileSync('.claude/ecc-fixture/installed','yes\\n');process.exit(0);
+const fs=require('fs');const a=process.argv.slice(2);
+if(a[0]==='--version'){console.log('10.9.0');process.exit(0);}
+fs.mkdirSync('.claude/ecc-fixture',{recursive:true});fs.writeFileSync('.claude/ecc-fixture/installed','yes\\n');process.exit(0);
 `);fs.chmodSync(npx,0o755);
  const codex=path.join(bin,'codex');fs.writeFileSync(codex,`#!/usr/bin/env node
 const a=process.argv.slice(2);if(a[0]==='--version'){console.log('codex-cli test');process.exit(0);}if(a[0]==='login'&&a[1]==='status')process.exit(0);if(a[0]==='plugin'&&a.includes('--json')){console.log('{}');process.exit(0);}process.exit(0);
