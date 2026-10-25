@@ -97,11 +97,11 @@ For this factory stack, **Spec Kit is the default** because it natively installs
 
 ```powershell
 # For personal skills visible across your local projects (recommended):
-project-init wire --project $project --agent both --scope user
+project-init wire --project . --agent both --scope user
 # If the preview lists old Project Init conflicts, review the backup plan:
-project-init wire --project $project --agent both --scope user --backup-conflicts
+project-init wire --project . --agent both --scope user --backup-conflicts
 # Only after reviewing the planned backups:
-project-init wire --project $project --agent both --scope user --backup-conflicts --apply
+project-init wire --project . --agent both --scope user --backup-conflicts --apply
 ```
 
 | Workflow | Codex skill | Claude Code skill |
