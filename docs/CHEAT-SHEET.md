@@ -31,22 +31,21 @@ Project Init
 ## Start a new or existing repository
 
 ```powershell
-$project = 'C:\Work\MyProject'
-$factoryKit = 'C:\Tools\factory-kit'
+cd C:\Work\MyProject
 
-project-init inspect --project $project
-project-init init --project $project --mode Existing --intent feature --ui auto
-project-init select --project $project --framework spec-kit
+project-init inspect --project .
+project-init init --project . --mode Existing --intent feature --ui auto
+project-init select --project . --framework spec-kit
 
 # Preview first
-project-init install --project $project --version 1.2.3 --agent both
-project-init ecc --project $project --version 2.2.3 --agent both --scope local
-project-init factory --project $project --kit $factoryKit
+project-init install --project . --version 1.2.3 --agent both
+project-init ecc --project . --version 2.2.3 --agent both --scope local
+project-init factory --project .
 
 # Apply after reviewing the plans
-project-init install --project $project --version 1.2.3 --agent both --apply
-project-init ecc --project $project --version 2.2.3 --agent both --scope local --apply
-project-init factory --project $project --kit $factoryKit --apply
+project-init install --project . --version 1.2.3 --agent both --apply
+project-init ecc --project . --version 2.2.3 --agent both --scope local --apply
+project-init factory --project . --apply
 ```
 
 For a brand-new empty repo, use `--mode New` instead of `Existing`.
@@ -88,7 +87,7 @@ factory/jobs/<slug>/spec.md
 | Choose planning framework | `project-init select --framework spec-kit` |
 | Install Spec Kit | `project-init install ... --agent both` |
 | Install ECC for both agents | `project-init ecc ... --agent both` |
-| Install/validate Factory | `project-init factory ...` |
+| Install/update Factory | `project-init factory --project . --apply` |
 | See Project Init skills | `project-init wire ...` |
 | Check evidence/status | `project-init status` / `project-init verify` workflow |
 | Build a backend Factory task | Codex `backend-factory` skill |
@@ -127,4 +126,4 @@ factory/jobs/                    Factory runtime jobs/evidence
 
 ## One sentence to remember
 
-> **Project Init bootstraps it; Spec Kit specifies it; Factory runs it; ECC strengthens it; Claude and Codex build it.**
+> **Project Init bootstraps it; Spec Kit specifies it; Factory runs it; ECC strengthens it; Claude and Codex build it.**\n\nFactory itself ships with Project Init. `--kit PATH` is only an advanced developer override for testing a different Factory source.
