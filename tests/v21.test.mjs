@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import {initProject,selectFramework,establishBaseline,recordReview,approve,checkBaseline,status,statePath,runChecks,installPlan,applyInstall,eccInstallPlan,applyEcc} from '../lib/core.mjs';
+import {initProject,readState,selectFramework,establishBaseline,recordReview,approve,checkBaseline,status,statePath,runChecks,installPlan,applyInstall,eccInstallPlan,applyEcc} from '../lib/core.mjs';
 import {skillPlan} from '../lib/skills.mjs';
 import {renderLean} from '../lib/lean.mjs';
 import {comparePng,readPng,writePng} from '../lib/png.mjs';
