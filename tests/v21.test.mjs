@@ -23,7 +23,7 @@ test('self-update version comparison handles preview releases',()=>{
 
 test('self-update check never invokes npm when current',async()=>{
  const sha='a'.repeat(40);
- const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.8'}});
+ const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.9'}});
  let calls=0;
  const result=await updateProjectInit({check:true,fetcher,runner:()=>{calls++;throw new Error('runner should not execute');}});
  assert.equal(result.status,'current');assert.equal(result.updated,false);assert.equal(calls,0);assert.equal(result.remoteCommit,sha);
@@ -31,11 +31,11 @@ test('self-update check never invokes npm when current',async()=>{
 
 test('self-update installs pinned GitHub source and verifies replacement CLI',async()=>{
  const sha='b'.repeat(40);
- const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.9'}});
+ const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.10'}});
  const calls=[];
- const runner=(command,args)=>{calls.push([command,...args]);if(command==='npm')return {status:0,stdout:'updated',stderr:''};return {status:0,stdout:'2.1.0-preview.9\n',stderr:''};};
+ const runner=(command,args)=>{calls.push([command,...args]);if(command==='npm')return {status:0,stdout:'updated',stderr:''};return {status:0,stdout:'2.1.0-preview.10\n',stderr:''};};
  const result=await updateProjectInit({fetcher,runner});
- assert.equal(result.status,'updated');assert.equal(result.installedVersion,'2.1.0-preview.9');
+ assert.equal(result.status,'updated');assert.equal(result.installedVersion,'2.1.0-preview.10');
  assert.deepEqual(calls[0],['npm','install','--global','--force',`git+https://github.com/Thugney/project-init.git#${sha}`]);
  assert.deepEqual(calls[1],['project-init','version']);
 });
@@ -198,7 +198,7 @@ test('guided init selects Spec Kit and returns the complete Factory stack plan',
  fs.writeFileSync(path.join(root,'LOCAL.txt'),'dirty existing work\n');
  const first=await bootstrapProject(root,{mode:'Existing',intent:'feature',ui:'auto'});
  assert.equal(first.initialized,true);assert.equal(first.resumed,false);assert.equal(first.profile,'factory');assert.equal(first.framework.id,'spec-kit');
- assert.equal(first.plan.specKit.framework,'spec-kit');assert.equal(first.plan.specKit.agent,'both');assert.equal(first.plan.ecc.agent,'both');assert.equal(first.plan.ecc.scope,'local');
+ assert.equal(first.plan.specKit.framework,'spec-kit');assert.equal(first.plan.specKit.agent,'both');assert.equal(first.plan.ecc.agent,'both');assert.equal(first.plan.ecc.scope,'local');assert.ok(first.plan.prerequisites);
  assert.equal(first.plan.factory.source,'project-init-bundled-factory');assert.equal(first.applied,false);assert.match(first.next,/same init command with --apply/i);
  assert.equal(readState(root).framework,'spec-kit');assert.equal(fs.readFileSync(path.join(root,'LOCAL.txt'),'utf8'),'dirty existing work\n');
  const resumed=await bootstrapProject(root,{mode:'Existing'});
@@ -229,8 +229,9 @@ const fs=require('fs');fs.mkdirSync('.claude/ecc-fixture',{recursive:true});fs.w
  }
  const prior=process.env.PATH;process.env.PATH=bin+path.delimiter+prior;
  try{
-  const result=await bootstrapProject(root,{mode:'Existing',intent:'feature',ui:'auto',apply:true});
-  assert.equal(result.status,'ready',JSON.stringify(result));assert.equal(result.applied,true);
+  const prompts=[],messages=[];
+  const result=await bootstrapProject(root,{mode:'Existing',intent:'feature',ui:'auto',apply:true,confirm:async message=>{prompts.push(message);return true;},progress:message=>messages.push(message)});
+  assert.equal(result.status,'ready',JSON.stringify(result));assert.equal(result.applied,true);assert.ok(prompts.some(x=>x.includes('Spec Kit')));assert.ok(prompts.some(x=>x.includes('ECC')));assert.ok(prompts.some(x=>x.includes('Factory')));assert.ok(messages.some(x=>x.includes('PROJECT READY')));
   assert.ok(fs.existsSync(path.join(root,'.specify/fixture.txt')));
   assert.ok(fs.existsSync(path.join(root,'.claude/ecc-fixture/installed')));
   assert.ok(fs.existsSync(path.join(root,'.claude/skills/factory/SKILL.md')));
@@ -238,6 +239,23 @@ const fs=require('fs');fs.mkdirSync('.claude/ecc-fixture',{recursive:true});fs.w
   assert.equal(fs.readFileSync(path.join(root,'README.md'),'utf8'),'local dirty work\n');assert.equal(fs.readFileSync(path.join(root,'LOCAL.txt'),'utf8'),'keep me\n');
   const state=JSON.parse(fs.readFileSync(statePath(root,'bootstrap.json'),'utf8'));assert.equal(state.steps.specKit.status,'completed');assert.equal(state.steps.ecc.status,'completed');assert.equal(state.steps.factory.status,'completed');
   const resumed=await bootstrapProject(root,{mode:'Existing',apply:true});assert.equal(resumed.status,'ready');assert.equal(resumed.execution.ecc.skipped,true);
+ }finally{process.env.PATH=prior;}
+});
+
+test('guided init stops cleanly when a component install is declined',async()=>{
+ const {spawnSync}=await import('node:child_process');
+ const tempRoot=fs.realpathSync(os.tmpdir()); const base=fs.mkdtempSync(path.join(tempRoot,'pinit-bootstrap-decline-')),root=path.join(base,'repo'),bin=path.join(base,'bin');fs.mkdirSync(root);fs.mkdirSync(bin);
+ const git=(...args)=>{const r=spawnSync('git',args,{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr);};
+ git('init');git('config','user.name','Fixture');git('config','user.email','fixture@example.invalid');fs.writeFileSync(path.join(root,'README.md'),'baseline\n');git('add','.');git('commit','-m','baseline');
+ const specify=path.join(bin,'specify');fs.writeFileSync(specify,`#!/usr/bin/env node
+const a=process.argv.slice(2);if(a[0]==='version'){console.log('specify 1.2.3');process.exit(0);}process.exit(9);
+`);fs.chmodSync(specify,0o755);
+ const npx=path.join(bin,'npx');fs.writeFileSync(npx,'#!/usr/bin/env node\nprocess.exit(0);\n');fs.chmodSync(npx,0o755);
+ if(process.platform==='win32'){fs.writeFileSync(path.join(bin,'specify.cmd'),'@echo off\r\nnode "%~dp0specify" %*\r\n');fs.writeFileSync(path.join(bin,'npx.cmd'),'@echo off\r\nnode "%~dp0npx" %*\r\n');}
+ const prior=process.env.PATH;process.env.PATH=bin+path.delimiter+prior;
+ try{
+  const result=await bootstrapProject(root,{mode:'Existing',intent:'feature',ui:'no',apply:true,confirm:async message=>!message.includes('Spec Kit')});
+  assert.equal(result.status,'stopped');assert.equal(result.stoppedAt,'spec-kit');assert.equal(result.applied,false);assert.equal(fs.existsSync(path.join(root,'.specify')),false);
  }finally{process.env.PATH=prior;}
 });
 
