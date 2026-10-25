@@ -2,7 +2,7 @@
 
 Build: 2026-10-25  
 Artifact: GitHub source candidate + `npm pack --dry-run` package inspection  
-Version: `2.1.0-preview.12`  
+Version: `2.1.0-preview.13`  
 **Status: FUNCTIONAL PREVIEW — NOT PRODUCTION ACCEPTED**
 
 ## Delivered and checked
@@ -26,8 +26,8 @@ Version: `2.1.0-preview.12`
 ## Validation results
 
 - GitHub CI matrix: **6/6 jobs passed** on Windows, Ubuntu and macOS with Node 22 and Node 24.
-- Windows Node 24: **49/49 Project Init regression tests passed**, 0 failed/skipped; JavaScript syntax and CLI smoke passed.
-- Ubuntu Node 24: **45/45 applicable Project Init tests passed**, 4 Windows-only tests skipped, 0 failed.
+- Windows Node 24: **50/50 Project Init regression tests passed**, 0 failed/skipped; JavaScript syntax and CLI smoke passed.
+- Ubuntu Node 24: **46/46 applicable Project Init tests passed**, 4 Windows-only tests skipped, 0 failed.
 - `node --test vendor/lean-kit/tests/render.test.mjs`: **8/8 Lean Kit tests passed** across the CI matrix.
 - `npm pack --dry-run` includes the complete `vendor/factory/` Claude, Codex and runtime distribution.
 - Dirty-existing-repo regressions passed on Windows: Project Init init, Spec Kit preserve-merge apply, ECC apply and bundled Factory install all preserve unrelated modified/untracked files.
@@ -38,6 +38,7 @@ Version: `2.1.0-preview.12`
 - Agent-runtime readiness regressions passed: Project Init distinguishes desktop apps from terminal clients, requires the `codex` and `claude` executables plus authentication status, and Spec Kit init uses `--ignore-agent-tools` so Project Init remains the prerequisite owner.
 - Authentication-command regressions passed on Windows/Linux: Codex uses `codex login` -> `codex login status`; Claude Code uses `claude auth login` -> `claude auth status`. Unexpected auth argv fails the regression.
 - ECC dual-harness regression passed: Claude+Codex guided setup contains both harnesses plus Claude local/standard choices and explicitly rejects the Kimi-only `--profile` option.
+- Windows native Codex runtime regression passed: Project Init normalizes the child-process `PATH`, exposes a native `codex.exe` to a `shell:false` spawn, preserves npm-managed Codex environment context, and installs the same native-resolution logic into the Factory Codex worker.
 - Synthetic positive whole lifecycle reached `readyForHumanReleaseReview: true` and `releaseApproved: false`, then failed correctly after modified source.
 - Screenshot drift after a green cached gate correctly made `status.releaseCandidateReady: false`.
 - At least one genuine Playwright-rendered browser PNG decoded and compared successfully by the new strict PNG comparator.
@@ -48,7 +49,7 @@ Version: `2.1.0-preview.12`
 - Semantic review `actor`, `evidence` and `verdict` are unverified local attestations. Machine checks verify existence, mapping and freshness of evidence, **not an agent's ability to understand semantics**. Real semantic review remains a separately required operation.
 - Screenshot comparison is pixel-based. It does not validate working links, keyboard operation, ARIA, API permissions, functional flows or hidden states. Those require genuine browser/functional tests configured per app.
 - Browser was rendered in Python Playwright with HTML directly injected because file/local server navigation was blocked by this container. The direct Chrome/Edge screenshot capture command has not passed a Windows acceptance test.
-- Live upstream Spec Kit/ECC installs, the real network download/extraction path for managed uv, the real npm install/browser sign-in path for Codex/Claude CLIs, old v1 PowerShell Pester, authenticated user approval and end-to-end Factory behavior in a real user project are **not yet acceptance-tested**. Synthetic execution now validates the dirty-existing-repo contract, but the user's real Trace repository remains the next acceptance test.
+- Live upstream ECC completion after the Windows native-runtime fix, the real network download/extraction path for managed uv, old v1 PowerShell Pester, authenticated user approval and one complete end-to-end Factory worktree job in a real user project are **not yet acceptance-tested**. Trace has already live-validated managed uv, Codex/Claude CLI install/auth, and Spec Kit installation; ECC is the remaining live bootstrap checkpoint. Synthetic execution now validates the dirty-existing-repo contract, but the user's real Trace repository remains the next acceptance test.
 - No continuous autonomous task runner, automatic Claude programmatic executor, production release or live vendor setup is claimed.
 
 ## Operations / rollback
