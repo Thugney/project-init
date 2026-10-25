@@ -126,4 +126,6 @@ factory/jobs/                    Factory runtime jobs/evidence
 
 ## One sentence to remember
 
-> **Project Init bootstraps it; Spec Kit specifies it; Factory runs it; ECC strengthens it; Claude and Codex build it.**\n\nFactory itself ships with Project Init. `--kit PATH` is only an advanced developer override for testing a different Factory source.
+> **Project Init bootstraps it; Spec Kit specifies it; Factory runs it; ECC strengthens it; Claude and Codex build it.**
+
+Factory itself ships with Project Init. `--kit PATH` is only an advanced developer override for testing a different Factory source.
