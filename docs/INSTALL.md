@@ -4,6 +4,19 @@
 
 Extract into a **new** local directory, run Node >=20.19 and `npm install -g .`, then `project-init help`. Git is required for automated Codex execution. `vendor/lean-kit/`, `vendor/factory/` and `lib/guard.mjs`/`lib/visual-gate.mjs` ship within the package; there is no extra Factory or Lean Kit download. Native OpenSpec, Spec Kit and BMAD are separate *optional* dependencies installed only when selected and explicitly authorized.
 
+## Updating the CLI
+
+Once preview.7 or newer is installed, Project Init no longer depends on the source checkout used for development.
+
+```powershell
+project-init update --check
+project-init update
+```
+
+`update --check` compares the installed version with GitHub `main` without changing anything. `update` installs a pinned GitHub commit globally and verifies the replacement CLI. A dirty `C:\Tools\project-init` checkout cannot block this path.
+
+The source clone is optional for normal use after the CLI is installed; keep it only when developing Project Init itself.
+
 ## Discoverable commands
 
 After installing the CLI, choose **one** scope. For a machine-wide personal experience in Codex and Claude, use `--scope user` (recommended for solo use); for team-specific project instructions, use the default `--scope project` after `init`. Do not install both scopes under the same name unless you deliberately want duplicate skills.
