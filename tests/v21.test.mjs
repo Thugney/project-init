@@ -428,6 +428,31 @@ fs.mkdirSync('.claude/ecc-fixture',{recursive:true});fs.writeFileSync('.claude/e
  assert.equal(calls.length,2);assert.ok(calls.some(a=>a.includes('--target')&&a.includes('codex')));
 });
 
+test('ECC Codex fallback honors custom CODEX_HOME by choosing legacy sync, not default managed home',()=>{
+ const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'pinit-ecc-custom-home-')),root=path.join(base,'repo'),bin=path.join(base,'bin'),codexHome=path.join(base,'CodexHome');fs.mkdirSync(root);fs.mkdirSync(bin);fs.mkdirSync(codexHome);
+ initProject(root,{mode:'Existing',intent:'feature',ui:'no'});
+ fs.writeFileSync(path.join(codexHome,'config.toml'),'# test config\n');
+ const write=(name,body)=>{const file=path.join(bin,name);fs.writeFileSync(file,`#!${process.execPath}\n${body}\n`);fs.chmodSync(file,0o755);return file;};
+ write('codex',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('codex-test');process.exit(0)}if(a[0]==='plugin'){process.exit(2)}process.exit(0)");
+ write('claude',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-test');process.exit(0)}if(a[0]==='plugin'&&a.includes('--json')){console.log('[]');process.exit(0)}process.exit(0)");
+ if(process.platform==='win32'){for(const name of ['codex','claude'])fs.writeFileSync(path.join(bin,name+'.cmd'),`@echo off\r\n"${process.execPath}" "%~dp0${name}" %*\r\n`);}
+ const priorPath=process.env.PATH,priorHome=process.env.CODEX_HOME,priorNative=process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE;
+ process.env.PATH=bin+path.delimiter+priorPath;process.env.CODEX_HOME=codexHome;
+ if(process.platform==='win32')process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE=process.execPath;
+ try{
+  const plan=eccInstallPlan(root,'2.2.3',{agent:'both',scope:'local'});
+  assert.equal(plan.channels.codex,'legacy-sync');
+  const codex=plan.steps.find(x=>x.id==='codex');
+  assert.equal(codex.channel,'legacy-sync');assert.equal(codex.internal,'legacy-codex-sync');
+  assert.equal(codex.command.includes('--target'),false);
+  assert.equal(path.resolve(plan.capabilities.codex.activeHome),path.resolve(codexHome));
+ }finally{
+  process.env.PATH=priorPath;
+  if(priorHome===undefined)delete process.env.CODEX_HOME;else process.env.CODEX_HOME=priorHome;
+  if(priorNative===undefined)delete process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE;else process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE=priorNative;
+ }
+});
+
 test('ECC plan chooses one supported channel per harness and never stacks them',()=>{
  const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'pinit-ecc-channel-')),root=path.join(base,'repo'),bin=path.join(base,'bin');fs.mkdirSync(root);fs.mkdirSync(bin);
  initProject(root,{mode:'Existing',intent:'feature',ui:'no'});
