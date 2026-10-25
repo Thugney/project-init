@@ -47,6 +47,30 @@ The normal Factory workflow does **not** require a manual `inspect → recommend
 
 Never use a version placeholder with `--apply`. Native install runs third-party code; inspect command and repository state first. Existing project instruction files, Git changes, and framework-owned artifacts are preserved.
 
+## Guided prerequisite bootstrap
+
+Normal users do not separately prepare Spec Kit/ECC/Factory prerequisites. During:
+
+```powershell
+project-init init --project . --apply
+```
+
+Project Init checks the bootstrap chain and asks before each missing prerequisite or external component install. Accepted steps are installed and verified immediately, then the installer advances automatically.
+
+Typical Windows flow:
+
+```text
+Spec Kit requires uv 0.13.5. Install a Project Init-managed user copy now? [Y/n]
+Install Spec Kit 1.2.3 for Codex + Claude now? [Y/n]
+Install ECC 2.2.3 for Codex + Claude now? [Y/n]
+Install/update the bundled Factory for parallel Codex + Claude isolated worktrees now? [Y/n]
+✓ PROJECT READY for Codex + Claude
+```
+
+A `No` answer stops cleanly without rolling back already verified prerequisites. Re-running the same command resumes from current state. `--yes` bypasses prompts only for intentionally reviewed automation.
+
+Project Init currently manages the pinned `uv` dependency itself. On Windows it can also install missing Git/Python with user-scoped `winget` after confirmation and can repair a missing `npx` from the installed npm version.
+
 ## Recommended dual-agent factory profile
 
 For the Claude + Codex software factory, **Project Init is the only normal bootstrap entry point**. Spec Kit is the single spec owner, ECC is the shared engineering toolbox, and Factory is the execution/review loop.
@@ -57,7 +81,7 @@ From the target repository:
 project-init init --project .
 ```
 
-This inspects or resumes the repository and returns one combined plan covering Git (when needed), Spec Kit, ECC and the bundled Factory. It does not require a clean worktree for unrelated existing changes.
+This inspects or resumes the repository and returns one combined plan covering prerequisites, Git (when needed), Spec Kit, ECC and the bundled Factory. It does not require a clean worktree for unrelated existing changes.
 
 After reviewing that plan:
 
