@@ -6,7 +6,7 @@ This documents **the shipped Project Init 2.1.0-preview.4 CLI**, not a speculati
 | --- | --- | --- |
 | `inspect` | Discover existing files, technology indicators and Git state | Read-only |
 | `recommend` | Rank OpenSpec, Spec Kit, BMAD and none | Read-only heuristic |
-| `init` | Initialize `.project-init/` state in a repo | Writes new local state; refuses overwrite |
+| `init` | Guided Factory bootstrap/resume: inspect state, select Spec Kit profile, plan/apply Spec Kit + ECC + bundled Factory | Preview/plan by default; `--apply` executes the combined bootstrap; resumes existing Project Init state |
 | `status` | Report selected framework, approval, tests, evidence and blockers | Reads state, may recalculate stale evidence |
 | `select` | Pin one framework | Requires initialized project, does not install |
 | `wire` | Generate local/user-level Codex and Claude skills | Preview by default; `--apply` creates without clobbering; explicit `--backup-conflicts` allows backed-up migration |
