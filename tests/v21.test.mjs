@@ -213,10 +213,11 @@ const fs=require('fs');fs.mkdirSync('.claude/ecc-fixture',{recursive:true});fs.w
  }finally{process.env.PATH=prior;}
 });
 
-test('guided init can plan a brand-new repository before Git exists',async()=>{
- const tempRoot=fs.realpathSync(os.tmpdir()); const base=fs.mkdtempSync(path.join(tempRoot,'pinit-bootstrap-new-')),root=path.join(base,'repo');fs.mkdirSync(root);
- const result=await bootstrapProject(root,{mode:'New',intent:'new-product',ui:'yes'});
- assert.equal(result.initialized,true);assert.equal(result.framework.id,'spec-kit');assert.equal(result.plan.git.action,'init');assert.equal(result.plan.factory.deferredUntilGitInit,true);
+test('guided init detects and creates a brand-new repository before Git exists',async()=>{
+ const tempRoot=fs.realpathSync(os.tmpdir()); const base=fs.mkdtempSync(path.join(tempRoot,'pinit-bootstrap-new-')),root=path.join(base,'repo');
+ const result=await bootstrapProject(root,{intent:'new-product',ui:'yes'});
+ assert.equal(result.initialized,true);assert.equal(result.initialization.state.mode,'New');assert.equal(result.framework.id,'spec-kit');assert.equal(result.plan.git.action,'init');assert.equal(result.plan.factory.deferredUntilGitInit,true);
+ assert.equal(fs.existsSync(root),true);
 });
 
 test('dirty existing repo initializes and Spec Kit plan uses preserve-merge without force',async()=>{
