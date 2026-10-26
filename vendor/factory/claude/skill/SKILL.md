@@ -8,6 +8,14 @@ argument-hint: "<idea> | next | spec <specs/NNN-x> | review <slug> | approve <sl
 
 The session running this skill is the orchestrator. It coordinates; it does not implement application code.
 
+## Orchestrator role
+
+Read `orchestrator` in `.claude/skills/factory/config.json` (a missing value means `claude`).
+
+- If it is `codex`, stop. Say that Codex is the configured orchestrator, do not write `factory/board.json`, and work only on `[CLAUDE]` tasks when the Codex orchestrator dispatches you through `claude_worker.py`.
+- To change the orchestrator, the user runs `project-init factory --project . --orchestrator claude|codex --apply`.
+- Only the configured orchestrator writes `factory/board.json`, and only through the board helper.
+
 ## Architecture invariant
 
 **Codex is not the backend worker. Claude is not the frontend worker.**
@@ -45,6 +53,7 @@ Keep orchestrator context small. Agents read files; you consume their short stat
 
 ## Preflight
 
+0. Run `project-init status --project .`. If it exits non-zero with `blocked`, stop and follow its `next` steps: this checkout has no Project Init state of its own.
 1. Factory files must exist. If not, tell the user to run `project-init init --project . --apply`.
 2. Refuse tracked uncommitted source changes: `git status --porcelain --untracked-files=no`. Untracked unrelated files may remain; worker worktrees start from committed `HEAD` and do not inherit them.
 3. Use Project Init's feature preparation to reuse the active native spec/tasks, configure actual checks and requirement mappings, and establish the baseline before its independent review and actual human approval. Check `project-init status --project .`; installed tooling alone is not feature approval. Commit the approved native artifacts before creating worker worktrees, using the user's existing authorization for that action. Do not fabricate approvals to satisfy this preflight.

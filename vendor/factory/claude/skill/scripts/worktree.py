@@ -200,7 +200,7 @@ def integration_receipt(slug, data, worker, before, worker_head, outcome, starte
         "workerRevision": worker_head, "exitCode": outcome.returncode,
         "startedAt": started, "finishedAt": datetime.now(timezone.utc).isoformat(),
         "log": observed(log),
-        "workerEvidenceKind": "interactive-commit" if worker == "claude" else "codex-process",
+        "workerEvidenceKind": f"{worker}-process" if worker_evidence else "interactive-commit",
     }
     if worker_evidence:
         receipt["workerEvidence"] = worker_evidence
@@ -216,26 +216,38 @@ def integration_receipt(slug, data, worker, before, worker_head, outcome, starte
     save(slug, data)
 
 
+def successful_process(slug, worker, worker_head):
+    directory = os.path.abspath(os.path.join(ROOT, "factory", "jobs", slug, worker))
+    with open(os.path.join(directory, "latest-execution.json"), encoding="utf-8") as f:
+        pointer = json.load(f)
+    filename = os.path.abspath(os.path.join(ROOT, pointer["path"]))
+    normalized_directory = os.path.normcase(directory)
+    normalized_filename = os.path.normcase(filename)
+    if os.path.commonpath([normalized_filename, normalized_directory]) != normalized_directory:
+        raise ValueError("receipt outside job")
+    with open(filename, encoding="utf-8") as f:
+        receipt = json.load(f)
+    if (receipt.get("job") != slug or receipt.get("worker") != worker
+            or receipt.get("status") != "done" or receipt.get("exitCode") != 0
+            or receipt.get("afterRevision") != worker_head):
+        raise ValueError("failed, blocked or stale worker result")
+    return observed(filename)
+
+
 def successful_codex(slug, worker_head):
-    directory = os.path.abspath(os.path.join(ROOT, "factory", "jobs", slug, "codex"))
     try:
-        with open(os.path.join(directory, "latest-execution.json"), encoding="utf-8") as f:
-            pointer = json.load(f)
-        filename = os.path.abspath(os.path.join(ROOT, pointer["path"]))
-        normalized_directory = os.path.normcase(directory)
-        normalized_filename = os.path.normcase(filename)
-        if os.path.commonpath([normalized_filename, normalized_directory]) != normalized_directory:
-            raise ValueError("receipt outside job")
-        with open(filename, encoding="utf-8") as f:
-            receipt = json.load(f)
-        if (receipt.get("job") != slug or receipt.get("worker") != "codex"
-                or receipt.get("status") != "done" or receipt.get("exitCode") != 0
-                or receipt.get("afterRevision") != worker_head):
-            raise ValueError("failed, blocked or stale worker result")
-        return observed(filename)
+        return successful_process(slug, "codex", worker_head)
     except (OSError, ValueError, KeyError, TypeError) as error:
         print(f"ERROR successful Codex process evidence required before integration: {error}")
         sys.exit(4)
+
+
+def headless_claude(slug, worker_head):
+    """A Claude worker run by claude_worker.py leaves process evidence; an interactive one does not."""
+    try:
+        return successful_process(slug, "claude", worker_head)
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
 
 
 def cmd_sync(args):
@@ -273,7 +285,7 @@ def cmd_integrate(args):
     branch = data["branches"][worker]
     before = run(["-C", integration_path, "rev-parse", "HEAD"], check=True).stdout.strip()
     worker_head = run(["-C", worker_path, "rev-parse", "HEAD"], check=True).stdout.strip()
-    worker_evidence = successful_codex(slug, worker_head) if worker == "codex" else None
+    worker_evidence = successful_codex(slug, worker_head) if worker == "codex" else headless_claude(slug, worker_head)
     started = datetime.now(timezone.utc).isoformat()
     r = run(["-C", integration_path, "merge", "--no-ff", "--no-edit", branch])
     integration_receipt(slug, data, worker, before, worker_head, r, started, worker_evidence)
