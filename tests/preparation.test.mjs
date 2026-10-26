@@ -10,6 +10,7 @@ import {
 } from '../lib/core.mjs';
 import {prepareProject,preparationPlan,featureReadiness,worktreeContext} from '../lib/prepare.mjs';
 import {semanticPlan,verifyGuard} from '../lib/guard.mjs';
+import {sameExistingPath} from '../lib/paths.mjs';
 
 function write(root,file,text){fs.mkdirSync(path.dirname(path.join(root,file)),{recursive:true});fs.writeFileSync(path.join(root,file),typeof text==='string'?text:JSON.stringify(text,null,2));}
 function git(root,...args){const r=spawnSync('git',args,{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr||r.error?.message);return r.stdout.trim();}
@@ -270,4 +271,42 @@ test('local native ownership wins over a different framework selected in another
  git(root,'add','.');git(root,'commit','-qm','Synthetic baseline');
  const child=path.join(root,'work','tutor-v2');git(root,'worktree','add','-qb','feature/example',child);
  assert.equal(preparationPlan(child).framework,'spec-kit');
+});
+
+// Mirrors a Claude Code session worktree: Project Init, Spec Kit and Factory files are
+// untracked in the initialized checkout, so a fresh linked worktree receives none of them.
+function untrackedStateCheckout(t){
+ const root=fixture(t,{feature:false});
+ git(root,'add','.');git(root,'rm','-r','-q','--cached','.specify');git(root,'commit','-qm','Synthetic baseline');
+ write(root,'factory/board.json',{jobs:[]});
+ return root;
+}
+
+test('a stateless linked worktree is blocked and pointed at the initialized checkout',t=>{
+ const root=untrackedStateCheckout(t);
+ const child=path.join(root,'work','claude-session');git(root,'worktree','add','-qb','claude/session',child);
+ const result=status(child);
+ assert.equal(result.initialized,false);
+ assert.equal(result.blocked?.reason,'linked-worktree-without-state');
+ assert.ok(sameExistingPath(result.blocked.stateOrigin,root));
+ assert.ok(sameExistingPath(result.blocked.factoryBoard,path.join(root,'factory','board.json')));
+ assert.match(result.blocked.next.join('\n'),/Never copy, recreate or improvise/);
+ const cli=spawnSync(process.execPath,[path.resolve('bin/project-init.mjs'),'status','--project',child,'--json'],{encoding:'utf8'});
+ assert.equal(cli.status,1,cli.stderr);
+ assert.equal(JSON.parse(cli.stdout).blocked.reason,'linked-worktree-without-state');
+ assert.equal(fs.existsSync(path.join(child,'.project-init')),false);
+});
+
+test('registered Factory worktrees and repositories without an initialized checkout are not blocked',t=>{
+ const root=untrackedStateCheckout(t);
+ const worker=path.join(root,'.project-init','worktrees','001-example','claude');git(root,'worktree','add','-qb','factory/001-example-claude',worker);
+ assert.equal(status(worker).blocked,null);
+ const fresh=fixture(t,{initialized:false,feature:false});
+ assert.equal(status(fresh).blocked,null);
+});
+
+test('a linked worktree that owns its native feature is not blocked',t=>{
+ const root=fixture(t);git(root,'add','.');git(root,'commit','-qm','Synthetic baseline');
+ const child=path.join(root,'work','tutor-v2');git(root,'worktree','add','-qb','feature/example',child);
+ assert.equal(status(child).blocked,null);
 });

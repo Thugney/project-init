@@ -4,7 +4,7 @@
 
 | Version | Support status |
 | --- | --- |
-| `2.1.0-preview.15` | Community preview; best-effort security fixes, not production-supported |
+| `2.1.0-preview.16` | Community preview; best-effort security fixes, not production-supported |
 | v1 architecture-first files | Compatibility reference only; no ongoing production support commitment |
 
 ## Reporting vulnerabilities

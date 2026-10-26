@@ -1,8 +1,18 @@
 {
   "base_branch": "",
   "branch_prefix": "factory/",
+  "orchestrator": "claude",
   "max_fix_rounds": 2,
   "claude_model": "opus",
+  "claude": {
+    "executable": "",
+    "model": "",
+    "args": [
+      "--permission-mode",
+      "acceptEdits"
+    ],
+    "timeout_minutes": 45
+  },
   "workers": {
     "mode": "parallel-worktrees",
     "assignment": "balanced-independent-work-units",

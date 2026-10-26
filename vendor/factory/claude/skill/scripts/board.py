@@ -308,16 +308,28 @@ def cmd_get(args):
     print(job(board, args[0])["notes"].get(args[1], ""))
 
 
+def orchestrator():
+    """The configured orchestrator is the only board.json writer; a missing value means claude."""
+    try:
+        with open(CONFIG, encoding="utf-8") as f:
+            value = json.load(f).get("orchestrator")
+        return value if value in ("claude", "codex") else "claude"
+    except (OSError, ValueError, AttributeError):
+        return "claude"
+
+
 def cmd_status(_):
     board = load()
     if not board["jobs"]:
         print("no jobs")
         state = "empty" if os.path.exists(BOARD) else "missing"
         print(f"board={BOARD} state={state} checkout={ROOT}")
+        print(f"orchestrator={orchestrator()}")
         if state == "missing":
             print("No board in this checkout. Check the orchestration worktree; status does not create or recover jobs.")
         return
     print(f"board={BOARD} jobs={len(board['jobs'])} checkout={ROOT}")
+    print(f"orchestrator={orchestrator()}")
     for j in board["jobs"][-15:]:
         rv = " ".join(f"{k}:{v}" for k, v in j["reviews"].items()) or "-"
         print(f"{j['id']:<36} {j['stage']:<12} r{j['round']} risk={j.get('risk') or '-':<4} {rv}")

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import path from 'node:path';
 import fs from 'node:fs';
+import os from 'node:os';
 import readline from 'node:readline/promises';
 import {
  VERSION,projectRoot,discover,recommendation,initProject,readState,selectFramework,installPlan,applyInstall,applyEcc,
@@ -23,15 +24,15 @@ const usage=`Project Init ${VERSION} — local-first development orchestrator (p
 Commands:
   inspect      --project PATH                                      Read-only source discovery
   recommend    --project PATH [--intent ...] [--complexity ...]   Rank OpenSpec / Spec Kit / BMAD / none
-  init         --project PATH [--mode New|Existing] [--intent ...] [--ui yes|no|auto] [--version X.Y.Z] [--ecc-version X.Y.Z] [--apply] [--yes]  Guided bootstrap; asks before installing missing prerequisites/components
+  init         --project PATH [--mode New|Existing] [--intent ...] [--ui yes|no|auto] [--version X.Y.Z] [--ecc-version X.Y.Z] [--orchestrator claude|codex] [--apply] [--yes]  Guided bootstrap; asks before installing missing prerequisites/components, then user-wide agent rules
   update       [--check] [--force]                                Update the global Project Init CLI from GitHub main; independent of any source clone
-  status       --project PATH                                      Actual gate and evidence status
+  status       --project PATH                                      Actual gate and evidence status; exits 1 when a linked worktree has no state of its own
   prepare      --project PATH [--feature NATIVE_DIR | --spec FILE] [--mapping FILE] [--apply]  Reuse the active native feature; prepare checks/mappings, then baseline; never approve automatically
   select       --project PATH --framework openspec|spec-kit|bmad|none
-  wire         --project PATH [--agent both|codex|claude] [--scope project|user] [--plugin] [--backup-conflicts] [--apply]  Install 7 descriptive project skills per agent
+  wire         --project PATH [--agent both|codex|claude] [--scope project|user] [--plugin] [--backup-conflicts] [--apply]  Install 7 descriptive project skills per agent; --scope user also maintains agent rules in ~/.claude/CLAUDE.md and Codex AGENTS.md
   install      --project PATH --version X.Y.Z [--agent codex|claude|both] [--apply]             Install selected native spec framework
   ecc          --project PATH --version X.Y.Z [--agent both|codex|claude] [--scope local|project|user] [--apply]  Install ECC for coding agents
-  factory      --project PATH [--kit PATH] [--apply]                 Install/update bundled Claude + Codex Factory; --kit is an optional developer override
+  factory      --project PATH [--kit PATH] [--orchestrator claude|codex] [--apply]  Install/update bundled Claude + Codex Factory and choose its orchestrator (default claude); --kit is an optional developer override
   handoff      --project PATH [--phase planning|design|implementation|verification] [--task TEXT]
   render       --project PATH                                      Generate offline high-fidelity review HTML
   lean         --project PATH --input report.md --out .project-init/lean/report.html [--execute]   Built-in Lean Kit
@@ -66,7 +67,7 @@ function parseArgs(argv){
    if(!token.startsWith('--')) fail(`Unexpected argument: ${token}`);
    const key=token.slice(2);
    if(['json','execute','apply','plugin','backup-conflicts','check','force','yes'].includes(key)) {options[key]=true;continue;}
-   if(!['project','mode','intent','complexity','ui','framework','version','ecc-version','phase','task','actor','evidence','verdict','out','spec','allow','agent','scope','input','id','side','url','browser','file','kit','feature','mapping','job'].includes(key)) fail(`Unknown option: ${key}`);
+   if(!['project','mode','intent','complexity','ui','framework','version','ecc-version','phase','task','actor','evidence','verdict','out','spec','allow','agent','scope','input','id','side','url','browser','file','kit','feature','mapping','job','orchestrator'].includes(key)) fail(`Unknown option: ${key}`);
    const value=rest[++i];
    if(value===undefined||value.startsWith('--')) fail(`Missing value after --${key}`);
    if(multi.has(key)){options[key]??=[];options[key].push(value);}
@@ -150,7 +151,7 @@ async function main(){
  switch(command){
  case 'inspect': result=discover(root);break;
  case 'recommend': result=recommendation(discover(root),options);break;
- case 'init': result=await bootstrapProject(root,{...options,specs:options.spec||[],eccVersion:options['ecc-version'],apply:!!options.apply,confirm:options.apply?(message=>confirmPrompt(message,!!options.yes)):undefined,progress:options.apply?(message=>console.log(message)):undefined});break;
+ case 'init': result=await bootstrapProject(root,{...options,specs:options.spec||[],eccVersion:options['ecc-version'],userHome:os.homedir(),apply:!!options.apply,confirm:options.apply?(message=>confirmPrompt(message,!!options.yes)):undefined,progress:options.apply?(message=>console.log(message)):undefined});break;
  case 'status': result=status(root);break;
  case 'prepare': result=prepareProject(root,{feature:options.feature,specs:options.spec||[],mapping:options.mapping,apply:!!options.apply});break;
  case 'select':
@@ -162,7 +163,7 @@ async function main(){
  case 'ecc':
   result=await applyEcc(root,options.version||'2.2.3',{apply:!!options.apply,agent:options.agent||'both',scope:options.scope||'local'});break;
  case 'factory':
-  result=applyFactory(root,{kit:options.kit,apply:!!options.apply});break;
+  result=applyFactory(root,{kit:options.kit,apply:!!options.apply,orchestrator:options.orchestrator});break;
  case 'handoff': result=workflow(root,options.phase||'planning',options.task||'');break;
  case 'render': result=renderVisualReview(root,options.out);break;
  case 'lean': result=renderLean(root,{input:options.input,out:options.out,execute:!!options.execute});break;
@@ -185,6 +186,7 @@ async function main(){
  }
  present(result,!!options.json,command);
  // Mutating/evidence commands return failure exit status when the attempted activity failed.
+ if(command==='status'&&result.blocked)process.exitCode=1;
  if(command==='verify'&&options.execute&&!result.passed)process.exitCode=1;
  if(['visual compare','guard'].includes(command)&&!result.passed)process.exitCode=1;
  if(command==='lean'&&options.execute&&!result.passed)process.exitCode=1;

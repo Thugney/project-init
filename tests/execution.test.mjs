@@ -35,7 +35,11 @@ function fixture(t,{factory=false,value=2}={}){
  if(factory){
   applyFactory(root,{apply:true});
   const filename=path.join(root,'.claude/skills/factory/config.json'),config=readJson(filename);
-  config.codex.executable=process.execPath;fs.writeFileSync(filename,JSON.stringify(config));
+  // Node rejects Claude CLI flags, so the Claude stand-in is a wrapper that runs the script named by FAKE_CLAUDE_SCRIPT.
+  const claude=path.join(base,process.platform==='win32'?'fake-claude.cmd':'fake-claude');
+  fs.writeFileSync(claude,process.platform==='win32'?`@"${process.execPath}" "%FAKE_CLAUDE_SCRIPT%" %*\r\n`:`#!/bin/sh\nexec "${process.execPath}" "$FAKE_CLAUDE_SCRIPT" "$@"\n`);
+  if(process.platform!=='win32')fs.chmodSync(claude,0o755);
+  config.codex.executable=process.execPath;config.claude.executable=claude;fs.writeFileSync(filename,JSON.stringify(config));
  }
  command(root,'git',['add','.']);command(root,'git',['commit','-qm','Synthetic accepted fixture']);
  fs.writeFileSync(statePath(root,'preparation.json'),JSON.stringify({schemaVersion:1,framework:'none',branch:'fixture-source',feature:{id:'synthetic-feature',specPaths:['specs/feature.md']},taskPath:null,remainingTasks:[],checks:['feature'],requirementIds:['FR-1']}));
@@ -242,6 +246,34 @@ test('a failed worker preflight cannot reuse a previous successful process recei
  const pointer=readJson(path.join(root,`factory/jobs/${j.slug}/codex/latest-execution.json`));
  assert.equal(pointer.processStarted,false);assert.equal(pointer.path,null);
  assert.equal(executionEvidence(j.integration).valid,false);
+});
+
+function fakeClaude(base,{blocked=false}={}){
+ const filename=path.join(base,`synthetic-claude-${blocked?'blocked':'pass'}.cjs`);
+ fs.writeFileSync(filename,`
+const fs=require('fs'),path=require('path');
+const result=${JSON.stringify(blocked?'WORKER: BLOCKED synthetic fixture':'WORKER: DONE\nSynthetic fixture; no authenticated agent was used.')};
+if(!${blocked})fs.writeFileSync(path.join(process.cwd(),'src/feature.mjs'),'export const value = 2;\\n');
+console.log(JSON.stringify({type:'system',subtype:'init'}));
+console.log(JSON.stringify({type:'result',result}));process.exit(0);
+`);
+ return childEnvironment({FAKE_CLAUDE_SCRIPT:filename});
+}
+
+test('a headless Claude worker leaves process evidence that integration and execution verify',async t=>{
+ const {base,root}=fixture(t,{factory:true,value:1}),j=job(root);
+ assert.match(command(root,py,[j.helper('claude_worker'),'build',j.slug],fakeClaude(base)),/^CLAUDE DONE mode=build/);
+ const pointer=readJson(path.join(root,`factory/jobs/${j.slug}/claude/latest-execution.json`));
+ const worker=readJson(path.join(root,pointer.path));
+ assert.equal(worker.worker,'claude');assert.equal(worker.status,'done');assert.equal(worker.logs.length,3);
+ command(root,py,[j.helper('worktree'),'integrate',j.slug,'claude']);
+ const result=await factoryEvidence(root,{job:j.slug,allowed:['src/'],execute:true});
+ assert.equal(result.passed,true,JSON.stringify(result));
+ const op=readJson(path.join(root,result.receipt.factory.operations[0].path));
+ assert.equal(op.workerEvidenceKind,'claude-process');assert.equal(op.workerEvidence.path,pointer.path);
+ const blocked=spawnSync(py,[j.helper('claude_worker'),'build',j.slug],{cwd:root,encoding:'utf8',env:fakeClaude(base,{blocked:true})});
+ assert.equal(blocked.status,4,blocked.stdout);assert.match(blocked.stdout,/^CLAUDE BLOCKED/);
+ await assert.rejects(factoryEvidence(root,{job:j.slug,allowed:['src/'],execute:true}),/latest Claude result has not been successfully integrated/);
 });
 
 test('interactive Claude integration records observed Git facts without inventing a Claude process',async t=>{

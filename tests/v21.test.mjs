@@ -24,7 +24,7 @@ test('self-update version comparison handles preview releases',()=>{
 
 test('self-update check never invokes npm when current',async()=>{
  const sha='a'.repeat(40);
- const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.15'}});
+ const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.16'}});
  let calls=0;
  const result=await updateProjectInit({check:true,fetcher,runner:()=>{calls++;throw new Error('runner should not execute');}});
  assert.equal(result.status,'current');assert.equal(result.updated,false);assert.equal(calls,0);assert.equal(result.remoteCommit,sha);
@@ -32,11 +32,11 @@ test('self-update check never invokes npm when current',async()=>{
 
 test('self-update installs pinned GitHub source and verifies replacement CLI',async()=>{
  const sha='b'.repeat(40);
- const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.16'}});
+ const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.17'}});
  const calls=[];
- const runner=(command,args)=>{calls.push([command,...args]);if(command==='npm')return {status:0,stdout:'updated',stderr:''};return {status:0,stdout:'2.1.0-preview.16\n',stderr:''};};
+ const runner=(command,args)=>{calls.push([command,...args]);if(command==='npm')return {status:0,stdout:'updated',stderr:''};return {status:0,stdout:'2.1.0-preview.17\n',stderr:''};};
  const result=await updateProjectInit({fetcher,runner});
- assert.equal(result.status,'updated');assert.equal(result.installedVersion,'2.1.0-preview.16');
+ assert.equal(result.status,'updated');assert.equal(result.installedVersion,'2.1.0-preview.17');
  assert.deepEqual(calls[0],['npm','install','--global','--force',`git+https://github.com/Thugney/project-init.git#${sha}`]);
  assert.deepEqual(calls[1],['project-init','version']);
 });
@@ -488,7 +488,7 @@ test('Factory installs generic Codex and Claude parallel-worktree stack and pres
  initProject(root,{mode:'Existing',intent:'feature',ui:'no'});
  fs.writeFileSync(path.join(root,'README.md'),'factory local work\n');fs.writeFileSync(path.join(root,'LOCAL-NOTES.md'),'do not touch\n');
  const plan=factoryPlan(root);
- assert.equal(plan.ready,true);assert.equal(plan.source,'project-init-bundled-factory');assert.equal(plan.override,false);assert.equal(plan.codexSkills.length,2);assert.ok(plan.factoryFiles.length>=12);
+ assert.equal(plan.ready,true);assert.equal(plan.source,'project-init-bundled-factory');assert.equal(plan.override,false);assert.equal(plan.codexSkills.length,3);assert.ok(plan.factoryFiles.length>=13);
  assert.equal(plan.workers.parallel,true);assert.equal(plan.workers.codex.role,'general');assert.equal(plan.workers.claude.role,'general');assert.equal(plan.workers.codex.worktree,'isolated');assert.equal(plan.workers.claude.worktree,'isolated');
  const applied=applyFactory(root,{apply:true});assert.equal(applied.applied,true);assert.equal(applied.installedBridgeCheck.ok,true);
  assert.equal(fs.readFileSync(path.join(root,'README.md'),'utf8'),'factory local work\n');assert.equal(fs.readFileSync(path.join(root,'LOCAL-NOTES.md'),'utf8'),'do not touch\n');
@@ -497,7 +497,9 @@ test('Factory installs generic Codex and Claude parallel-worktree stack and pres
   '.claude/skills/factory/scripts/board.py',
   '.claude/skills/factory/scripts/worktree.py',
   '.claude/skills/factory/scripts/codex_worker.py',
+  '.claude/skills/factory/scripts/claude_worker.py',
   '.claude/agents/factory-builder.md',
+  '.agents/skills/factory/SKILL.md',
   '.agents/skills/factory-worker/SKILL.md',
   '.agents/skills/factory-audit/SKILL.md',
   'factory/dashboard.html',
