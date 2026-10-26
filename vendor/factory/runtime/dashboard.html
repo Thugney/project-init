@@ -115,8 +115,12 @@ function card(j){
   const hot=j.stage==="needs-human"||j.stage==="failed";
   const tags=[`<span class="tag">r${j.round}</span>`];
   if(j.risk) tags.push(`<span class="tag ${j.risk==="HIGH"?"high":""}">${esc(j.risk)}</span>`);
-  tags.push(`<span class="tag codex">Codex</span>`);
-  tags.push(`<span class="tag">Claude</span>`);
+  // The owner is the job's notes.owner. workers{} is written once when the job
+  // is created and never updated, so it cannot carry it. A job with no owner
+  // note keeps both names rather than claiming one.
+  const owner=String((j.notes&&j.notes.owner)||"").trim();
+  if(owner) tags.push(`<span class="tag ${/codex/i.test(owner)?"codex":""}">${esc(owner)}</span>`);
+  else {tags.push(`<span class="tag codex">Codex</span>`);tags.push(`<span class="tag">Claude</span>`);}
   if(DONE.has(j.stage)) tags.push(`<span class="tag ${hot?"high":""}">${esc(j.stage)}</span>`);
   const rounds=(j.rounds||[]).map(r=>`<div class="round">R${r.round}${Object.entries(r.reviews).map(([k,v])=>`<span class="chip ${v}">${esc(k)}</span>`).join("")}</div>`);
   if(j.stage==="review"&&!(j.rounds||[]).some(r=>r.round===j.round)){
@@ -137,7 +141,7 @@ function render(){
 }
 
 function files(j){
-  const f=[["spec","spec.md"],["build","build.md"],["codex","codex/build/report.md"]];
+  const f=[["spec","spec.md"],["build","build.md"],["codex","codex/build/report.md"],["claude","claude/build/report.md"]];
   for(const r of j.rounds||[]) for(const k of Object.keys(r.reviews)) f.push([`R${r.round} ${k}`,`round-${r.round}/review-${k}.md`]);
   f.push(["decision","decision.md"]);
   return f;
