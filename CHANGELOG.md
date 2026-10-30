@@ -13,7 +13,7 @@ All notable changes to the public Project Init package are documented here. Ther
 - Updated package and lockfile SPDX metadata; the package stays `private: true` to explicitly prevent accidental npm publication while supporting reviewed GitHub release tarballs.
 - Updated release checks, documentation, and contributor terms. GitHub releases still require an explicitly created version tag; production acceptance remains pending.
 - Rewrote the README for a shorter, task-first path: what Project Init does, install, set up, daily use, Factory, and what the gate does and does not prove. Dashboard serving steps now live only in the dashboard docs.
-- Added `docs/ROADMAP-2.2.md`, a proposed plan for domain packs (pack mechanism, PowerShell/M365 pack, hooks, web/GDPR pack, `learn` feedback loop, read-only JSON status, model routing, GitHub workflow pack). Nothing in it is implemented.
+- Added `docs/ROADMAP-2.2.md`, a proposed plan for domain packs (pack mechanism, PowerShell/M365 pack, hooks, web/GDPR pack, `learn` feedback loop, read-only JSON status, model routing, GitHub workflow pack, evals, local-first CI, supply chain, gated deployment, work intake). Nothing in it is implemented.
 
 ### Fixed (documentation)
 - NOTICE listed the bundled Factory on the same line as Lean Kit because of a literal `\n`.

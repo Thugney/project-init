@@ -131,6 +131,59 @@ Project Init's own repository already follows a release policy (SemVer with `-pr
 
 **Done when:** a fixture repository gets a previewed CI and release workflow without touching existing ones, a misnamed branch and a forbidden trailer each fail with a precise finding, and the guard blocks until a successful CI run exists for the current head commit.
 
+## Phase 9 — Evals
+
+Model routing (Phase 7) is guesswork without measurement. Public benchmarks do not say whether a cheaper tier is good enough for *this* maintainer's work.
+
+- **Eval set:** a small, versioned set of real tasks from the maintainer's own repositories (for example a PowerShell script, a bug fix, a UI change), each with a fixed starting commit and known-good acceptance: configured checks plus requirement findings.
+- **`project-init eval`:** runs the set in disposable worktrees with a given routing configuration and records, per task, checks passed, guard result, review findings, tokens or usage where the client reports it, and wall time.
+- **Comparison:** a Lean Kit report comparing two configurations (for example all-`top` against the proposed tiers), so routing changes are decided on recorded results.
+- Runs are explicit and never automatic, because every run spends model usage.
+
+**Done when:** an eval set with at least two fixture tasks runs end to end under two configurations and produces a comparison report, and a task whose checks fail is reported as failed rather than averaged away.
+
+## Phase 10 — Local-first checks and CI cost
+
+CI should confirm, not be the first place a problem is found, and documentation-only changes should not run the full matrix.
+
+- **Local first:** a pre-push hook (through the Phase 3 hook flow) runs the same fast checks CI runs, so agents and the maintainer get feedback before pushing.
+- **Agents do not wait on CI.** Workers finish on local checks; the guard reads the CI result for the head commit (Phase 8) when the work reaches human review, and only a red run sends work back.
+- **CI scaffold defaults:** path filters so documentation-only changes run one quick job, dependency caching, and `concurrency` cancellation of superseded runs.
+- **Self-hosted runners:** documented as an option for private repositories only, with a warning never to use them for public repositories that accept outside pull requests.
+
+**Done when:** the scaffolded workflow skips the full matrix for a docs-only change in a fixture, and the pre-push hook blocks a push whose fast checks fail.
+
+## Phase 11 — Supply chain in CI
+
+Agents add dependencies freely; the gate should notice.
+
+- CI scaffold includes secret scanning, a dependency audit, and CodeQL where the repository qualifies.
+- Third-party GitHub Actions pinned to full commit SHAs, with a check that flags tag-only references (`@v4`), including in Project Init's own workflows.
+- Lockfile and dependency-manifest changes produce a required review finding before the guard passes.
+
+**Done when:** a fixture with a tag-pinned action, a committed fake secret and an unreviewed new dependency fails with three precise findings.
+
+## Phase 12 — Gated deployment
+
+The last mile for projects that deploy (for example websites): guard passes → the maintainer approves → CI deploys.
+
+- Deployment workflow scaffold using a protected GitHub environment with required reviewers, so approval can be given from a phone.
+- Cloud credentials through OIDC federation instead of stored long-lived secrets where the target supports it.
+- A documented one-command rollback to the previous release, exercised in the fixture.
+- Project Init never deploys itself; it only scaffolds and checks the workflow.
+
+**Done when:** a fixture deployment workflow waits for environment approval, uses no stored deploy secret, and a rollback restores the previous release.
+
+## Phase 13 — Work intake for coding
+
+Today work starts when someone prompts an agent. For coding work to flow without that:
+
+- GitHub issues with a configured label (and Dependabot pull requests) become proposed Factory jobs: the orchestrator drafts the native spec change and stops for approval before any build.
+- Production error reports can create such issues through a documented integration.
+- Issue intake never carries personal data into a repository: issues are written from the code perspective, and business records stay in the system that owns them.
+
+**Done when:** a labelled issue produces a proposed Factory job that waits for approval, and an unlabelled issue produces nothing.
+
 ## Out of scope for 2.2
 
 - Signed attestations. The [security model](SECURITY-MODEL.md) already states local records can be rewritten; branch protection and CI remain the enforcement.
