@@ -113,9 +113,10 @@ Today every bundled Factory agent declares `model: opus`, so spec writing, build
 - **Deterministic first:** a configured check that can answer a question (lint, analyzer, tests, guard) runs before any model review of the same concern, and model reviewers receive its results instead of re-deriving them.
 - **Diversity over volume:** a builder and a reviewer from different model families by default (Codex builds, Claude reviews, or the reverse). Multi-model debate is an explicit opt-in for decisions, never the default loop.
 - **Data classes:** a project declares what data it handles (`public`, `internal`, `personal`, `restricted`), and each provider/model entry declares which classes it is approved for. Routing refuses a model not approved for the project's class. Approval is the maintainer's decision, recorded in config; Project Init does not judge providers' terms.
+- **Providers through one adapter, not one per vendor:** the `mid` and `fast` tiers may point at other model families (for example Gemini, DeepSeek, Kimi or Grok). Rather than integrating each vendor, Factory gains one generic worker adapter: either a command-line agent that takes a prompt and works in the assigned worktree (for example an existing multi-provider agent such as Hermes), or an OpenAI-compatible endpoint configured by base URL and model name. Keys come from the environment or a secret store, never from config files or logs. These providers are pay-per-token, so they are off by default and every entry is subject to the data-class rule above.
 - **Usage record:** each Factory job records which tier and model each role used and, where the client reports it, token usage, so cost per job is visible.
 
-**Done when:** role tiers replace hardcoded models with migration of existing configs, a role resolves to the configured model per client, a `restricted` project refuses an unapproved provider, and the job record shows the model used per role.
+**Done when:** role tiers replace hardcoded models with migration of existing configs, a role resolves to the configured model per client, a generic worker produces a receipt and Git integration like Codex and Claude workers, a `restricted` project refuses an unapproved provider, and the job record shows the model used per role.
 
 ## Phase 8 — GitHub workflow pack
 
