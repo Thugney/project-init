@@ -105,6 +105,31 @@ Agent-company orchestrators (for example Paperclip) assign work and show its pro
 
 **Done when:** the JSON schema is documented and covered by tests, and a stale baseline or failed guard is visible through it.
 
+## Phase 7 — Model routing policy
+
+Today every bundled Factory agent declares `model: opus`, so spec writing, building, every review round and approval all run on the most expensive tier. Cost is driven by how many tokens are spent where, not by the model alone.
+
+- **Role tiers in Factory config:** map each role (orchestrator, spec writer, builder, code/security/UX/UI reviewer, approver) to a tier (`top`, `mid`, `fast`) instead of a hardcoded model. Suggested defaults: `top` for orchestrator, security review and approval; `mid` for building and routine review; `fast` for summaries and status. Tiers resolve to concrete models per client, so a model change is one config edit.
+- **Deterministic first:** a configured check that can answer a question (lint, analyzer, tests, guard) runs before any model review of the same concern, and model reviewers receive its results instead of re-deriving them.
+- **Diversity over volume:** a builder and a reviewer from different model families by default (Codex builds, Claude reviews, or the reverse). Multi-model debate is an explicit opt-in for decisions, never the default loop.
+- **Data classes:** a project declares what data it handles (`public`, `internal`, `personal`, `restricted`), and each provider/model entry declares which classes it is approved for. Routing refuses a model not approved for the project's class. Approval is the maintainer's decision, recorded in config; Project Init does not judge providers' terms.
+- **Usage record:** each Factory job records which tier and model each role used and, where the client reports it, token usage, so cost per job is visible.
+
+**Done when:** role tiers replace hardcoded models with migration of existing configs, a role resolves to the configured model per client, a `restricted` project refuses an unapproved provider, and the job record shows the model used per role.
+
+## Phase 8 — GitHub workflow pack
+
+Project Init's own repository already follows a release policy (SemVer with `-preview.N`, `feat/*`/`fix/*`/`docs/*` branches, tag-triggered releases that check the tag against `package.json`, CI on three operating systems). Consuming projects get none of it. A `github` pack makes that policy reusable and checkable:
+
+- **Naming:** branch pattern and Conventional Commit PR titles, enforced by a check and, where supported, a commit-message hook.
+- **CI scaffold:** a least-privilege (`contents: read`) workflow proposed from discovered checks, previewed before `--apply`, never overwriting an existing workflow.
+- **Releases:** a tag-triggered release workflow that requires the tag to match the package version and to be reachable from the default branch, marks `-preview`/`-rc` tags as pre-releases, and never publishes to a registry unless configured.
+- **CI as evidence:** the guard can require a *successful CI run for the exact head commit*, read through the GitHub REST API, turning today's `runsVerified: false` into a verified state. Branch-protection guidance is printed as reviewable steps; Project Init still never changes branch protection itself.
+- **Attribution policy:** a configurable rule for AI attribution in commits and PR descriptions (require, allow or forbid trailers such as `Co-Authored-By`), checked by the commit-message hook and at verify time.
+- **Skill:** `/project-init-ship` / `$project-init-ship` walks branch → PR (using the repository's template and evidence) → CI → release tag, stopping at each human decision.
+
+**Done when:** a fixture repository gets a previewed CI and release workflow without touching existing ones, a misnamed branch and a forbidden trailer each fail with a precise finding, and the guard blocks until a successful CI run exists for the current head commit.
+
 ## Out of scope for 2.2
 
 - Signed attestations. The [security model](SECURITY-MODEL.md) already states local records can be rewritten; branch protection and CI remain the enforcement.
