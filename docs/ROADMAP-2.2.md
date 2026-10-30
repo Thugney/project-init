@@ -1,18 +1,44 @@
 # Roadmap — Project Init 2.2: domain packs
 
-**Status:** proposed. Nothing in this document is implemented. Items move to the [changelog](../CHANGELOG.md) only when they ship with tests.
+**Status:** proposed. Nothing in this document is implemented. Items move to the [changelog](../CHANGELOG.md) only when they ship with tests. Phases are listed in priority order.
 
-## Goal
+## Scope
 
-Project Init 2.1 is a general workflow harness: discovery, one spec owner, evidence and a fail-closed gate. It knows nothing about the *kind* of work in a repository. A PowerShell automation repo and a public website get the same checks — which, for PowerShell, means none, because check discovery only reads `package.json`.
+Project Init is a **personal development harness**: the layer around Claude Code and Codex that makes their output dependable for one maintainer's own work. It covers:
 
-2.2 keeps the core general and adds **domain packs**: versioned bundles of rules, checks, hooks and skills that a project opts into.
+- **Software development:** applications and tools in the maintainer's repositories.
+- **Scripting and automation:** PowerShell and Microsoft Graph automation for Microsoft 365, Intune, Entra, Defender and Conditional Access.
+- **Later, tenant configuration as code:** planning, reviewing and applying Microsoft 365 security configuration through the same gate (Phase 13).
+
+It is not an agent orchestrator, a business-operations system or a background service. The aim is the best output the available models can produce, at a cost the maintainer controls.
+
+## Harness layers
+
+A harness is everything around the model that shapes its output. This roadmap fills the layers 2.1 leaves thin:
+
+| Layer | In 2.1 | Added by |
+| --- | --- | --- |
+| Rules | Managed `AGENTS.md`/`CLAUDE.md` block | Pack rule fragments (1) |
+| Skills | Seven workflow skills per agent | Domain skills in packs (2), ship skill (7) |
+| Checks (enforcement) | npm-discovered checks, guard | PowerShell checks (2), supply chain (8), CI as evidence (7) |
+| Hooks | None | Pack-declared hooks (3), pre-push (6) |
+| Context and tools (MCP) | Native specs and handoffs | Pack-recommended MCP servers (2) |
+| Sub-agents and models | Factory workers, all on one top-tier model | Role tiers, multiple model families, opt-in debate (4) |
+| Measurement | Evidence per change | Evals across model configurations (5) |
+| Feedback | None | `learn` turns failures into rules (9) |
+| Interface | Factory dashboard, Lean Kit reports | Eval comparison reports (5) |
+
+## Domain packs
+
+2.1 knows nothing about the *kind* of work in a repository. A PowerShell automation repository and a web application get the same checks, which for PowerShell means none, because check discovery only reads `package.json`. 2.2 keeps the core general and adds **domain packs**: versioned bundles of rules, checks, hooks and skills that a project opts into.
 
 | Pack | For | Carries |
 | --- | --- | --- |
 | `core` (built in) | Every repository | What 2.1 does today |
 | `m365-powershell` | Microsoft 365 / Intune / Defender / Entra automation in PowerShell | Script standards, Pester and PSScriptAnalyzer checks, Graph least-privilege checks, admin-automation skills |
-| `web-gdpr` | Public websites and apps that handle personal data | Privacy-review gate, accessibility and content checks |
+| `github` | Repositories hosted on GitHub | Naming, CI and release workflows, CI as evidence, attribution policy |
+| `web-gdpr` | Web applications that handle personal data | Privacy-review gate, accessibility and content checks |
+| `m365-config` (later) | Tenant configuration as code | Desired-state baselines, plan and apply flow, safety rules |
 
 ## Principles
 
@@ -20,8 +46,9 @@ Project Init 2.1 is a general workflow harness: discovery, one spec owner, evide
 2. **Packs carry knowledge, never data.** No tenant IDs, customer records, credentials or exports in a pack, an example or a test fixture. A pack must be safe to publish.
 3. **A pack is part of the baseline.** Its pinned version and hash are recorded like specs and check configuration; changing a pack invalidates approval.
 4. **Enforcement beats instruction.** A rule that matters becomes a check the guard can fail on. Prompt rules and hooks give early feedback; checks are the gate.
-5. **Project Init stays the gate, not the orchestrator.** External orchestrators may read its state; Project Init does not become one.
-6. **Same honesty rules.** Every capability documents what it proves and what it does not, as the rest of the docs do.
+5. **Deterministic before model.** Anything a check can decide is not spent on model tokens.
+6. **Project Init gates; it does not orchestrate.** It does not schedule work, run as a service or listen on the network.
+7. **Same honesty rules.** Every capability documents what it proves and what it does not, as the rest of the docs do.
 
 ## Phase 1 — Pack mechanism
 
@@ -35,6 +62,7 @@ packs/<name>/
   checks/              check-discovery adapters and check definitions
   hooks/               client hook definitions (Phase 3)
   review/              per-domain review checklists for source/semantic review
+  mcp.json             recommended MCP servers (suggested, never installed silently)
 ```
 
 - `project-init pack list | add <name|path|git-url@ref> | remove <name>`, dry-run by default, `--apply` to change.
@@ -62,7 +90,7 @@ packs/<name>/
 
 **Graph least-privilege check:** a script declares the application permissions it needs in a small manifest. The check maps the Graph cmdlets and endpoints the script uses to the minimum documented permission and fails when the script needs more than it declares, or flags declared permissions it never uses. The mapping table is versioned in the pack and cites Microsoft Learn for every entry. It is a static check: it does not prove the permission is granted, and dynamic URIs are reported as unverifiable rather than passed.
 
-**Skills:** app-only Graph authentication, Intune remediation scripts, Defender/ASR rollout in audit-then-block stages, Power Automate flows that call Graph. Recommended MCP: Microsoft Learn, so guidance comes from current documentation.
+**Skills:** app-only Graph authentication, Intune remediation scripts, Defender/ASR rollout in audit-then-block stages, Conditional Access changes in report-only first, Power Automate flows that call Graph. Recommended MCP: Microsoft Learn, so guidance comes from current documentation.
 
 **Done when:** a fixture repository with deliberate violations fails each rule with a precise finding, a clean fixture passes, and the Graph check passes a correctly declared script and fails an over- and an under-declared one. Windows CI runs the PowerShell checks.
 
@@ -78,47 +106,43 @@ Packs declare hooks once; Project Init renders them for each client that support
 
 **Done when:** generated hook configuration is covered by regression tests, existing user hooks are preserved, and a blocked write is demonstrated in a disposable project.
 
-## Phase 4 — `web-gdpr` pack
-
-- **Privacy gate:** requirements or source changes that introduce or change personal-data fields (forms, database columns, analytics, third-party scripts) require a privacy-review finding before the guard passes. The pack supplies the review checklist; the judgment comes from the reviewer, as with semantic review today.
-- **Accessibility:** propose browser accessibility checks where the project has a browser test runner, mapped to requirements like other checks.
-- **Content:** optional checks for configured locales (for example Norwegian and English) so pages do not ship half-translated.
-
-**Done when:** a fixture change that adds a personal-data form field is blocked until a privacy finding is imported, and is not blocked after.
-
-## Phase 5 — Feedback loop: `project-init learn`
-
-Failed checks and rejected review findings are the most valuable signal a harness gets, and today they are not reused.
-
-- `project-init learn` reads recent failed checks and review findings from the local audit records and proposes rule or checklist additions to the relevant pack.
-- Proposals are written as a reviewable diff to the pack; nothing is applied without `--apply`, and an applied change bumps the pack version and therefore invalidates the baseline like any other pack change.
-
-**Done when:** a recorded failure produces a proposed rule diff, and applying it changes the pack hash and the baseline status.
-
-## Phase 6 — Read-only state for external orchestrators
-
-Agent-company orchestrators (for example Paperclip) assign work and show its progress. They need to read Project Init's state without Project Init taking on orchestration.
-
-- `project-init status --json` as a stable, versioned schema: feature, baseline state, check results, review coverage, guard result, blockers.
-- Optional append-only export of the existing JSONL audit events for a local reader.
-- No write API, no daemon, no network listener in Project Init. An external system that wants to *start* work invokes the agents through its own adapters; Project Init then gates the result as usual.
-
-**Done when:** the JSON schema is documented and covered by tests, and a stale baseline or failed guard is visible through it.
-
-## Phase 7 — Model routing policy
+## Phase 4 — Model routing policy
 
 Today every bundled Factory agent declares `model: opus`, so spec writing, building, every review round and approval all run on the most expensive tier. Cost is driven by how many tokens are spent where, not by the model alone.
 
 - **Role tiers in Factory config:** map each role (orchestrator, spec writer, builder, code/security/UX/UI reviewer, approver) to a tier (`top`, `mid`, `fast`) instead of a hardcoded model. Suggested defaults: `top` for orchestrator, security review and approval; `mid` for building and routine review; `fast` for summaries and status. Tiers resolve to concrete models per client, so a model change is one config edit.
 - **Deterministic first:** a configured check that can answer a question (lint, analyzer, tests, guard) runs before any model review of the same concern, and model reviewers receive its results instead of re-deriving them.
-- **Diversity over volume:** a builder and a reviewer from different model families by default (Codex builds, Claude reviews, or the reverse). Multi-model debate is an explicit opt-in for decisions, never the default loop.
+- **Combine models, don't multiply them:** a builder and a reviewer from different model families by default (Codex builds, Claude reviews, or the reverse). Multi-model debate or parallel planning is an explicit opt-in for decisions, never the default loop, because it multiplies usage.
+- **Providers through one adapter, not one per vendor:** the `mid` and `fast` tiers may point at other model families (for example Gemini, DeepSeek, Kimi or Grok). Rather than integrating each vendor, Factory gains one generic worker adapter: either a command-line agent that takes a prompt and works in the assigned worktree (for example a multi-provider agent such as Hermes), or an OpenAI-compatible endpoint configured by base URL and model name. Keys come from the environment or a secret store, never from config files or logs. These providers are pay-per-token, so they are off by default.
 - **Data classes:** a project declares what data it handles (`public`, `internal`, `personal`, `restricted`), and each provider/model entry declares which classes it is approved for. Routing refuses a model not approved for the project's class. Approval is the maintainer's decision, recorded in config; Project Init does not judge providers' terms.
-- **Providers through one adapter, not one per vendor:** the `mid` and `fast` tiers may point at other model families (for example Gemini, DeepSeek, Kimi or Grok). Rather than integrating each vendor, Factory gains one generic worker adapter: either a command-line agent that takes a prompt and works in the assigned worktree (for example an existing multi-provider agent such as Hermes), or an OpenAI-compatible endpoint configured by base URL and model name. Keys come from the environment or a secret store, never from config files or logs. These providers are pay-per-token, so they are off by default and every entry is subject to the data-class rule above.
 - **Usage record:** each Factory job records which tier and model each role used and, where the client reports it, token usage, so cost per job is visible.
 
 **Done when:** role tiers replace hardcoded models with migration of existing configs, a role resolves to the configured model per client, a generic worker produces a receipt and Git integration like Codex and Claude workers, a `restricted` project refuses an unapproved provider, and the job record shows the model used per role.
 
-## Phase 8 — GitHub workflow pack
+## Phase 5 — Evals
+
+Model routing is guesswork without measurement. Public benchmarks do not say whether a cheaper tier is good enough for *this* maintainer's work.
+
+- **Eval set:** a small, versioned set of real tasks from the maintainer's own repositories (for example a PowerShell script, a bug fix, a UI change), each with a fixed starting commit and known-good acceptance: configured checks plus requirement findings.
+- **`project-init eval`:** runs the set in disposable worktrees with a given routing configuration and records, per task, checks passed, guard result, review findings, tokens or usage where the client reports it, and wall time.
+- **Comparison:** a Lean Kit report comparing two configurations (for example all-`top` against the proposed tiers), so routing changes are decided on recorded results.
+- **Success measures** tracked over time: share of changes accepted without rework, usage per accepted change, time from task to green guard.
+- Runs are explicit and never automatic, because every run spends model usage.
+
+**Done when:** an eval set with at least two fixture tasks runs end to end under two configurations and produces a comparison report, and a task whose checks fail is reported as failed rather than averaged away.
+
+## Phase 6 — Local-first checks and CI cost
+
+CI should confirm, not be the first place a problem is found, and documentation-only changes should not run the full matrix.
+
+- **Local first:** a pre-push hook (through the Phase 3 hook flow) runs the same fast checks CI runs, so agents and the maintainer get feedback before pushing.
+- **Agents do not wait on CI.** Workers finish on local checks; the guard reads the CI result for the head commit (Phase 7) when the work reaches human review, and only a red run sends work back.
+- **CI scaffold defaults:** path filters so documentation-only changes run one quick job, dependency caching, and `concurrency` cancellation of superseded runs.
+- **Self-hosted runners:** documented as an option for private repositories only, with a warning never to use them for public repositories that accept outside pull requests.
+
+**Done when:** the scaffolded workflow skips the full matrix for a docs-only change in a fixture, and the pre-push hook blocks a push whose fast checks fail.
+
+## Phase 7 — `github` pack
 
 Project Init's own repository already follows a release policy (SemVer with `-preview.N`, `feat/*`/`fix/*`/`docs/*` branches, tag-triggered releases that check the tag against `package.json`, CI on three operating systems). Consuming projects get none of it. A `github` pack makes that policy reusable and checkable:
 
@@ -131,29 +155,7 @@ Project Init's own repository already follows a release policy (SemVer with `-pr
 
 **Done when:** a fixture repository gets a previewed CI and release workflow without touching existing ones, a misnamed branch and a forbidden trailer each fail with a precise finding, and the guard blocks until a successful CI run exists for the current head commit.
 
-## Phase 9 — Evals
-
-Model routing (Phase 7) is guesswork without measurement. Public benchmarks do not say whether a cheaper tier is good enough for *this* maintainer's work.
-
-- **Eval set:** a small, versioned set of real tasks from the maintainer's own repositories (for example a PowerShell script, a bug fix, a UI change), each with a fixed starting commit and known-good acceptance: configured checks plus requirement findings.
-- **`project-init eval`:** runs the set in disposable worktrees with a given routing configuration and records, per task, checks passed, guard result, review findings, tokens or usage where the client reports it, and wall time.
-- **Comparison:** a Lean Kit report comparing two configurations (for example all-`top` against the proposed tiers), so routing changes are decided on recorded results.
-- Runs are explicit and never automatic, because every run spends model usage.
-
-**Done when:** an eval set with at least two fixture tasks runs end to end under two configurations and produces a comparison report, and a task whose checks fail is reported as failed rather than averaged away.
-
-## Phase 10 — Local-first checks and CI cost
-
-CI should confirm, not be the first place a problem is found, and documentation-only changes should not run the full matrix.
-
-- **Local first:** a pre-push hook (through the Phase 3 hook flow) runs the same fast checks CI runs, so agents and the maintainer get feedback before pushing.
-- **Agents do not wait on CI.** Workers finish on local checks; the guard reads the CI result for the head commit (Phase 8) when the work reaches human review, and only a red run sends work back.
-- **CI scaffold defaults:** path filters so documentation-only changes run one quick job, dependency caching, and `concurrency` cancellation of superseded runs.
-- **Self-hosted runners:** documented as an option for private repositories only, with a warning never to use them for public repositories that accept outside pull requests.
-
-**Done when:** the scaffolded workflow skips the full matrix for a docs-only change in a fixture, and the pre-push hook blocks a push whose fast checks fail.
-
-## Phase 11 — Supply chain in CI
+## Phase 8 — Supply chain in CI
 
 Agents add dependencies freely; the gate should notice.
 
@@ -163,9 +165,29 @@ Agents add dependencies freely; the gate should notice.
 
 **Done when:** a fixture with a tag-pinned action, a committed fake secret and an unreviewed new dependency fails with three precise findings.
 
-## Phase 12 — Gated deployment
+## Phase 9 — Feedback loop: `project-init learn`
 
-The last mile for projects that deploy (for example websites): guard passes → the maintainer approves → CI deploys.
+Failed checks and rejected review findings are the most valuable signal a harness gets, and today they are not reused.
+
+- `project-init learn` reads recent failed checks and review findings from the local audit records and proposes rule or checklist additions to the relevant pack.
+- Proposals are written as a reviewable diff to the pack; nothing is applied without `--apply`, and an applied change bumps the pack version and therefore invalidates the baseline like any other pack change.
+- Start once enough failures are recorded to learn from; until then, rules are added by hand.
+
+**Done when:** a recorded failure produces a proposed rule diff, and applying it changes the pack hash and the baseline status.
+
+## Phase 10 — `web-gdpr` pack
+
+For web applications in the maintainer's repositories that handle personal data.
+
+- **Privacy gate:** requirements or source changes that introduce or change personal-data fields (forms, database columns, analytics, third-party scripts) require a privacy-review finding before the guard passes. The pack supplies the review checklist; the judgment comes from the reviewer, as with semantic review today.
+- **Accessibility:** propose browser accessibility checks where the project has a browser test runner, mapped to requirements like other checks.
+- **Content:** optional checks for configured locales (for example Norwegian and English) so pages do not ship half-translated.
+
+**Done when:** a fixture change that adds a personal-data form field is blocked until a privacy finding is imported, and is not blocked after.
+
+## Phase 11 — Gated deployment
+
+The last mile for projects that deploy: guard passes → the maintainer approves → CI deploys.
 
 - Deployment workflow scaffold using a protected GitHub environment with required reviewers, so approval can be given from a phone.
 - Cloud credentials through OIDC federation instead of stored long-lived secrets where the target supports it.
@@ -174,21 +196,43 @@ The last mile for projects that deploy (for example websites): guard passes → 
 
 **Done when:** a fixture deployment workflow waits for environment approval, uses no stored deploy secret, and a rollback restores the previous release.
 
-## Phase 13 — Work intake for coding
+## Phase 12 — Work intake from issues
 
-Today work starts when someone prompts an agent. For coding work to flow without that:
+Today work starts when the maintainer prompts an agent. For routine work to arrive on its own:
 
 - GitHub issues with a configured label (and Dependabot pull requests) become proposed Factory jobs: the orchestrator drafts the native spec change and stops for approval before any build.
 - Production error reports can create such issues through a documented integration.
-- Issue intake never carries personal data into a repository: issues are written from the code perspective, and business records stay in the system that owns them.
+- Issues are written from the code perspective and carry no personal data into a repository.
 
 **Done when:** a labelled issue produces a proposed Factory job that waits for approval, and an unlabelled issue produces nothing.
 
+## Phase 13 — `m365-config` pack: tenant configuration as code (later)
+
+Builds on Phase 2. Production tenant changes (Conditional Access, MFA, Intune, ASR, Defender) need exactly the gate Project Init already has: a reviewed plan, human approval, evidence and rollback.
+
+Microsoft Graph's Tenant Configuration Management APIs are generally available for **snapshots and drift monitoring** across Entra, Intune, Defender, Exchange, Purview and Teams, using JSON baselines. They do **not** deploy or remediate; Microsoft points to Microsoft365DSC for that. Their limits shape the design: monitors run every six hours, monitoring is capped per tenant per day, snapshot extraction is capped per month, and parts of the experience require a Tenant Governance licence.
+
+1. **Desired state in Git:** policies as JSON in the same baseline format, so files stay portable.
+2. **Plan:** a read-only identity takes a snapshot and diffs it against Git, producing a readable plan of what would change.
+3. **Gate:** the plan goes through a pull request; pack checks run first, including:
+   - every Conditional Access policy excludes the configured emergency-access accounts;
+   - new Conditional Access policies start in report-only;
+   - new ASR rules start in audit mode;
+   - no tenant-wide block without exclusions.
+   The guard then requires the maintainer's approval.
+4. **Apply:** a separate write identity applies only the approved change, through Graph or Microsoft365DSC, with least privilege per resource type, idempotently, with every change logged.
+5. **Drift:** a monitor's detected drift becomes an issue that re-enters the same flow (Phase 12).
+6. **Rollback:** re-apply the previous approved Git version.
+
+**Data boundary:** snapshots and baselines contain tenant configuration and object IDs. They live in the organization's own private repository, on machines and tools the organization has approved, and are never sent to AI services the organization has not approved. The pack itself — rules, checks and plan logic — contains no tenant data.
+
+**Done when:** against a test tenant, a baseline change produces a plan, a policy missing the emergency-access exclusion is blocked, an approved plan applies idempotently (a second apply changes nothing), and re-applying the previous version restores the original state.
+
 ## Out of scope for 2.2
 
+- Agent orchestration across a business, scheduling and background services.
 - Signed attestations. The [security model](SECURITY-MODEL.md) already states local records can be rewritten; branch protection and CI remain the enforcement.
 - Additional spec frameworks.
-- A background service of any kind.
 
 ## Before 2.2 starts
 
