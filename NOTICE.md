@@ -7,7 +7,8 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
 ## Included project-owned components
 
 - `legacy/v1/`: preserved original Project Init v1 architecture-review scripts, skill instructions and tests.
-- `vendor/lean-kit/`: embedded Codex Lean Kit source, examples and renderer previously developed and supplied by the maintainer.\n- `vendor/factory/`: bundled Claude/Codex software-factory templates and runtime files supplied by the maintainer.
+- `vendor/lean-kit/`: embedded Codex Lean Kit source, examples and renderer previously developed and supplied by the maintainer.
+- `vendor/factory/`: bundled Claude/Codex software-factory templates and runtime files supplied by the maintainer.
 
 The maintainer has authorized release of these included components under Apache-2.0. No separate Factory, Lean Kit or AI Drift Guard installation is needed when using the Project Init package.
 

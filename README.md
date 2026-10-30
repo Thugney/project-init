@@ -1,54 +1,40 @@
 # Project Init
 
-**Spec-driven development orchestration for Claude Code and Codex.**
+**The workflow harness around Claude Code and Codex: approved specs in, verified evidence out, the human decides.**
 
 [![CI](https://github.com/Thugney/project-init/actions/workflows/ci.yml/badge.svg)](https://github.com/Thugney/project-init/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 [![Node 20.19%2B](https://img.shields.io/badge/Node-%3E%3D20.19-339933)](package.json)
+[![Channel: preview](https://img.shields.io/badge/channel-preview-9b59b6)](docs/RELEASES.md)
 
-Project Init is a **local-first development orchestrator** that connects your specifications, coding agents and verification workflow. It prepares repositories, preserves existing feature context, coordinates Claude Code and Codex through the bundled Factory, and checks the evidence behind completed work.
+Project Init runs locally. It sets up a repository for Claude Code and Codex, carries the feature context between agents and sessions, and refuses to call work done until there is current evidence: checks that actually ran, an independent review, and screenshots where the work has a UI. It never commits, merges or deploys on its own.
 
-Use it for **new projects, existing repositories and features already in progress**. Continue focused fixes through build and verify skills, or use Factory for coordinated tasks, isolated worktrees and integration review. The selected framework owns the requirements and tasks; Project Init carries that context through implementation and handoffs.
+Use it on new projects, existing repositories and features that are already in progress.
 
-[Get started](docs/GETTING-STARTED.md) · [Command cheat sheet](docs/CHEAT-SHEET.md) · [Existing features](docs/FEATURE-PREPARATION.md) · [Architecture](docs/ARCHITECTURE.md)
+[Get started](docs/GETTING-STARTED.md) · [Cheat sheet](docs/CHEAT-SHEET.md) · [Existing features](docs/FEATURE-PREPARATION.md) · [Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP-2.2.md)
 
-## What Project Init does
-
-| Work you need to do | How Project Init helps |
-| --- | --- |
-| Set up a project for Claude Code and Codex | Inspects the repository, checks prerequisites, installs the selected framework and ECC, and wires the agent skills and bundled Factory |
-| Continue an existing feature | Reuses its native specifications, plan and task IDs; prepares checks, requirement mappings and the approval baseline |
-| Hand work between agents or sessions | Carries the selected feature, remaining tasks, branch, worktree, configured checks and actual Factory job context |
-| Coordinate implementation | Factory assigns tasks by dependency and file boundaries, runs workers in isolated worktrees, and integrates their changes |
-| Follow progress | The local Factory dashboard displays registered jobs, stages, review rounds and findings |
-| Verify completed changes | Runs configured checks and validates current execution, source review, requirement and applicable visual evidence |
-| Review designs and reports | Renders local UI design reviews and bundles Lean Kit for reports, diagrams and boards |
-
-The manual work it removes is repeated setup, reconstructing task context, copying handoffs between agents and collecting disconnected completion reports. Product decisions, scope approval and the final merge or release decision stay with the maintainer.
-
-## Who owns what
+## How it works
 
 ![Project Init architecture and ownership](docs/architecture.svg)
 
-| Component | Responsibility |
+Every artifact has exactly one owner, so agents never produce competing plans:
+
+| Component | Owns |
 | --- | --- |
-| **Project Init** | Setup, feature preparation, workflow handoffs, baseline tracking and verification gates |
-| **Spec Kit, OpenSpec, BMAD or an explicitly selected existing specification** | The authoritative requirements, architecture decisions and native tasks; one source of truth per workflow |
-| **ECC** | Engineering, security and review capabilities available to the coding agents |
-| **Claude Code and Codex** | Implementation and review work, directly or through Factory |
-| **Bundled Factory** | Task assignment, isolated worker and integration worktrees, review/fix rounds and job state |
-| **Bundled Lean Kit** | Deterministic local HTML reports |
-| **Human maintainer** | Product decisions, approval of the baseline and final merge/release authorization |
+| **Spec Kit** (default), OpenSpec or BMAD | Requirements, architecture decisions and tasks. One methodology per project. |
+| **Claude Code and Codex** | Writing and reviewing code, directly or through Factory |
+| **Bundled Factory** | Splitting approved work into tasks, isolated worktrees, integration and review rounds |
+| **ECC** | Shared engineering, security and testing capabilities for both agents |
+| **Project Init** | Setup, handoffs, check configuration, evidence and the verification gate |
+| **You** | Product decisions, baseline approval and the final merge or release |
 
-The guided setup uses **Spec Kit** for the normal Claude + Codex workflow. Existing framework ownership is preserved. Factory translates approved native work into an execution contract without creating a competing product specification. See the [ownership ADR](docs/adr/0001-single-source-of-truth.md) and [Factory stack](docs/FACTORY-STACK.md).
+See the [ownership ADR](docs/adr/0001-single-source-of-truth.md) and [Factory stack](docs/FACTORY-STACK.md).
 
-## Install and start
+## Install
 
-**Requirements:** Node.js **20.19+** and Git. Guided setup checks the actual Codex and Claude Code terminal clients, authentication and the prerequisites of the selected tools. Missing supported prerequisites can be installed after confirmation. Project Init has no runtime npm package dependencies.
+Requires Node.js 20.19+ and Git. Project Init has no runtime npm dependencies. Setup checks that the `claude` and `codex` terminal clients are installed and signed in.
 
-Install from GitHub source:
-
-```powershell
+```shell
 git clone https://github.com/Thugney/project-init.git
 cd project-init
 npm ci
@@ -56,165 +42,110 @@ npm install --global .
 project-init version
 ```
 
-Then open the repository or worktree where you want to work:
+To update later: `project-init update --check`, then `project-init update`. See [Install](docs/INSTALL.md) for platform details and [Releases](docs/RELEASES.md) for versioning.
 
-```powershell
-Set-Location 'C:\Work\MyProject'
+## Set up a project
 
-# Inspect the checkout and review the proposed setup.
-project-init init --project .
+Run this in the repository or worktree you want to work in:
 
-# Apply the reviewed setup and resume completed steps.
-project-init init --project . --apply
+```shell
+project-init init --project .           # read-only preview of the setup plan
+project-init init --project . --apply   # apply it; safe to re-run to resume
 ```
 
-The first command is a read-only preview. Apply installs or resumes the tooling, refreshes project-local skills for both agents with reviewed backups when needed, prepares an unambiguous existing feature and initializes a missing Factory board. Existing source changes, native specifications and Factory history are preserved; conflicting managed files are reported for review.
+Apply installs or resumes the tooling, refreshes the agent skills (backing up anything it would overwrite), prepares an existing feature if there is exactly one candidate, and creates the Factory board. Your source, existing `AGENTS.md`/`CLAUDE.md`, native specs and uncommitted work are left alone.
 
-**Tooling ready, feature prepared and implementation verified are separate states.** The agent resolves check and requirement-mapping gaps from the existing specification and tests. A missing or changed approval baseline still needs actual review and human acceptance.
+Afterwards, reload the agent's skills or restart its session in the same checkout.
 
-Reload the agent's skills or restart its session in the same checkout after setup. For an upgrade from older personal skills, use the [migration guide](docs/MIGRATION.md). See [installation](docs/INSTALL.md) for platform details and optional personal skill installation.
+> **Three separate states.** *Tooling ready* means the tools installed. *Feature prepared* means checks, requirement mappings and the baseline are in place. *Verified* means the guard passed on current evidence. One does not imply the next.
 
-### Update an existing installation
+## Daily use
 
-The global CLI updates independently of a development checkout:
+Run these skills inside the coding agent, in the checkout that owns the work, followed by a description of the task:
 
-```powershell
-project-init update --check
-project-init update
-project-init version
-```
-
-The updater resolves `main` to an exact Git commit, installs that source with npm and verifies the resulting version. In each active project checkout, preview and apply `project-init init --project .` again to refresh its managed files. Keep the current feature and task context when reloading the agent.
-
-Source installation and updates use GitHub. Package versions, tagged releases and promotion policy are documented in [Releases](docs/RELEASES.md).
-
-## Choose the workflow for your task
-
-Use these skills inside the coding agent, opened in the checkout that owns the work:
-
-| Your task | Claude Code | Codex |
+| Task | Claude Code | Codex |
 | --- | --- | --- |
-| Start or resume existing work | `/project-init` | `$project-init` |
-| Prepare or review a UI design | `/project-init-design` | `$project-init-design` |
+| Start or resume | `/project-init` | `$project-init` |
+| Design or review a UI | `/project-init-design` | `$project-init-design` |
 | Plan new or changed scope | `/project-init-plan` | `$project-init-plan` |
-| Implement an approved task or bounded bug fix | `/project-init-build` | `$project-init-build` |
-| Verify an existing PR or implementation | `/project-init-verify` | `$project-init-verify` |
-| Inspect progress and blockers | `/project-init-status` | `$project-init-status` |
-| Render a project report | `/project-init-report` | `$project-init-report` |
-
-Describe the actual task after the skill name. These entry points use the existing native feature and preparation lifecycle. Planning fills missing or changed scope; build and verify can continue work that already has a specification and PR.
-
-For example, in Claude Code:
+| Build an approved task or bounded fix | `/project-init-build` | `$project-init-build` |
+| Verify a PR or implementation | `/project-init-verify` | `$project-init-verify` |
+| Status and blockers | `/project-init-status` | `$project-init-status` |
+| Render a report | `/project-init-report` | `$project-init-report` |
 
 ```text
 /project-init-verify Verify the current PR against its existing requirements.
-```
-
-Or in Codex:
-
-```text
 $project-init-build Continue the remaining approved tasks in specs/001-example.
 ```
 
-Replace the example feature path with the actual folder. The [cheat sheet](docs/CHEAT-SHEET.md) explains daily use; the [command reference](docs/COMMANDS.md) covers lower-level controls.
+The [cheat sheet](docs/CHEAT-SHEET.md) covers daily use; the [command reference](docs/COMMANDS.md) covers the lower-level CLI.
 
-## Coordinate work with Factory
+## Larger work: Factory
 
-Choose Factory when the work benefits from multiple agents, isolated tasks or a coordinated integration and review cycle. Focused changes can stay in the normal build/verify workflow.
-
-Before dispatch, include the required setup and approved native artifacts in the reviewed committed base, because worker worktrees start from that commit. Preserve unrelated local work. From Claude Code, start the execution workflow with the actual feature directory:
-
-```text
-/factory spec specs/001-example
-```
-
-This dispatches Factory work from the existing specification. The resulting job has its own slug, assignments and recorded history.
+Use Factory when work benefits from several agents working in parallel. Focused fixes can stay in the build and verify skills.
 
 ![Factory flow: parallel Codex and Claude in isolated worktrees](docs/factory-flow.svg)
 
-1. **Assign.** Factory decomposes the approved work into tasks tagged `[CODEX]` or `[CLAUDE]`, grouped by dependency and file boundaries. Either agent can own frontend, backend, tests, documentation or migrations.
-2. **Isolate.** Worker and integration Git worktrees start from the same committed base. Each worker has its own checkout.
-3. **Implement.** Codex runs through the worker bridge; Claude runs through the Factory builder. Independent assignments can proceed in parallel.
-4. **Integrate.** The worktree manager merges worker branches into the integration branch. Conflicts stop for resolution.
-5. **Check and review.** Configured checks and code/security reviews assess the integrated result, with UX/UI reviews when applicable. Findings return to their owning worker for up to two fix rounds.
-6. **Hand off.** Factory records its decision and produces a PR when its documented conditions allow it, or reports what needs human resolution. The maintainer controls final approval.
+1. **Assign:** approved tasks are split by dependency and file boundaries and tagged `[CODEX]` or `[CLAUDE]`. Either agent can take any kind of task.
+2. **Isolate:** each worker gets its own Git worktree from the same committed base.
+3. **Integrate:** worker branches merge into an integration worktree. Conflicts stop for resolution.
+4. **Review:** checks plus code, security and (for UI) UX reviews run on the integrated result, with up to two fix rounds.
+5. **Hand off:** Factory opens a PR when its conditions are met, or reports what needs you.
 
-For an existing job, use its actual slug:
+Commit the setup and approved specs first, since worker worktrees start from that commit. Then, from Claude Code:
 
-| Action | Claude Code command |
+| Action | Command |
 | --- | --- |
-| Inspect jobs and the board location | `/factory status` |
-| Review an existing job | `/factory review <actual-slug>` |
-| Address feedback within its approved scope | `/factory rework <actual-slug> <feedback>` |
+| Start a job from a spec | `/factory spec specs/001-example` |
+| List jobs and the board location | `/factory status` |
+| Review a job | `/factory review <slug>` |
+| Address feedback within scope | `/factory rework <slug> <feedback>` |
 
-Codex's `$factory-audit` skill provides an additional read-only audit of the integration worktree. See [Factory evidence](docs/FACTORY-EVIDENCE.md) for how worker outcomes, Git integrations and current checks are connected to the approved scope.
+Codex can be the orchestrator instead (`init --orchestrator codex`). Its `$factory-audit` skill gives a read-only audit of the integration worktree. To watch progress, open the local board: see [Factory dashboard](docs/FACTORY-DASHBOARD.md). How worker runs and integrations become evidence is described in [Factory evidence](docs/FACTORY-EVIDENCE.md).
 
-### View the dashboard
+## Verification
 
-Use `/factory status` to identify the orchestration checkout. From that checkout's root, open a terminal and run:
+1. Prepare the feature: its check commands, requirement mappings and, for UI work, approved reference screenshots.
+2. Register the baseline and get a review and your approval.
+3. Implement, directly or through Factory.
+4. Run the checks on the current source, get an independent per-requirement review, and compare screenshots.
+5. Run the guard. A pass means *ready for your review*, never *released*.
 
-```powershell
-Set-Location '.\factory'
-python -m http.server 8765 --bind 127.0.0.1
-```
-
-Open [http://127.0.0.1:8765/dashboard.html](http://127.0.0.1:8765/dashboard.html). Use `python3` if that is your installed Python command.
-
-The dashboard displays registered Factory jobs. An empty board means that checkout has no registered jobs; ordinary agent sessions, Spec Kit tasks and GitHub PRs are not imported automatically. Moving cards show recorded workflow progress. Completion is assessed through the associated code, checks and review evidence. See [dashboard states and recovery](docs/FACTORY-DASHBOARD.md).
-
-## Verification and design review
-
-Project Init connects the native specification to a concrete verification lifecycle:
-
-1. Select the existing feature and prepare its actual check commands, requirement mappings and applicable design references.
-2. Register the completed baseline and obtain the required review and human approval.
-3. Implement the task or integrate its Factory workers, retaining the actual execution context.
-4. Run checks on the current source and obtain independent source/requirement review and applicable screenshot evidence.
-5. Run the guard and report the result for human review, including any unresolved blockers.
-
-Already implemented code can use the reviewed existing-code evidence path. A current baseline and passing evidence remain required; no dummy implementation task is necessary. See [feature preparation](docs/FEATURE-PREPARATION.md) and the [verification contract](docs/VERIFICATION.md).
-
-### Visual design example
-
-These examples use demonstration data. Projects supply their own design content and approved reference screenshots.
+Code that already exists can go through the same gate without a fake implementation run. See [Feature preparation](docs/FEATURE-PREPARATION.md) and the [verification contract](docs/VERIFICATION.md).
 
 | Light | Dark |
 | --- | --- |
 | ![Light theme visual-review example](docs/visual-light.png) | ![Dark theme visual-review example](docs/visual-dark.png) |
 
-UI review supports navigation, typography, colors, component states and responsive variants. Screenshot checks compare actual images against approved references for the expected viewport, theme and state matrix. Browser interaction and accessibility tests remain separate checks.
+*The design review above uses demonstration data.*
 
-### Evidence boundaries
+### What the gate does and doesn't prove
 
-- **Current evidence:** source, specification or relevant configuration changes can invalidate earlier results. Missing or stale evidence blocks acceptance.
-- **Requirement review:** an independent reviewer supplies per-requirement findings. The guard checks their coverage and evidence freshness.
-- **Execution:** `project-init run --execute` is a foreground Codex runner. Claude works through its interactive client and Factory agents. Work proceeds while an actual agent or runner is executing; the CLI is not a continuous background service.
-- **CI:** this repository's CI tests Project Init. Application CI must be configured and verified in the application repository.
-- **Approval:** local actor names and evidence records provide an audit trail, not authenticated identity signatures. A passing guard prepares work for human review; merge and release authorization remain separate.
+- **Freshness:** any change to source, specs, configuration or reference screenshots invalidates earlier evidence. Missing or stale evidence blocks.
+- **Review:** the guard checks that every requirement has a current finding. The judgment itself comes from the reviewer, not from Project Init.
+- **Screenshots:** pixel comparison catches visual drift. Clicks, accessibility and behavior need separate browser tests.
+- **Identity:** records are a local audit trail, not signatures. Use branch protection and CI for enforcement.
+- **CI:** this repository's CI tests Project Init itself (Windows, Linux and macOS on Node 22 and 24). Your application's CI is its own.
 
-Repository CI covers Windows, Linux and macOS with Node 22 and 24. Test coverage, maintainer-reported operational observations and remaining acceptance work are recorded in the [validation report](docs/ACCEPTANCE-REPORT.md). See the [security model](docs/SECURITY-MODEL.md) for guarantees and limits.
+Details: [Security model](docs/SECURITY-MODEL.md) and [validation report](docs/ACCEPTANCE-REPORT.md).
 
 ## Documentation
 
 | For | Read |
 | --- | --- |
-| New vs existing project, step by step | [Getting started](docs/GETTING-STARTED.md) |
-| Daily commands and responsibilities | [Cheat sheet](docs/CHEAT-SHEET.md) |
-| Installation and platform details | [Install](docs/INSTALL.md) |
-| All CLI operations | [Commands](docs/COMMANDS.md) |
-| Adopt existing work and preserve task progress | [Feature preparation](docs/FEATURE-PREPARATION.md), [Check discovery](docs/CHECK-DISCOVERY.md) |
-| Factory progress and execution evidence | [Dashboard](docs/FACTORY-DASHBOARD.md), [Evidence bridge](docs/FACTORY-EVIDENCE.md) |
-| Architecture and ownership | [Architecture](docs/ARCHITECTURE.md), [Factory stack](docs/FACTORY-STACK.md) |
-| Threats and verification boundaries | [Security model](docs/SECURITY-MODEL.md), [Verification](docs/VERIFICATION.md) |
-| Validation and operational evidence | [Validation report](docs/ACCEPTANCE-REPORT.md) |
-| Versioning and releases | [Releases](docs/RELEASES.md), [Changelog](CHANGELOG.md) |
-| Migration from older installations | [Migration](docs/MIGRATION.md) |
-| Helping out | [Contributing](CONTRIBUTING.md), [Security policy](SECURITY.md) |
+| Step-by-step setup, new or existing project | [Getting started](docs/GETTING-STARTED.md) |
+| Daily commands | [Cheat sheet](docs/CHEAT-SHEET.md), [Commands](docs/COMMANDS.md) |
+| Installation and upgrades | [Install](docs/INSTALL.md), [Migration](docs/MIGRATION.md) |
+| Existing work | [Feature preparation](docs/FEATURE-PREPARATION.md), [Check discovery](docs/CHECK-DISCOVERY.md) |
+| Factory | [Stack](docs/FACTORY-STACK.md), [Dashboard](docs/FACTORY-DASHBOARD.md), [Evidence](docs/FACTORY-EVIDENCE.md) |
+| Design and guarantees | [Architecture](docs/ARCHITECTURE.md), [Invariants](docs/INVARIANTS.md), [Security model](docs/SECURITY-MODEL.md), [Verification](docs/VERIFICATION.md) |
+| Status and plans | [Validation report](docs/ACCEPTANCE-REPORT.md), [Changelog](CHANGELOG.md), [Releases](docs/RELEASES.md), [Roadmap](docs/ROADMAP-2.2.md) |
+| Contributing | [Contributing](CONTRIBUTING.md), [Security policy](SECURITY.md) |
 
 ## Community and license
 
-Maintained by **[Thugney](https://github.com/Thugney)**. Practical Microsoft cloud/security writing: **[Eriteach blog](https://blog.eriteach.com/)**. Professional updates: **[LinkedIn](https://www.linkedin.com/in/eriteach/)**. Contributions, reproducible bug reports and technical reviews are welcome.
+Maintained by **[Thugney](https://github.com/Thugney)**. Microsoft cloud and security writing on the **[Eriteach blog](https://blog.eriteach.com/)**; updates on **[LinkedIn](https://www.linkedin.com/in/eriteach/)**. Bug reports, reviews and contributions are welcome.
 
-Project Init, bundled Lean Kit, bundled Factory templates and preserved v1 sources are licensed under [Apache-2.0](LICENSE). External tools such as Spec Kit, ECC, OpenSpec and BMAD retain their own licenses. See [NOTICE](NOTICE.md) for provenance and attribution.
+Project Init, the bundled Lean Kit and Factory, and the preserved v1 sources are licensed under [Apache-2.0](LICENSE). Spec Kit, ECC, OpenSpec and BMAD keep their own licenses. See [NOTICE](NOTICE.md).
 
-Project Init is an independent community project with no affiliation to OpenAI, Anthropic, GitHub, ECC, OpenSpec or BMAD. Respective names belong to their owners.
+Project Init is an independent project, not affiliated with OpenAI, Anthropic, GitHub, ECC, OpenSpec or BMAD.
