@@ -8,7 +8,7 @@ Project Init is a **personal development harness**: the layer around Claude Code
 
 - **Software development:** applications and tools in the maintainer's repositories.
 - **Scripting and automation:** PowerShell and Microsoft Graph automation for Microsoft 365, Intune, Entra, Defender and Conditional Access.
-- **Later, tenant configuration as code:** planning, reviewing and applying Microsoft 365 security configuration through the same gate (Phase 13).
+- **Later, tenant configuration as code:** planning, reviewing and applying Microsoft 365 security configuration through the same gate (Phase 14).
 
 It is not an agent orchestrator, a business-operations system or a background service. The aim is the best output the available models can produce, at a cost the maintainer controls.
 
@@ -19,14 +19,15 @@ A harness is everything around the model that shapes its output. This roadmap fi
 | Layer | In 2.1 | Added by |
 | --- | --- | --- |
 | Rules | Managed `AGENTS.md`/`CLAUDE.md` block | Pack rule fragments (1) |
-| Skills | Seven workflow skills per agent | Domain skills in packs (2), ship skill (7) |
-| Checks (enforcement) | npm-discovered checks, guard | PowerShell checks (2), supply chain (8), CI as evidence (7) |
-| Hooks | None | Pack-declared hooks (3), pre-push (6) |
-| Context and tools (MCP) | Native specs and handoffs | Pack-recommended MCP servers (2) |
-| Sub-agents and models | Factory workers, all on one top-tier model | Role tiers, multiple model families, opt-in debate (4) |
-| Measurement | Evidence per change | Evals across model configurations (5) |
-| Feedback | None | `learn` turns failures into rules (9) |
-| Interface | Factory dashboard, Lean Kit reports | Eval comparison reports (5) |
+| Planning method | Spec Kit in guided setup and Factory; OpenSpec and BMAD selectable only | First-class BMAD (2) |
+| Skills | Seven workflow skills per agent | Domain skills in packs (3), ship skill (8) |
+| Checks (enforcement) | npm-discovered checks, guard | PowerShell checks (3), supply chain (9), CI as evidence (8) |
+| Hooks | None | Pack-declared hooks (4), pre-push (7) |
+| Context and tools (MCP) | Native specs and handoffs | Pack-recommended MCP servers (3) |
+| Sub-agents and models | Factory workers, all on one top-tier model | Role tiers, multiple model families, opt-in debate (5) |
+| Measurement | Evidence per change | Evals across model configurations (6) |
+| Feedback | None | `learn` turns failures into rules (10) |
+| Interface | Factory dashboard, Lean Kit reports | Eval comparison reports (6) |
 
 ## Domain packs
 
@@ -60,7 +61,7 @@ packs/<name>/
   rules/               fragments merged into the managed AGENTS.md / CLAUDE.md block
   skills/              extra Claude and Codex skills
   checks/              check-discovery adapters and check definitions
-  hooks/               client hook definitions (Phase 3)
+  hooks/               client hook definitions (Phase 4)
   review/              per-domain review checklists for source/semantic review
   mcp.json             recommended MCP servers (suggested, never installed silently)
 ```
@@ -72,7 +73,24 @@ packs/<name>/
 
 **Done when:** a synthetic pack can be added, pinned, hashed into the baseline, removed cleanly, and a pack change makes `status` report a stale baseline. Regression tests cover conflicts and removal.
 
-## Phase 2 — `m365-powershell` pack
+## Phase 2 — First-class BMAD
+
+Project Init already ranks, pins and installs BMAD, and its handoffs describe BMAD's planning, UX, story and review workflows. Three things stop BMAD projects from using the full harness:
+
+- Guided `init` accepts only `--framework spec-kit`.
+- Factory starts jobs only from Spec Kit's `specs/NNN-x/` folders, so BMAD stories cannot be dispatched to parallel Codex and Claude workers.
+- Feature preparation discovers Spec Kit and OpenSpec features automatically, but BMAD features must be pointed out with `--spec`.
+
+Scope:
+
+- **Guided setup:** `init --framework bmad` runs the same reviewed bootstrap (BMAD at a pinned version, ECC, Factory) as the Spec Kit path. The BMAD installer is interactive, so the plan says so and the step is supervised.
+- **Factory from BMAD stories:** Factory can start a job from a BMAD story or epic, translating its acceptance criteria and tasks into the execution contract the same way it does for a Spec Kit feature, without copying them into a second specification. Story status remains BMAD's.
+- **Preparation:** discover BMAD epics, stories and their task IDs in the installed version's output location, read from the installed BMAD files rather than assumed.
+- **Choice per project:** the recommender keeps choosing per project (BMAD for new products, large scope and UI-heavy discovery; Spec Kit for scripts, tools and Microsoft 365 automation). One methodology per project still holds, and evals (Phase 6) show whether BMAD's heavier process pays for itself on real work.
+
+**Done when:** guided `init --framework bmad --apply` completes on a fixture, a BMAD story starts a Factory job whose integration evidence passes `execution factory`, preparation finds the fixture's stories without `--spec`, and a project with Spec Kit already initialized refuses BMAD instead of creating a second spec owner.
+
+## Phase 3 — `m365-powershell` pack
 
 **PowerShell check adapter** (extends [check discovery](CHECK-DISCOVERY.md)):
 
@@ -94,7 +112,7 @@ packs/<name>/
 
 **Done when:** a fixture repository with deliberate violations fails each rule with a precise finding, a clean fixture passes, and the Graph check passes a correctly declared script and fails an over- and an under-declared one. Windows CI runs the PowerShell checks.
 
-## Phase 3 — Hooks
+## Phase 4 — Hooks
 
 Rules in `AGENTS.md` and `CLAUDE.md` are suggestions to the agent. Hooks act immediately:
 
@@ -106,7 +124,7 @@ Packs declare hooks once; Project Init renders them for each client that support
 
 **Done when:** generated hook configuration is covered by regression tests, existing user hooks are preserved, and a blocked write is demonstrated in a disposable project.
 
-## Phase 4 — Model routing policy
+## Phase 5 — Model routing policy
 
 Today every bundled Factory agent declares `model: opus`, so spec writing, building, every review round and approval all run on the most expensive tier. Cost is driven by how many tokens are spent where, not by the model alone.
 
@@ -119,7 +137,7 @@ Today every bundled Factory agent declares `model: opus`, so spec writing, build
 
 **Done when:** role tiers replace hardcoded models with migration of existing configs, a role resolves to the configured model per client, a generic worker produces a receipt and Git integration like Codex and Claude workers, a `restricted` project refuses an unapproved provider, and the job record shows the model used per role.
 
-## Phase 5 — Evals
+## Phase 6 — Evals
 
 Model routing is guesswork without measurement. Public benchmarks do not say whether a cheaper tier is good enough for *this* maintainer's work.
 
@@ -131,18 +149,18 @@ Model routing is guesswork without measurement. Public benchmarks do not say whe
 
 **Done when:** an eval set with at least two fixture tasks runs end to end under two configurations and produces a comparison report, and a task whose checks fail is reported as failed rather than averaged away.
 
-## Phase 6 — Local-first checks and CI cost
+## Phase 7 — Local-first checks and CI cost
 
 CI should confirm, not be the first place a problem is found, and documentation-only changes should not run the full matrix.
 
-- **Local first:** a pre-push hook (through the Phase 3 hook flow) runs the same fast checks CI runs, so agents and the maintainer get feedback before pushing.
-- **Agents do not wait on CI.** Workers finish on local checks; the guard reads the CI result for the head commit (Phase 7) when the work reaches human review, and only a red run sends work back.
+- **Local first:** a pre-push hook (through the Phase 4 hook flow) runs the same fast checks CI runs, so agents and the maintainer get feedback before pushing.
+- **Agents do not wait on CI.** Workers finish on local checks; the guard reads the CI result for the head commit (Phase 8) when the work reaches human review, and only a red run sends work back.
 - **CI scaffold defaults:** path filters so documentation-only changes run one quick job, dependency caching, and `concurrency` cancellation of superseded runs.
 - **Self-hosted runners:** documented as an option for private repositories only, with a warning never to use them for public repositories that accept outside pull requests.
 
 **Done when:** the scaffolded workflow skips the full matrix for a docs-only change in a fixture, and the pre-push hook blocks a push whose fast checks fail.
 
-## Phase 7 — `github` pack
+## Phase 8 — `github` pack
 
 Project Init's own repository already follows a release policy (SemVer with `-preview.N`, `feat/*`/`fix/*`/`docs/*` branches, tag-triggered releases that check the tag against `package.json`, CI on three operating systems). Consuming projects get none of it. A `github` pack makes that policy reusable and checkable:
 
@@ -155,7 +173,7 @@ Project Init's own repository already follows a release policy (SemVer with `-pr
 
 **Done when:** a fixture repository gets a previewed CI and release workflow without touching existing ones, a misnamed branch and a forbidden trailer each fail with a precise finding, and the guard blocks until a successful CI run exists for the current head commit.
 
-## Phase 8 — Supply chain in CI
+## Phase 9 — Supply chain in CI
 
 Agents add dependencies freely; the gate should notice.
 
@@ -165,7 +183,7 @@ Agents add dependencies freely; the gate should notice.
 
 **Done when:** a fixture with a tag-pinned action, a committed fake secret and an unreviewed new dependency fails with three precise findings.
 
-## Phase 9 — Feedback loop: `project-init learn`
+## Phase 10 — Feedback loop: `project-init learn`
 
 Failed checks and rejected review findings are the most valuable signal a harness gets, and today they are not reused.
 
@@ -175,7 +193,7 @@ Failed checks and rejected review findings are the most valuable signal a harnes
 
 **Done when:** a recorded failure produces a proposed rule diff, and applying it changes the pack hash and the baseline status.
 
-## Phase 10 — `web-gdpr` pack
+## Phase 11 — `web-gdpr` pack
 
 For web applications in the maintainer's repositories that handle personal data.
 
@@ -185,7 +203,7 @@ For web applications in the maintainer's repositories that handle personal data.
 
 **Done when:** a fixture change that adds a personal-data form field is blocked until a privacy finding is imported, and is not blocked after.
 
-## Phase 11 — Gated deployment
+## Phase 12 — Gated deployment
 
 The last mile for projects that deploy: guard passes → the maintainer approves → CI deploys.
 
@@ -196,7 +214,7 @@ The last mile for projects that deploy: guard passes → the maintainer approves
 
 **Done when:** a fixture deployment workflow waits for environment approval, uses no stored deploy secret, and a rollback restores the previous release.
 
-## Phase 12 — Work intake from issues
+## Phase 13 — Work intake from issues
 
 Today work starts when the maintainer prompts an agent. For routine work to arrive on its own:
 
@@ -206,9 +224,9 @@ Today work starts when the maintainer prompts an agent. For routine work to arri
 
 **Done when:** a labelled issue produces a proposed Factory job that waits for approval, and an unlabelled issue produces nothing.
 
-## Phase 13 — `m365-config` pack: tenant configuration as code (later)
+## Phase 14 — `m365-config` pack: tenant configuration as code (later)
 
-Builds on Phase 2. Production tenant changes (Conditional Access, MFA, Intune, ASR, Defender) need exactly the gate Project Init already has: a reviewed plan, human approval, evidence and rollback.
+Builds on Phase 3. Production tenant changes (Conditional Access, MFA, Intune, ASR, Defender) need exactly the gate Project Init already has: a reviewed plan, human approval, evidence and rollback.
 
 Microsoft Graph's Tenant Configuration Management APIs are generally available for **snapshots and drift monitoring** across Entra, Intune, Defender, Exchange, Purview and Teams, using JSON baselines. They do **not** deploy or remediate; Microsoft points to Microsoft365DSC for that. Their limits shape the design: monitors run every six hours, monitoring is capped per tenant per day, snapshot extraction is capped per month, and parts of the experience require a Tenant Governance licence.
 
@@ -221,7 +239,7 @@ Microsoft Graph's Tenant Configuration Management APIs are generally available f
    - no tenant-wide block without exclusions.
    The guard then requires the maintainer's approval.
 4. **Apply:** a separate write identity applies only the approved change, through Graph or Microsoft365DSC, with least privilege per resource type, idempotently, with every change logged.
-5. **Drift:** a monitor's detected drift becomes an issue that re-enters the same flow (Phase 12).
+5. **Drift:** a monitor's detected drift becomes an issue that re-enters the same flow (Phase 13).
 6. **Rollback:** re-apply the previous approved Git version.
 
 **Data boundary:** snapshots and baselines contain tenant configuration and object IDs. They live in the organization's own private repository, on machines and tools the organization has approved, and are never sent to AI services the organization has not approved. The pack itself — rules, checks and plan logic — contains no tenant data.
