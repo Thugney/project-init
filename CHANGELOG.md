@@ -15,6 +15,8 @@ All notable changes to the public Project Init package are documented here. Ther
 - Rewrote the README for a shorter, task-first path: what Project Init does, install, set up, daily use, Factory, and what the gate does and does not prove. Dashboard serving steps now live only in the dashboard docs.
 - Added `docs/ROADMAP-2.2.md`, a proposed, prioritized plan for domain packs that keeps Project Init a personal development harness: pack mechanism, first-class BMAD, PowerShell/M365 pack, hooks, model routing, evals, local-first CI, GitHub pack, supply chain, `learn` feedback loop, web/GDPR pack, gated deployment, issue intake, and later tenant configuration as code. Nothing in it is implemented.
 
+- Added `AGENTS.md` (imported by `CLAUDE.md`) with the rules for coding agents working on this repository, and Spec Kit feature specs `specs/001`–`specs/014` for every 2.2 roadmap phase, with build order in `specs/README.md`.
+
 ### Fixed (documentation)
 - NOTICE listed the bundled Factory on the same line as Lean Kit because of a literal `\n`.
 
