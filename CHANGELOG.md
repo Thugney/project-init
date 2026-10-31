@@ -12,6 +12,13 @@ All notable changes to the public Project Init package are documented here. Ther
 - Added the unmodified Apache License 2.0 and an attribution/provenance NOTICE covering original Project Init, legacy v1, and bundled Lean Kit code with maintainer authorization.
 - Updated package and lockfile SPDX metadata; the package stays `private: true` to explicitly prevent accidental npm publication while supporting reviewed GitHub release tarballs.
 - Updated release checks, documentation, and contributor terms. GitHub releases still require an explicitly created version tag; production acceptance remains pending.
+- Rewrote the README for a shorter, task-first path: what Project Init does, install, set up, daily use, Factory, and what the gate does and does not prove. Dashboard serving steps now live only in the dashboard docs.
+- Added `docs/ROADMAP-2.2.md`, a proposed, prioritized plan for domain packs that keeps Project Init a personal development harness: pack mechanism, first-class BMAD, PowerShell/M365 pack, hooks, model routing, evals, local-first CI, GitHub pack, supply chain, `learn` feedback loop, web/GDPR pack, gated deployment, issue intake, and later tenant configuration as code. Nothing in it is implemented.
+
+- Added `AGENTS.md` (imported by `CLAUDE.md`) with the rules for coding agents working on this repository, and Spec Kit feature specs `specs/001`–`specs/014` for every 2.2 roadmap phase, with build order in `specs/README.md`.
+
+### Fixed (documentation)
+- NOTICE listed the bundled Factory on the same line as Lean Kit because of a literal `\n`.
 
 ## [2.1.0-preview.16] — 2026-10-26 (agents follow Project Init everywhere; Codex or Claude orchestrates)
 
