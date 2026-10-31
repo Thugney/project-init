@@ -18,6 +18,7 @@ import {semanticPlan,importSemanticReview,verifyGuard} from '../lib/guard.mjs';
 import {updateProjectInit} from '../lib/update.mjs';
 import {prepareProject} from '../lib/prepare.mjs';
 import {factoryEvidence,verifyExisting} from '../lib/execution.mjs';
+import {packPlan,applyPack,listPacks,removePlan,applyRemove} from '../lib/packs.mjs';
 
 const usage=`Project Init ${VERSION} — local-first development orchestrator (preview)
 
@@ -33,6 +34,9 @@ Commands:
   install      --project PATH --version X.Y.Z [--agent codex|claude|both] [--apply]             Install selected native spec framework
   ecc          --project PATH --version X.Y.Z [--agent both|codex|claude] [--scope local|project|user] [--apply]  Install ECC for coding agents
   factory      --project PATH [--kit PATH] [--orchestrator claude|codex] [--apply]  Install/update bundled Claude + Codex Factory and choose its orchestrator (default claude); --kit is an optional developer override
+  pack list    --project PATH                                      List applied packs and content status
+  pack add     <name|path|git+url#tag-or-sha> --project PATH [--apply]  Preview pack changes; apply only when explicitly requested
+  pack remove  <name> --project PATH [--apply]                     Preview removal; apply only when explicitly requested
   handoff      --project PATH [--phase planning|design|implementation|verification] [--task TEXT]
   render       --project PATH                                      Generate offline high-fidelity review HTML
   lean         --project PATH --input report.md --out .project-init/lean/report.html [--execute]   Built-in Lean Kit
@@ -58,13 +62,16 @@ No automatic Git commit/push/merge/deployment. Audit records are local and not a
 `;
 function parseArgs(argv){
  const [base,...tail]=argv;
- const command=['visual','semantic','execution'].includes(base)&&tail[0]&&!tail[0].startsWith('--')?`${base} ${tail.shift()}`:base;
+ const command=['visual','semantic','execution','pack'].includes(base)&&tail[0]&&!tail[0].startsWith('--')?`${base} ${tail.shift()}`:base;
  const rest=tail;
  const options={};
  const multi=new Set(['spec','allow']);
  for(let i=0;i<rest.length;i++) {
    const token=rest[i];
-   if(!token.startsWith('--')) fail(`Unexpected argument: ${token}`);
+   if(!token.startsWith('--')){
+    if(['pack add','pack remove'].includes(command)&&!options.argument){options.argument=token;continue;}
+    fail(`Unexpected argument: ${token}`);
+   }
    const key=token.slice(2);
    if(['json','execute','apply','plugin','backup-conflicts','check','force','yes'].includes(key)) {options[key]=true;continue;}
    if(!['project','mode','intent','complexity','ui','framework','version','ecc-version','phase','task','actor','evidence','verdict','out','spec','allow','agent','scope','input','id','side','url','browser','file','kit','feature','mapping','job','orchestrator'].includes(key)) fail(`Unknown option: ${key}`);
@@ -164,6 +171,13 @@ async function main(){
   result=await applyEcc(root,options.version||'2.2.3',{apply:!!options.apply,agent:options.agent||'both',scope:options.scope||'local'});break;
  case 'factory':
   result=applyFactory(root,{kit:options.kit,apply:!!options.apply,orchestrator:options.orchestrator});break;
+ case 'pack list':result={packs:listPacks(root)};break;
+ case 'pack add':
+  if(!options.argument)fail('Pass a pack name, local directory path, or pinned Git source.');
+  result=options.apply?applyPack(root,options.argument):packPlan(root,options.argument);break;
+ case 'pack remove':
+  if(!options.argument)fail('Pass the installed pack name.');
+  result=options.apply?applyRemove(root,options.argument):removePlan(root,options.argument);break;
  case 'handoff': result=workflow(root,options.phase||'planning',options.task||'');break;
  case 'render': result=renderVisualReview(root,options.out);break;
  case 'lean': result=renderLean(root,{input:options.input,out:options.out,execute:!!options.execute});break;
@@ -195,5 +209,6 @@ async function main(){
  if(command==='ecc'&&options.apply&&(result.applied===false||result.results?.some(x=>x.exitCode!==0)))process.exitCode=1;
  if(command.startsWith('execution ')&&options.execute&&!result.passed)process.exitCode=1;
  if(command==='prepare'&&options.apply&&(!result.applied||!result.readyForBaseline))process.exitCode=1;
+ if(command.startsWith('pack ')&&options.apply&&(!result.applied||result.refused))process.exitCode=1;
 }
 main().catch(error=>{console.error(`Project Init: ${error.message}`);process.exitCode=1;});

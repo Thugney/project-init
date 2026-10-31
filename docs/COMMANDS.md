@@ -15,6 +15,9 @@ This documents **the Project Init 2.1.0-preview.16 CLI**. Every command accepts 
 | `install` | Plan native framework installation for selected exact version | Preview by default; `--apply` executes vendor process with prerequisites/constraints |
 | `ecc` | Plan/install pinned ECC for Claude Code, Codex, or both | Preview by default; `--apply` runs the official `ecc-universal` guided installer with explicit harness choices |
 | `factory` | Install/update the bundled parallel-worktree Claude + Codex Factory | Preview by default; `--apply`; migrates legacy managed Factory roles/config safely, preserves backlog/custom legacy files, and uses isolated worker/integration worktrees. `--orchestrator claude|codex` chooses which agent orchestrates and writes the board (default `claude`); the other agent works as a worker |
+| `pack list` | List installed packs, content status, and MCP recommendations | Read-only; reports `current` or `modified` |
+| `pack add` | Preview or apply a bundled, local, or pinned Git pack | Read-only plan by default; `--apply` stores content, updates rules/skills and lock, and audits; never executes pack content |
+| `pack remove` | Preview or apply removal of an installed pack | Read-only plan by default; `--apply` removes unchanged files, keeps modified skills as conflicts, updates lock and audits |
 | `handoff` | Produce next phase instructions for selected framework | Instructions only; does not run agent |
 | `render` | Generate offline HTML high-fidelity design review | Writes `.project-init/review.html` |
 | `lean` | Render Markdown/JSON report/board/diagram using bundled Lean Kit | Preview; `--execute` renders and audits |
