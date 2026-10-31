@@ -42,10 +42,10 @@ test('self-update installs pinned GitHub source and verifies replacement CLI',as
 });
 
 test('Factory prerequisites require Codex and Claude CLIs plus authentication, not desktop apps',()=>{
- const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'pinit-agent-cli-')),bin=path.join(base,'bin'),globalBin=path.join(base,'global-bin');fs.mkdirSync(bin);fs.mkdirSync(globalBin);
+ const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'pinit-agent-cli-')),bin=path.join(base,'bin'),globalPrefix=path.join(base,'global-prefix'),globalBin=process.platform==='win32'?globalPrefix:path.join(globalPrefix,'bin');fs.mkdirSync(bin);fs.mkdirSync(globalBin,{recursive:true});
  const node=process.execPath.replaceAll('\\','\\\\');
  const js=(name,body,directory=bin)=>{const file=path.join(directory,name);fs.writeFileSync(file,`#!${process.execPath}\n${body}\n`);fs.chmodSync(file,0o755);return file;};
- js('npm',`if(process.argv[2]==='--version'){console.log('10.0.0');process.exit(0)}if(process.argv[2]==='prefix'&&process.argv[3]==='-g'){console.log(${JSON.stringify(globalBin)});process.exit(0)}process.exit(0)`);
+ js('npm',`if(process.argv[2]==='--version'){console.log('10.0.0');process.exit(0)}if(process.argv[2]==='prefix'&&process.argv[3]==='-g'){console.log(${JSON.stringify(globalPrefix)});process.exit(0)}process.exit(0)`);
  js('codex',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('codex-test');process.exit(0)}if(a[0]==='login'&&a[1]==='status')process.exit(1);if(a[0]==='plugin'&&a.includes('--json')){console.log('{}');process.exit(0)}process.exit(0)",globalBin);
  js('claude',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-test');process.exit(0)}if(a[0]==='auth'&&a[1]==='status')process.exit(1);if(a[0]==='plugin'&&a.includes('--json')){console.log('[]');process.exit(0)}process.exit(0)",globalBin);
  if(process.platform==='win32'){
