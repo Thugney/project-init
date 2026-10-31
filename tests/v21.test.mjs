@@ -42,14 +42,14 @@ test('self-update installs pinned GitHub source and verifies replacement CLI',as
 });
 
 test('Factory prerequisites require Codex and Claude CLIs plus authentication, not desktop apps',()=>{
- const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'pinit-agent-cli-')),bin=path.join(base,'bin');fs.mkdirSync(bin);
+ const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'pinit-agent-cli-')),bin=path.join(base,'bin'),globalBin=path.join(base,'global-bin');fs.mkdirSync(bin);fs.mkdirSync(globalBin);
  const node=process.execPath.replaceAll('\\','\\\\');
- const js=(name,body)=>{const file=path.join(bin,name);fs.writeFileSync(file,`#!${process.execPath}\n${body}\n`);fs.chmodSync(file,0o755);return file;};
- js('npm',"if(process.argv[2]==='--version'){console.log('10.0.0');process.exit(0)}process.exit(0)");
- js('codex',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('codex-test');process.exit(0)}if(a[0]==='login'&&a[1]==='status')process.exit(1);if(a[0]==='plugin'&&a.includes('--json')){console.log('{}');process.exit(0)}process.exit(0)");
- js('claude',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-test');process.exit(0)}if(a[0]==='auth'&&a[1]==='status')process.exit(1);if(a[0]==='plugin'&&a.includes('--json')){console.log('[]');process.exit(0)}process.exit(0)");
+ const js=(name,body,directory=bin)=>{const file=path.join(directory,name);fs.writeFileSync(file,`#!${process.execPath}\n${body}\n`);fs.chmodSync(file,0o755);return file;};
+ js('npm',`if(process.argv[2]==='--version'){console.log('10.0.0');process.exit(0)}if(process.argv[2]==='prefix'&&process.argv[3]==='-g'){console.log(${JSON.stringify(globalBin)});process.exit(0)}process.exit(0)`);
+ js('codex',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('codex-test');process.exit(0)}if(a[0]==='login'&&a[1]==='status')process.exit(1);if(a[0]==='plugin'&&a.includes('--json')){console.log('{}');process.exit(0)}process.exit(0)",globalBin);
+ js('claude',"const a=process.argv.slice(2);if(a[0]==='--version'){console.log('claude-test');process.exit(0)}if(a[0]==='auth'&&a[1]==='status')process.exit(1);if(a[0]==='plugin'&&a.includes('--json')){console.log('[]');process.exit(0)}process.exit(0)",globalBin);
  if(process.platform==='win32'){
-  for(const name of ['npm','codex','claude'])fs.writeFileSync(path.join(bin,name+'.cmd'),`@echo off\r\n"${process.execPath}" "%~dp0${name}" %*\r\n`);
+  for(const [name,directory] of [['npm',bin],['codex',globalBin],['claude',globalBin]])fs.writeFileSync(path.join(directory,name+'.cmd'),`@echo off\r\n"${process.execPath}" "%~dp0${name}" %*\r\n`);
  }
  const prior=process.env.PATH,priorNative=process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE;process.env.PATH=bin;
  if(process.platform==='win32')process.env.PROJECT_INIT_CODEX_NATIVE_EXECUTABLE=process.execPath;

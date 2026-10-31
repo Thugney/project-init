@@ -302,6 +302,15 @@ test('applyPack stores the pack, locks hashes, installs rules and skills, and au
  assert.equal(audit.filter(item=>item.action==='pack-added').length,1);
 });
 
+test('applyPack rolls back lock and installed files when audit writing fails',t=>{
+ const root=project(t),auditPath=path.join(root,'.project-init','audit.jsonl');
+ fs.unlinkSync(auditPath);fs.mkdirSync(auditPath);
+ const before=snapshot(root);
+ assert.throws(()=>applyPack(root,'example'));
+ assert.deepEqual(snapshot(root),before);
+ assert.equal(fs.existsSync(path.join(root,'.project-init','packs.json')),false);
+});
+
 test('re-applying the same pack is a no-op and writes no second audit event',t=>{
  const root=project(t);applyPack(root,'example');
  const before=snapshot(root),result=applyPack(root,'example');
