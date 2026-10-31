@@ -103,6 +103,16 @@ test('bundled example pack validates and exposes its manifest and files',()=>{
  assert.ok(result.files.includes('skills/hello/SKILL.md'));
 });
 
+test('pack add and remove explain that init must be applied before managing packs',t=>{
+ const base=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'project-init-pack-uninitialized-'));
+ const root=path.join(base,'project');fs.mkdirSync(root);
+ t.after(()=>fs.rmSync(base,{recursive:true,force:true}));
+ const setup=/Project Init setup has not been applied.*project-init init --project \. --apply/i;
+ assert.throws(()=>packPlan(root,'example'),setup);
+ assert.throws(()=>removePlan(root,'example'),setup);
+ assert.equal(fs.existsSync(path.join(root,'.project-init')),false);
+});
+
 test('manifest validation rejects unknown top-level keys',t=>{
  const dir=fixture(t,{unexpected:true});
  assert.throws(()=>validatePack(dir),/unknown.*unexpected/i);

@@ -4,6 +4,8 @@ A domain pack is an opt-in directory of reusable rules, skills, check proposals,
 
 Project Init never adds a pack automatically. `inspect` and `recommend` may list bundled packs whose `appliesTo` patterns match repository files. Review the suggestion and choose whether to add it.
 
+Pack management requires Project Init state. `project-init init --project .` is a read-only preview; apply setup first with `project-init init --project . --apply`. Until setup is applied, `pack add` and `pack remove` explain this prerequisite and make no changes.
+
 ## Commands
 
 ```powershell
