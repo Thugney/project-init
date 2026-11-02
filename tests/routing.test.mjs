@@ -81,6 +81,19 @@ test('agent frontmatter is rendered from routing and a second preview reports it
  assert.throws(()=>factoryPlan(root),/Invalid model identifier/);
 });
 
+test('Factory install never copies Python bytecode caches from the bundled helpers',t=>{
+ // Importing routing.py from the source tree writes a __pycache__ beside it, as board.py does.
+ const scripts=fileURLToPath(new URL('../vendor/factory/claude/skill/scripts/',import.meta.url));
+ const imported=spawnSync(py,['-c',`import sys; sys.path.insert(0, ${JSON.stringify(scripts)}); import routing`],{encoding:'utf8',env:childEnvironment({PYTHONDONTWRITEBYTECODE:''})});
+ assert.equal(imported.status,0,imported.stderr);
+ assert.ok(fs.existsSync(path.join(scripts,'__pycache__')),'the fixture precondition: a bytecode cache exists in the source');
+ const {root}=repository(t);
+ const plan=factoryPlan(root);
+ assert.equal(plan.factoryFiles.some(f=>/__pycache__|\.pyc$/.test(f.path)),false);
+ applyFactory(root,{apply:true});
+ assert.equal(fs.existsSync(path.join(root,'.claude/skills/factory/scripts/__pycache__')),false);
+});
+
 function workerFixture(t){
  const {base,root}=repository(t);
  fs.mkdirSync(path.join(root,'src'));fs.writeFileSync(path.join(root,'src/feature.mjs'),'export const value = 1;\n');
