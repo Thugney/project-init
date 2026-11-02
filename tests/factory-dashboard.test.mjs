@@ -145,6 +145,8 @@ test('board helper status reports the local path without creating or changing bo
 
 test('board helper registers BMAD story paths and rejects unsafe or missing story sources',t=>{
  const {root,boardPath}=fixture(t);
+ // board init applies the data class policy, which needs the installed Factory config.
+ applyFactory(root,{apply:true});
  const story='_bmad-output/implementation-artifacts/1-1-export-report.md';
  const storyFile=path.join(root,...story.split('/'));
  fs.mkdirSync(path.dirname(storyFile),{recursive:true});

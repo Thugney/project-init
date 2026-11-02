@@ -3,7 +3,6 @@
   "branch_prefix": "factory/",
   "orchestrator": "claude",
   "max_fix_rounds": 2,
-  "claude_model": "opus",
   "claude": {
     "executable": "",
     "model": "",
@@ -11,7 +10,37 @@
       "--permission-mode",
       "acceptEdits"
     ],
-    "timeout_minutes": 45
+    "timeout_minutes": 45,
+    "approvedDataClasses": [
+      "public",
+      "internal"
+    ]
+  },
+  "routing": {
+    "roles": {
+      "orchestrator": "top",
+      "spec-writer": "mid",
+      "builder": "mid",
+      "code-reviewer": "mid",
+      "security-reviewer": "top",
+      "ux-reviewer": "mid",
+      "ui-reviewer": "mid",
+      "approver": "top"
+    },
+    "tiers": {
+      "top": {
+        "claude": "",
+        "codex": ""
+      },
+      "mid": {
+        "claude": "",
+        "codex": ""
+      },
+      "fast": {
+        "claude": "",
+        "codex": ""
+      }
+    }
   },
   "workers": {
     "mode": "parallel-worktrees",
@@ -30,7 +59,11 @@
     "args": [
       "--full-auto"
     ],
-    "timeout_minutes": 45
+    "timeout_minutes": 45,
+    "approvedDataClasses": [
+      "public",
+      "internal"
+    ]
   },
   "reviewers": [
     "security",

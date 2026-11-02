@@ -26,6 +26,7 @@ Read `orchestrator` in `.claude/skills/factory/config.json` (a missing value mea
 - `WT` = `<python> .claude/skills/factory/scripts/worktree.py`
 - `CX` = `<python> .claude/skills/factory/scripts/codex_worker.py` (Codex worker, headless `codex exec`)
 - `CL` = `<python> .claude/skills/factory/scripts/claude_worker.py` (Claude worker and Factory agents, headless `claude -p`)
+- `RT` = `<python> .claude/skills/factory/scripts/routing.py` (model routing and data class policy)
 - `J` = `factory/jobs/<slug>`
 
 Keep orchestrator context small. Workers and agents read files; you consume their short status lines.
@@ -37,6 +38,7 @@ Keep orchestrator context small. Workers and agents read files; you consume thei
 3. Refuse tracked uncommitted source changes: `git status --porcelain --untracked-files=no`. Worker worktrees start from committed `HEAD`.
 4. Use Project Init's feature preparation, baseline, independent review and actual human approval. Installed tooling alone is not feature approval. Commit the approved native artifacts before creating worker worktrees, using the user's existing authorization for that action. Never fabricate approvals.
 5. Record `base_commit=$(git rev-parse HEAD)` and `base_branch=$(git rev-parse --abbrev-ref HEAD)`. Do not checkout or pull the user's working branch.
+6. Run `RT check`. If it prints `ROUTING REFUSED`, stop and show the user the message: a role would run on a client not approved for the project's data class. `B init` refuses the same way. Never edit `approvedDataClasses` or the data class yourself.
 
 ## 1. Spec and task assignment
 
@@ -68,7 +70,8 @@ Record and verify the integrated result with `project-init execution factory --p
 ## 5. Review round
 
 - `B round <slug>`
-- For each configured reviewer (`security`, `code`, `ux`, `ui`; skip UI reviewers when `has_ui` is false), run `CL agent <slug> factory-<reviewer>-reviewer <round>`. Each writes `J/round-<N>/review-<reviewer>.md` with findings tagged `[CODEX]`, `[CLAUDE]` or `[INTEGRATION]`.
+- For each configured reviewer (`security`, `code`, `ux`, `ui`; skip UI reviewers when `has_ui` is false), run `CL agent <slug> factory-<reviewer>-reviewer <round>`. Each writes `J/round-<N>/review-<reviewer>.md` with findings tagged `[CODEX]`, `[CLAUDE]` or `[INTEGRATION]`. `CL agent` passes the deterministic check results from `execution factory --execute` (`<integration>/.project-init/evidence/latest-checks.json`) into each reviewer prompt; reviewers do not re-derive what those checks decided.
+- `CX` and `CL` use the model routed for each role and record it in `J/routing.json`; a role with no configured model keeps the client's existing model setting.
 - `B collect <slug>`. `ALL_PASS` continues to decision; `CHANGES` starts a fix round.
 
 ## 6. Fix round

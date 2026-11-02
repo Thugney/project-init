@@ -93,6 +93,12 @@ Existing `factory/backlog.md` is preserved. Legacy Factory config is migrated to
 
 **One worker = one worktree.** Worker tags are per-job ownership labels. They must never be interpreted as stack ownership.
 
+## Model routing and data classes
+
+Factory roles (spec writer, builder, reviewers, approver) map to `top`, `mid` and `fast` tiers in `.claude/skills/factory/config.json`, and each tier maps to a model per client that you choose. A role whose tier has no model keeps the client's existing model setting. Each job records the tier, client, model and reported usage per role in `factory/jobs/<slug>/routing.json`.
+
+Each project declares a data class with `project-init data-class` (default `internal`). Factory refuses to register or start a job when a role would run on a client whose `approvedDataClasses` does not include it. Reviewers receive the deterministic check results from `execution factory --execute` instead of re-deriving them. Details and limits: [ROUTING.md](ROUTING.md).
+
 ## Boundaries
 
 - Project Init does not duplicate the Spec Kit PRD/spec/plan/tasks.

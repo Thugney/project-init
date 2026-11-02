@@ -26,6 +26,9 @@ import time
 import uuid
 from datetime import datetime, timezone
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import routing  # noqa: E402
+
 ROOT = subprocess.run(
     ["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True
 ).stdout.strip()
@@ -107,13 +110,30 @@ def resolve_claude(settings):
     return shutil.which("claude")
 
 
-def claude_args(settings, executable):
+def claude_args(settings, executable, route):
     claude = settings.get("claude") or {}
     args = [executable, "-p", "--output-format", "stream-json", "--verbose"]
-    model = claude.get("model") or settings.get("claude_model") or ""
-    if model:
-        args += ["--model", model]
+    if route["passedModel"]:
+        args += ["--model", route["passedModel"]]
     return args + list(claude.get("args", ["--permission-mode", "acceptEdits"]))
+
+
+def route_for(settings, role):
+    try:
+        return routing.invocation(settings, role, "claude")
+    except routing.PolicyError as error:
+        print(f"CLAUDE ERROR model routing: {error}")
+        return None
+
+
+def record_route(slug, route, started, events, mode):
+    routing.record(ROOT, slug, {
+        "role": route["role"], "client": "claude", "tier": route["tier"],
+        "model": route["model"] or "not-configured", "routing": route["routing"],
+        "passedModel": route["passedModel"], "mode": mode,
+        "startedAt": started, "finishedAt": datetime.now(timezone.utc).isoformat(),
+        "usage": routing.usage_from_claude(events),
+    })
 
 
 def worktree_path(slug, name):
@@ -207,7 +227,7 @@ def extract_result(events, last):
     return next((line.strip() for line in result.splitlines() if line.strip()), "")
 
 
-def record_execution(slug, worktree, output, started, before, exit_code, status, paths, prompt):
+def record_execution(slug, worktree, output, started, before, exit_code, status, paths, prompt, route):
     """Capture observed process/Git facts, never infer success from a prior summary."""
     immutable = os.path.join(output, "evidence", str(uuid.uuid4()))
     os.makedirs(immutable)
@@ -223,12 +243,16 @@ def record_execution(slug, worktree, output, started, before, exit_code, status,
         logs.append({"path": os.path.relpath(retained, ROOT).replace(os.sep, "/"), "sha256": digest})
     head = run(["git", "-C", worktree, "rev-parse", "HEAD"])
     receipt = {
-        "schemaVersion": 1, "job": slug, "worker": "claude", "cwd": worktree,
+        "schemaVersion": 2, "job": slug, "worker": "claude", "cwd": worktree,
         "startedAt": started, "finishedAt": datetime.now(timezone.utc).isoformat(),
         "beforeRevision": before, "afterRevision": head.stdout.strip(),
         "exitCode": exit_code, "status": status, "logs": logs,
-        "command": "claude -p --output-format stream-json --verbose <stdin prompt> (cwd=<isolated-worktree>)",
+        "command": "claude -p --output-format stream-json --verbose"
+                   + (f" --model {route['passedModel']}" if route["passedModel"] else "")
+                   + " <stdin prompt> (cwd=<isolated-worktree>)",
         "promptHash": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
+        "role": route["role"], "client": "claude", "tier": route["tier"],
+        "model": route["model"] or "not-configured", "passedModel": route["passedModel"],
     }
     filename = os.path.join(immutable, "execution.json")
     with open(filename, "x", encoding="utf-8") as f:
@@ -246,6 +270,9 @@ def launch(args, cwd, prompt, events, stderr, timeout_min):
 
 
 def work(mode, slug, round_no, settings, claude):
+    route = route_for(settings, "builder")
+    if not route:
+        return 6
     wt = worktree_path(slug, "claude")
     sync_context(slug, wt, round_no)
     out = os.path.join(ROOT, "factory", "jobs", slug, "claude", "build" if mode == "build" else f"fix-r{round_no}")
@@ -286,11 +313,11 @@ Rules:
         os.remove(last)
 
     def receipt(code, state):
-        record_execution(slug, wt, out, started, before, code, state, [events, stderr, last], prompt)
+        record_execution(slug, wt, out, started, before, code, state, [events, stderr, last], prompt, route)
 
     start = time.time()
     try:
-        r = launch(claude_args(settings, claude), wt, prompt, events, stderr, timeout_min)
+        r = launch(claude_args(settings, claude, route), wt, prompt, events, stderr, timeout_min)
     except subprocess.TimeoutExpired:
         receipt(124, "failed")
         print(f"CLAUDE FAILED timeout after {timeout_min}m worktree={wt}")
@@ -301,6 +328,7 @@ Rules:
         return 3
     secs = int(time.time() - start)
     first = extract_result(events, last)
+    record_route(slug, route, started, events, "headless-" + ("build" if mode == "build" else "fix"))
     if r.returncode:
         receipt(r.returncode, "failed")
         tail = ""
@@ -358,17 +386,28 @@ def agent(slug, name, round_no, settings, claude):
     events = os.path.join(out, "events.jsonl")
     stderr = os.path.join(out, "stderr.log")
     round_line = f"Review round: {round_no}. Round directory: {os.path.join(job, f'round-{round_no}')}\n" if round_no else ""
+    checks = os.path.join(integration, ".project-init", "evidence", "latest-checks.json")
+    checks_line = f"Deterministic check results: {checks}\n" if os.path.isfile(checks) else ""
     prompt = f"""You are the Factory agent {name}, run headless by the Codex orchestrator for Factory job {slug}.
 Orchestration root: {ROOT}
 Job directory: {job}
 Job spec: {os.path.join(job, 'spec.md')}
 Integration worktree: {integration}
-{round_line}
+{round_line}{checks_line}
 Follow these agent instructions exactly. Write the job file they name, using the absolute job directory above.
 
 {body.strip()}
 """
-    args = claude_args(settings, claude)
+    role = routing.role_for_agent(name)
+    if role:
+        route = route_for(settings, role)
+        if not route:
+            return 6
+    else:
+        route = {"role": name, "tier": None, "model": None, "routing": "not-configured",
+                 "passedModel": routing.fallback_model(settings, "claude")}
+    started = datetime.now(timezone.utc).isoformat()
+    args = claude_args(settings, claude, route)
     if os.path.isdir(integration):
         args += ["--add-dir", integration]
     timeout_min = int((settings.get("claude") or {}).get("timeout_minutes", 45))
@@ -381,6 +420,7 @@ Follow these agent instructions exactly. Write the job file they name, using the
         print(f"CLAUDE AGENT FAILED agent={name} could not launch process: {error}")
         return 3
     first = extract_result(events, last)
+    record_route(slug, route, started, events, "headless-agent")
     if r.returncode:
         print(f"CLAUDE AGENT FAILED agent={name} exit={r.returncode} log={stderr}")
         return 3
