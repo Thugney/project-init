@@ -47,6 +47,28 @@ test('updating an existing Factory config adds new settings without overwriting 
  assert.equal(applyFactory(root,{apply:true}).configMigration.action,'current');
 });
 
+test('Factory update accepts CRLF checkouts and older managed Codex skills, and still protects hand-written ones',t=>{
+ const root=repository(t);applyFactory(root,{apply:true});
+ const skill=name=>path.join(root,`.agents/skills/${name}/SKILL.md`);
+ const crlf=file=>fs.writeFileSync(file,fs.readFileSync(file,'utf8').replaceAll('\r\n','\n').replaceAll('\n','\r\n'));
+ // A Windows checkout with core.autocrlf rewrites line endings only.
+ crlf(skill('factory-worker'));crlf(path.join(root,'.claude/agents/factory-builder.md'));
+ const plan=factoryPlan(root);
+ assert.equal(plan.codexSkills.find(s=>s.name==='factory-worker').action,'unchanged');
+ assert.equal(plan.factoryFiles.find(f=>f.path==='.claude/agents/factory-builder.md').action,'unchanged');
+ // An earlier Project Init copy of the orchestrator skill is updated in place.
+ fs.writeFileSync(skill('factory'),'---\nname: factory\ndescription: Project Init Factory orchestrator for Codex (earlier release).\n---\n\nOlder bundled text.\n');
+ assert.equal(factoryPlan(root).codexSkills.find(s=>s.name==='factory').action,'update');
+ const updated=applyFactory(root,{apply:true});
+ assert.ok(updated.installedCodexSkills.includes('.agents/skills/factory/SKILL.md'));
+ assert.doesNotMatch(fs.readFileSync(skill('factory'),'utf8'),/Older bundled text/);
+ // Content without the Project Init marker is never overwritten.
+ fs.writeFileSync(skill('factory-audit'),'---\nname: factory-audit\ndescription: My own audit skill.\n---\n\nMine.\n');
+ assert.equal(factoryPlan(root).codexSkills.find(s=>s.name==='factory-audit').action,'conflict');
+ assert.throws(()=>applyFactory(root,{apply:true}),/Existing Codex factory skill content differs: \.agents\/skills\/factory-audit\/SKILL\.md/);
+ assert.match(fs.readFileSync(skill('factory-audit'),'utf8'),/Mine\./);
+});
+
 test('user-scope wiring keeps one managed rules block per agent and preserves the user’s own instructions',t=>{
  const root=repository(t),home=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'pinit-home-'));
  t.after(()=>fs.rmSync(home,{recursive:true,force:true}));

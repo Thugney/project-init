@@ -4,6 +4,11 @@ All notable changes to the public Project Init package are documented here. Ther
 
 ## Unreleased
 
+## [2.1.0-preview.18] — 2026-11-02 (Factory update accepts its own earlier files)
+
+### Fixed
+- Factory update no longer refuses on the bundled Codex Factory skills that an earlier Project Init installed: an older managed copy is updated in place, and line-ending-only differences (Windows CRLF checkouts) count as unchanged for skills and Factory files. Hand-written skills at those paths are still refused without overwrite.
+
 ## [2.1.0-preview.17] — 2026-11-02 (domain packs, first-class BMAD, model routing and data classes; licensing and GitHub preview distribution)
 
 ### Added
