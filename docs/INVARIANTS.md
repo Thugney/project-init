@@ -23,6 +23,7 @@ Based on decisions through October 19, 2026 and the uploaded original `project-i
 | PI-017 | Codex and Claude discoverable skills | Seven descriptive skill files per agent through reviewed guided `init --apply` or explicit `wire --apply`, with conflict handling/backups; Claude namespaced commands require plugin activation |
 | PI-018 | Idempotency, rollback and audit | Local JSONL events, exact hashes, dry-run by default for external actions, v1 protected. No tamper-resistant identity signature |
 | PI-019 | Human release decision | `guard` may produce a human-review-ready candidate, but no automatic release approval is possible |
+| PI-020 | Domain packs are opt-in, pinned and safe to remove | Pack add/remove are dry-run by default; the lock hash participates in the baseline; pack content is not executed; rule changes stay inside marked blocks; removal preserves user-edited skills |
 
 ## Evidence ownership
 

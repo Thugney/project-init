@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "name": "example",
+  "version": "1.0.0",
+  "description": "Demonstration pack showing the Project Init pack format.",
+  "appliesTo": ["**/*.example"],
+  "provides": {
+    "rules": ["rules/example.md"],
+    "skills": [
+      {
+        "name": "hello",
+        "path": "skills/hello/SKILL.md"
+      }
+    ],
+    "checks": [
+      {
+        "name": "example-smoke",
+        "argv": ["npm", "run", "smoke"]
+      }
+    ],
+    "hooks": [],
+    "review": [],
+    "mcp": [
+      {
+        "name": "Context7",
+        "description": "Documentation lookup for a technology already used by the project."
+      }
+    ]
+  }
+}

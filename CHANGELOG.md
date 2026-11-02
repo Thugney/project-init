@@ -4,7 +4,12 @@ All notable changes to the public Project Init package are documented here. Ther
 
 ## Unreleased — licensing and GitHub preview distribution
 
+### Added
+- Added opt-in domain packs with pinned content hashes, dry-run add/remove plans, managed rules and skill installation, check proposals, pack suggestions, MCP recommendations, and baseline invalidation.
+- Added a bundled example pack and documented the manifest format, source rules, safety limits, and removal conflicts.
+
 ### Fixed
+- Pack add and remove now explain that guided setup must be applied before pack management, instead of exposing a missing state-file path.
 - Windows command discovery supports native executables such as `codex.exe` without requiring a `.cmd` shim. Batch dispatch preserves the selected absolute `.cmd`/`.bat` path, quotes ordinary arguments, and rejects unsafe shell expansion/control characters.
 - Added Windows regressions for executable discovery, PATH precedence, batch paths and arguments containing spaces, conflicting working-directory shims, and unsafe argument rejection. Command windows stay hidden during execution.
 

@@ -140,6 +140,7 @@ Details: [Security model](docs/SECURITY-MODEL.md) and [validation report](docs/A
 | Factory | [Stack](docs/FACTORY-STACK.md), [Dashboard](docs/FACTORY-DASHBOARD.md), [Evidence](docs/FACTORY-EVIDENCE.md) |
 | Design and guarantees | [Architecture](docs/ARCHITECTURE.md), [Invariants](docs/INVARIANTS.md), [Security model](docs/SECURITY-MODEL.md), [Verification](docs/VERIFICATION.md) |
 | Status and plans | [Validation report](docs/ACCEPTANCE-REPORT.md), [Changelog](CHANGELOG.md), [Releases](docs/RELEASES.md), [Roadmap](docs/ROADMAP-2.2.md) |
+| Domain packs | [Pack format, commands, lock and safety limits](docs/PACKS.md) |
 | Contributing | [Contributing](CONTRIBUTING.md), [Security policy](SECURITY.md) |
 
 ## Community and license
