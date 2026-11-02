@@ -22,6 +22,7 @@ All notable changes to the public Project Init package are documented here. Ther
 - Added `docs/ROADMAP-2.2.md`, a proposed, prioritized plan for domain packs that keeps Project Init a personal development harness: pack mechanism, first-class BMAD, PowerShell/M365 pack, hooks, model routing, evals, local-first CI, GitHub pack, supply chain, `learn` feedback loop, web/GDPR pack, gated deployment, issue intake, and later tenant configuration as code. Nothing in it is implemented.
 
 - Added `AGENTS.md` (imported by `CLAUDE.md`) with the rules for coding agents working on this repository, and Spec Kit feature specs `specs/001`–`specs/014` for every 2.2 roadmap phase, with build order in `specs/README.md`.
+- Corrected `specs/005-model-routing` after re-checking it against the bundled Factory: all three current model sources described, rendered agents compared at install, `claude_model` deprecated, `project-init data-class` named, data class fail closed, orchestrator tier advisory, family diversity and the `decide` command deferred, OpenAI-compatible endpoints out of scope. The generic CLI worker moved to a new drafted-ahead `specs/015-generic-cli-worker`; the `summarizer` role moved to 010.
 
 ### Fixed (documentation)
 - NOTICE listed the bundled Factory on the same line as Lean Kit because of a literal `\n`.

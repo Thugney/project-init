@@ -7,7 +7,7 @@
 - `lib/learn.mjs`: `collect(root, since)` over existing evidence files and audit JSONL; `group()`; `propose()`; `apply()`; `dismiss()`.
 - Proposal storage: `.project-init/learn/` with one JSON metadata file and one diff per proposal.
 - Target selection: the pack whose check produced the failure if it is local/overlay; otherwise ask for `--pack <local pack>`.
-- Drafting through the 005 `summarizer` role via the configured client when present; otherwise template only.
+- Drafting through the `summarizer` role this feature adds (routed through 005 tiers) when a model is configured for it; otherwise template only.
 
 ## Changes
 
