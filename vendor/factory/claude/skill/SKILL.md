@@ -47,6 +47,7 @@ integration worktree
 - `B` = `<python> .claude/skills/factory/scripts/board.py`
 - `WT` = `<python> .claude/skills/factory/scripts/worktree.py`
 - `CX` = `<python> .claude/skills/factory/scripts/codex_worker.py`
+- `RT` = `<python> .claude/skills/factory/scripts/routing.py` (model routing and data class policy)
 - `J` = `factory/jobs/<slug>`
 
 Keep orchestrator context small. Agents read files; you consume their short status lines.
@@ -58,6 +59,9 @@ Keep orchestrator context small. Agents read files; you consume their short stat
 2. Refuse tracked uncommitted source changes: `git status --porcelain --untracked-files=no`. Untracked unrelated files may remain; worker worktrees start from committed `HEAD` and do not inherit them.
 3. Use Project Init's feature preparation to reuse the active native spec/tasks, configure actual checks and requirement mappings, and establish the baseline before its independent review and actual human approval. Check `project-init status --project .`; installed tooling alone is not feature approval. Commit the approved native artifacts before creating worker worktrees, using the user's existing authorization for that action. Do not fabricate approvals to satisfy this preflight.
 4. After the native artifacts are committed, record `base_commit=$(git rev-parse HEAD)` and `base_branch=$(git rev-parse --abbrev-ref HEAD)`. Do not checkout or pull the user's working branch. Use this same committed base for the board entry and worktree creation.
+5. Run `RT check`. If it prints `ROUTING REFUSED`, stop and show the user the message: a role would run on a client not approved for the project's data class. `B init` refuses the same way. Never edit `approvedDataClasses` or the data class yourself.
+
+Model routing: agent files carry the model routed for their role (rendered at Factory install). After each agent you spawn as a subagent, run `RT record <slug> <role>` (for example `RT record <slug> code-reviewer`) so `J/routing.json` lists the model it used. `CX` records its own runs.
 
 ## 1. Spec and task assignment
 
@@ -109,7 +113,7 @@ If the isolated checkout needs dependencies, use its established reproducible se
 ## 5. Review round
 
 - `B round <slug>`
-- Spawn configured reviewers in parallel against the **integration worktree** and `J/spec.md`.
+- Spawn configured reviewers in parallel against the **integration worktree** and `J/spec.md`. Give each reviewer the deterministic check results from `execution factory --execute`: `<integration>/.project-init/evidence/latest-checks.json`. Reviewers do not re-derive what those checks decided.
 - Findings must be tagged `[CODEX]`, `[CLAUDE]`, or `[INTEGRATION]` according to the task/file ownership that needs correction.
 - `B collect <slug>`.
 

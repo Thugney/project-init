@@ -5,6 +5,9 @@ All notable changes to the public Project Init package are documented here. Ther
 ## Unreleased — licensing and GitHub preview distribution
 
 ### Added
+- Added Factory model routing: roles map to `top`/`mid`/`fast` tiers and tiers map to a model per client, with no models shipped. Unconfigured roles keep today's model sources. Claude agent frontmatter is rendered at Factory install with a clean second preview, headless workers pass `--model`/`-m`, worker receipts move to schema 2 with role, client, tier and model, and each job keeps `routing.json` with reported usage or `not-reported`. Reviewers receive the `execution factory` check results. `status` reports routing per role and the advisory orchestrator tier. See `docs/ROUTING.md`.
+- Added project data classes (`public`, `internal`, `personal`, `restricted`; default `internal`) and `project-init data-class` (preview by default, `--apply` with an audit event). Factory refuses jobs, fail closed, when a role would run on a client not approved for the class; clients ship approved for `public` and `internal`.
+- Deprecated the top-level Factory `claude_model` setting: `factory --apply` moves it into `claude.model` and reports a conflicting value it dropped.
 - Added guided first-class BMAD v6 setup pinned to 6.12.0 by default, native story discovery/preparation, BMAD-backed Factory jobs with story-contract evidence, and methodology-selection guidance. BMAD v7 remains unsupported.
 - Added opt-in domain packs with pinned content hashes, dry-run add/remove plans, managed rules and skill installation, check proposals, pack suggestions, MCP recommendations, and baseline invalidation.
 - Added a bundled example pack and documented the manifest format, source rules, safety limits, and removal conflicts.

@@ -23,6 +23,9 @@ import sys
 import tempfile
 from datetime import datetime, timezone
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import routing  # noqa: E402
+
 # Git may report a short-name or junction alias on Windows. Derive every
 # runtime path from the existing filesystem identity of that checkout.
 ROOT = os.path.realpath(
@@ -171,6 +174,13 @@ def cmd_init(args):
         if not inside or not os.path.isfile(candidate):
             die(f"BMAD story file does not exist inside this repository: {story_path}")
         source = "bmad:" + "/".join(parts)
+    # Data class policy fails closed: unreadable state or config refuses the job.
+    try:
+        routing.check(ROOT, load_config())
+    except (OSError, ValueError) as error:
+        die(f"job refused: cannot read Factory config: {error}")
+    except routing.PolicyError as error:
+        die(f"job refused: {error}")
     board = load()
     n = max([int(j["id"].split("-")[0]) for j in board["jobs"]] + [0]) + 1
     slug = f"{n:03d}-{slugify(title)}"

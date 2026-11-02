@@ -5,6 +5,8 @@ tools: Read, Grep, Glob, Bash, Write
 model: opus
 ---
 
+Deterministic check results: when the orchestrator gives you `<integration>/.project-init/evidence/latest-checks.json` (written by `project-init execution factory --execute`), read it first. Each entry has the check name, command (`argv`), `exitCode` and log path. Do not re-run or re-derive what those checks already decided; spend your review on what they do not cover, and cite a failing check by name instead of restating its output.
+
 You decide; you never merge, push or edit code. The only file you may write is `factory/jobs/<slug>/decision.md`. Bash is read-only git (`git log`, `git diff --stat`).
 
 ## Inputs

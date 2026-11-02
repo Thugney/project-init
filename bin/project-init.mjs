@@ -6,7 +6,7 @@ import readline from 'node:readline/promises';
 import {
  VERSION,projectRoot,discover,recommendation,initProject,readState,selectFramework,installPlan,applyInstall,applyEcc,
  establishBaseline,recordReview,approve,checkBaseline,status,workflow,runChecks,runCodex,validChecks,readJson,statePath,
- fail,reconcileSource
+ fail,reconcileSource,dataClass
 } from '../lib/core.mjs';
 import { renderVisualReview } from '../lib/visual.mjs';
 import {skillPlan} from '../lib/skills.mjs';
@@ -34,6 +34,7 @@ Commands:
   install      --project PATH --version X.Y.Z [--agent codex|claude|both] [--apply]             Install selected native spec framework
   ecc          --project PATH --version X.Y.Z [--agent both|codex|claude] [--scope local|project|user] [--apply]  Install ECC for coding agents
   factory      --project PATH [--kit PATH] [--orchestrator claude|codex] [--apply]  Install/update bundled Claude + Codex Factory and choose its orchestrator (default claude); --kit is an optional developer override
+  data-class   --project PATH [--set public|internal|personal|restricted] [--apply]  Show the project data class (default internal) or preview a change; only --apply writes it
   pack list    --project PATH                                      List applied packs and content status
   pack add     <name|path|git+url#tag-or-sha> --project PATH [--apply]  Preview pack changes; apply only when explicitly requested
   pack remove  <name> --project PATH [--apply]                     Preview removal; apply only when explicitly requested
@@ -74,7 +75,7 @@ function parseArgs(argv){
    }
    const key=token.slice(2);
    if(['json','execute','apply','plugin','backup-conflicts','check','force','yes'].includes(key)) {options[key]=true;continue;}
-   if(!['project','mode','intent','complexity','ui','framework','version','ecc-version','phase','task','actor','evidence','verdict','out','spec','allow','agent','scope','input','id','side','url','browser','file','kit','feature','mapping','job','orchestrator'].includes(key)) fail(`Unknown option: ${key}`);
+   if(!['project','mode','intent','complexity','ui','framework','version','ecc-version','phase','task','actor','evidence','verdict','out','spec','allow','agent','scope','input','id','side','url','browser','file','kit','feature','mapping','job','orchestrator','set'].includes(key)) fail(`Unknown option: ${key}`);
    const value=rest[++i];
    if(value===undefined||value.startsWith('--')) fail(`Missing value after --${key}`);
    if(multi.has(key)){options[key]??=[];options[key].push(value);}
@@ -175,6 +176,7 @@ async function main(){
   result=await applyEcc(root,options.version||'2.2.3',{apply:!!options.apply,agent:options.agent||'both',scope:options.scope||'local'});break;
  case 'factory':
   result=applyFactory(root,{kit:options.kit,apply:!!options.apply,orchestrator:options.orchestrator});break;
+ case 'data-class':result=dataClass(root,{set:options.set,apply:!!options.apply});break;
  case 'pack list':result={packs:listPacks(root)};break;
  case 'pack add':
   if(!options.argument)fail('Pass a pack name, local directory path, or pinned Git source.');

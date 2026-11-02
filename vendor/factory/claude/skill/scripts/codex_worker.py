@@ -19,6 +19,9 @@ import re
 import uuid
 from datetime import datetime, timezone
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import routing  # noqa: E402
+
 ROOT = subprocess.run(
     ["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True
 ).stdout.strip()
@@ -192,7 +195,7 @@ def commit_changes(worktree, slug, tag):
     return head.stdout.strip() or "unknown", changed
 
 
-def record_execution(slug, worktree, output, started, before, exit_code, status, paths, prompt):
+def record_execution(slug, worktree, output, started, before, exit_code, status, paths, prompt, route):
     """Capture observed process/Git facts, never infer success from a prior summary."""
     immutable = os.path.join(output, "evidence", str(uuid.uuid4()))
     os.makedirs(immutable)
@@ -208,12 +211,16 @@ def record_execution(slug, worktree, output, started, before, exit_code, status,
         logs.append({"path": os.path.relpath(retained, ROOT).replace(os.sep, "/"), "sha256": digest})
     head = run(["git", "-C", worktree, "rev-parse", "HEAD"])
     receipt = {
-        "schemaVersion": 1, "job": slug, "worker": "codex", "cwd": worktree,
+        "schemaVersion": 2, "job": slug, "worker": "codex", "cwd": worktree,
         "startedAt": started, "finishedAt": datetime.now(timezone.utc).isoformat(),
         "beforeRevision": before, "afterRevision": head.stdout.strip(),
         "exitCode": exit_code, "status": status, "logs": logs,
-        "command": "codex exec --cd <isolated-worktree> --json -o <last-message> <prompt>",
+        "command": "codex exec"
+                   + (f" -m {route['passedModel']}" if route["passedModel"] else "")
+                   + " --cd <isolated-worktree> --json -o <last-message> <prompt>",
         "promptHash": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
+        "role": route["role"], "client": "codex", "tier": route["tier"],
+        "model": route["model"] or "not-configured", "passedModel": route["passedModel"],
     }
     filename = os.path.join(immutable, "execution.json")
     with open(filename, "x", encoding="utf-8") as f:
@@ -237,6 +244,11 @@ def main():
     if not begin_attempt(slug):
         return 6
     settings = cfg()
+    try:
+        route = routing.invocation(settings, "builder", "codex")
+    except routing.PolicyError as error:
+        print(f"CODEX ERROR model routing: {error}")
+        return 6
     codex = resolve_codex(settings)
     if not codex:
         print("CODEX MISSING codex CLI runtime not found")
@@ -275,9 +287,8 @@ Rules:
 - Final first line must be exactly WORKER: DONE or WORKER: BLOCKED <reason>. At most 10 short lines total.
 """
     args = [codex, "exec"]
-    model = settings.get("codex", {}).get("model", "")
-    if model:
-        args += ["-m", model]
+    if route["passedModel"]:
+        args += ["-m", route["passedModel"]]
     args += settings.get("codex", {}).get("args", [])
     args += ["--cd", wt, "--json", "-o", last, prompt]
     timeout_min = int(settings.get("codex", {}).get("timeout_minutes", 45))
@@ -286,7 +297,7 @@ Rules:
     if os.path.exists(last):
         os.remove(last)
     def receipt(code, state):
-        record_execution(slug, wt, out, started, before, code, state, [events, stderr, last], prompt)
+        record_execution(slug, wt, out, started, before, code, state, [events, stderr, last], prompt, route)
     start = time.time()
     try:
         with open(events, "w", encoding="utf-8") as ef, open(stderr, "w", encoding="utf-8") as sf:
@@ -300,6 +311,13 @@ Rules:
         print(f"CODEX FAILED could not launch process: {error}")
         return 3
     secs = int(time.time() - start)
+    routing.record(ROOT, slug, {
+        "role": "builder", "client": "codex", "tier": route["tier"],
+        "model": route["model"] or "not-configured", "routing": route["routing"],
+        "passedModel": route["passedModel"], "mode": "headless-" + ("build" if mode == "build" else "fix"),
+        "startedAt": started, "finishedAt": datetime.now(timezone.utc).isoformat(),
+        "usage": routing.usage_from_codex(events),
+    })
     if r.returncode:
         receipt(r.returncode, "failed")
         tail = ""

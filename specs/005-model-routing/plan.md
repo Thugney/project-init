@@ -14,7 +14,7 @@
 
 ## Design
 
-- **Config schema:** `routing.roles`, `routing.tiers.<tier>.{claude,codex}`, and `approvedDataClasses` on the existing `claude` and `codex` objects. Shipped defaults: suggested role → tier map, empty tier models, empty `approvedDataClasses` (so data class refusal is visible until the maintainer approves clients).
+- **Config schema:** `routing.roles`, `routing.tiers.<tier>.{claude,codex}`, and `approvedDataClasses` on the existing `claude` and `codex` objects. Shipped defaults: suggested role → tier map, empty tier models, `approvedDataClasses` of `["public", "internal"]` for both clients (maintainer decision during build, 2026-11-02: empty lists would refuse every job after upgrade, contradicting US2 and SC-001). `personal` and `restricted` stay refused until approved.
 - **Migration:** add `routing` when missing; add `approvedDataClasses` to existing `claude`/`codex` objects when missing (nested-key merge, never overwriting a value); move `claude_model` into an empty `claude.model` and drop it, reporting a conflicting dropped value.
 - **Resolution** in one Python helper used by workers and `board.py`: `resolve(role, client) → {tier, model|None}`; `None` means fallback (FR-003). The orchestrator role resolves for display only.
 - **Rendering:** at Factory install/update, agent frontmatter `model:` is rewritten only when a model is configured for that role's tier. `mappedEntry` compares against the rendered content and `applyFactory` writes the rendered content instead of copying the source.
@@ -41,7 +41,7 @@
 
 - **Breaking existing Factory jobs.** Mitigation: fallback is today's behavior through all three sources; existing tests must pass unchanged.
 - **Install churn from rendering.** Mitigation: planning compares against rendered content; regression test for a clean second preview.
-- **Refusing every job after upgrade.** Shipped empty `approvedDataClasses` refuse by design (FR-007). Mitigation: status names the unapproved clients and the docs give the exact config edit; the refusal message says the same.
+- **Refusing jobs after upgrade.** Shipped `approvedDataClasses` cover `public` and `internal`, so only `personal`/`restricted` projects and clients with an emptied list are refused (FR-007). Mitigation: status names the unapproved clients and the docs give the exact config edit; the refusal message says the same.
 - **Usage parsing brittle.** Mitigation: best effort, explicit `not-reported`.
 
 ## Rollback
