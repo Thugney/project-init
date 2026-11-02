@@ -60,6 +60,9 @@ test('recommendation considers intent, complexity, existing footprints',()=>{
  assert.equal(recommendation(d,{intent:'automation',complexity:'small'}).ranking[0].id,'none');
  const q=newProject('ranknew');
  assert.equal(recommendation(discover(q.root),{intent:'new-product',complexity:'large',ui:'yes'}).ranking[0].id,'bmad');
+ const recommended=recommendation(discover(q.root),{intent:'new-product',complexity:'large',ui:'yes'});
+ assert.ok(recommended.ranking[0].reasons.some(reason=>reason.includes('heavier process')));
+ assert.equal(recommended.ranking[0].score,90,'Reason text does not affect the existing ranking score.');
 });
 test('framework pin is idempotent and refuses silent methodology switching',()=>{
  const p=newProject('pin');selectFramework(p.root,'openspec');selectFramework(p.root,'openspec');
@@ -86,6 +89,14 @@ test('install preview never executes package managers or vendor scaffolding',()=
  assert.deepEqual(plan.steps.at(-1).args,['init','--tools','codex']);
  assert.equal(fs.existsSync(path.join(p.root,'openspec')),false);
  assert.equal(readState(p.root).installation.state,'selected');
+});
+test('BMAD install preview uses the exact 6.12.0 default and refuses v7',()=>{
+ const p=newProject('bmad-install');selectFramework(p.root,'bmad');
+ const plan=installPlan(p.root,null,'both');
+ assert.equal(plan.framework,'bmad');assert.equal(plan.installed,false);assert.equal(plan.requiresVersion,false);
+ assert.deepEqual(plan.steps,[{kind:'project',cmd:'npx',args:['--yes','bmad-method@6.12.0','install','--directory','.','--modules','bmm','--tools','claude-code,codex'],interactive:true,supervised:true}]);
+ const explicit=installPlan(p.root,'6.12.4','both');assert.ok(explicit.steps[0].args.includes('bmad-method@6.12.4'));
+ assert.throws(()=>installPlan(p.root,'7.0.0','both'),/v7 is not supported/i);
 });
 test('approval requires current spec, review and actual actor/evidence',()=>{
  const p=newProject('review');selectAndSpec(p.root);

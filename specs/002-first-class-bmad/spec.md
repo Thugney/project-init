@@ -7,7 +7,7 @@
 
 ## Summary
 
-Project Init already ranks, pins and installs BMAD, but a BMAD project cannot use guided setup, cannot start Factory jobs, and its features are not discovered automatically. This feature makes BMAD a first-class methodology next to Spec Kit for the BMAD Method **v6.12.0**, the latest stable release on 2026-10-30. Spec Kit remains the default; the methodology is chosen per project and only one is ever active.
+Project Init already ranks, pins and installs BMAD, but a BMAD project cannot use guided setup, cannot start Factory jobs, and its features are not discovered automatically. This feature makes BMAD a first-class methodology next to Spec Kit for the BMAD Method **v6.12.0**, the project's selected supported v6 pin. Spec Kit remains the default; the methodology is chosen per project and only one is ever active.
 
 ## Background: BMAD v6 versus v7
 

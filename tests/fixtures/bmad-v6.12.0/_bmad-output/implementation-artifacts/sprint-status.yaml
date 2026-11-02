@@ -1,0 +1,18 @@
+# generated: 10-31-2026 08:10
+# project: fixture-project
+# project_key: BMADFIX
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+generated: 10-31-2026 08:10
+last_updated: 10-31-2026 08:10
+project: Fixture Export
+project_key: BMADFIX
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  epic-1: backlog
+  1-1-create-fixture-export: ready-for-dev
+  1-2-validate-fixture-export: in-progress
+  epic-1-retrospective: optional

@@ -5,6 +5,7 @@ All notable changes to the public Project Init package are documented here. Ther
 ## Unreleased — licensing and GitHub preview distribution
 
 ### Added
+- Added guided first-class BMAD v6 setup pinned to 6.12.0 by default, native story discovery/preparation, BMAD-backed Factory jobs with story-contract evidence, and methodology-selection guidance. BMAD v7 remains unsupported.
 - Added opt-in domain packs with pinned content hashes, dry-run add/remove plans, managed rules and skill installation, check proposals, pack suggestions, MCP recommendations, and baseline invalidation.
 - Added a bundled example pack and documented the manifest format, source rules, safety limits, and removal conflicts.
 

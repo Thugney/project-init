@@ -43,6 +43,8 @@ You are one worker in a parallel software factory. Claude may be working at the 
 - Never modify `.claude/`, `.agents/`, `.project-init/`, `factory/`, or `.factory-context/`.
 - Never run Git commit/push/pull/merge/rebase/checkout/switch/worktree commands. Factory owns branch and integration operations.
 
+For a BMAD story assignment, never change its `Status:` field or `sprint-status.yaml`. You may tick only task checkboxes assigned to you and completed in this worktree. Keep acceptance criteria and task identifiers unchanged.
+
 ## Final message
 
 The first non-empty line must be one of:
