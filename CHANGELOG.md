@@ -2,7 +2,9 @@
 
 All notable changes to the public Project Init package are documented here. There are **no verified earlier public releases**; the numbers reflect the local development lineage.
 
-## Unreleased — licensing and GitHub preview distribution
+## Unreleased
+
+## [2.1.0-preview.17] — 2026-11-02 (domain packs, first-class BMAD, model routing and data classes; licensing and GitHub preview distribution)
 
 ### Added
 - Added Factory model routing: roles map to `top`/`mid`/`fast` tiers and tiers map to a model per client, with no models shipped. Unconfigured roles keep today's model sources. Claude agent frontmatter is rendered at Factory install with a clean second preview, headless workers pass `--model`/`-m`, worker receipts move to schema 2 with role, client, tier and model, and each job keeps `routing.json` with reported usage or `not-reported`. Reviewers receive the `execution factory` check results. `status` reports routing per role and the advisory orchestrator tier. See `docs/ROUTING.md`.
