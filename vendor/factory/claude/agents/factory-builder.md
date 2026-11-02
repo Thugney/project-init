@@ -24,6 +24,10 @@ You will be given an absolute **worktree path**. All source edits and Git comman
 7. On fix rounds, fix only findings tagged `[CLAUDE]` after the orchestrator syncs the integration branch into your worktree.
 8. Commit only your worktree changes with `git -C <worktree> add ...` and `git -C <worktree> commit ...`. Never push, merge, rebase, switch branches, or manage worktrees.
 
+## BMAD status ownership
+
+When the assigned source is a BMAD story, never change its `Status:` field or the project's `sprint-status.yaml`. You may tick only the story task checkboxes assigned to you and completed in this worktree. Keep task identifiers and acceptance criteria unchanged.
+
 Do not edit `.claude/`, `.agents/`, `.project-init/`, `factory/`, CI/workflows, or Factory context unless the approved task explicitly requires a normally protected path and the spec marks it high risk.
 
 ## Final message

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {bootstrapProject} from '../lib/bootstrap.mjs';
 import {initProject,readState,selectFramework,statePath,recordReview,approve,checkBaseline} from '../lib/core.mjs';
@@ -68,6 +69,63 @@ test('init preview in an existing dirty repository does not select a framework o
   assert.equal(fs.existsSync(path.join(root,'factory')),false);
   assert.deepEqual(fs.readFileSync(path.join(root,'README.md')),before);
   assert.equal(fs.existsSync(calls),false);
+});
+
+test('BMAD init preview is pinned, supervised, read-only, and accepts explicit v6 pins',async t=>{
+ const {root}=fixture(t,{exists:false});
+ const preview=await bootstrapProject(root,{framework:'bmad',intent:'new-product',ui:'no'});
+ assert.equal(preview.framework.id,'bmad');assert.equal(preview.architecture.specOwner,'bmad');
+ assert.equal(preview.versions.bmad,'6.12.0');
+ assert.equal(preview.plan.native.framework,'bmad');
+ assert.equal(preview.plan.native.steps[0].interactive,true);assert.equal(preview.plan.native.steps[0].supervised,true);
+ assert.equal(preview.plan.native.steps[0].args[1],'bmad-method@6.12.0');
+ assert.equal(fs.existsSync(root),false);
+ const explicit=await bootstrapProject(root,{framework:'bmad',version:'6.12.4',intent:'new-product',ui:'no'});
+ assert.equal(explicit.versions.bmad,'6.12.4');assert.equal(explicit.plan.native.steps[0].args[1],'bmad-method@6.12.4');
+ await assert.rejects(()=>bootstrapProject(root,{framework:'bmad',version:'7.0.0',ui:'no'}),/v7 is not supported/i);
+});
+
+test('new-project BMAD init runs a supervised installer and resumes without repeating it',async t=>{
+ const {root}=fixture(t,{exists:false});
+ const source=path.join(path.dirname(fileURLToPath(import.meta.url)),'fixtures','bmad-v6.12.0');
+ let installs=0;
+ const runSupervisedInstaller=async(command,args,cwd)=>{
+  installs++;assert.equal(command,'npx');assert.ok(args.includes('bmad-method@6.12.0'));
+  fs.cpSync(source,cwd,{recursive:true});return {exitCode:0};
+ };
+ const first=await bootstrapProject(root,{mode:'New',framework:'bmad',intent:'new-product',ui:'no',apply:true,confirm:async()=>true,runSupervisedInstaller});
+ assert.equal(first.status,'ready',JSON.stringify(first));assert.equal(first.readiness.nativeFramework,true);assert.equal(installs,1);
+ assert.equal(fs.existsSync(path.join(root,'.specify')),false);
+ const progress=JSON.parse(fs.readFileSync(statePath(root,'bootstrap.json'),'utf8'));
+ assert.equal(progress.steps.bmad.status,'completed');assert.equal(progress.steps.bmad.version,'6.12.0');
+ const resumed=await bootstrapProject(root,{apply:true,confirm:async()=>true,runSupervisedInstaller});
+ assert.equal(resumed.status,'ready');assert.equal(resumed.execution.bmad.skipped,true);assert.equal(installs,1);
+});
+
+test('existing nonempty project receives a supervised command and resumes after BMAD appears',async t=>{
+ const {root,put,git}=fixture(t);put('README.md','Existing work stays intact.\n');git('init');
+ let installs=0;
+ const first=await bootstrapProject(root,{mode:'Existing',framework:'bmad',ui:'no',apply:true,confirm:async()=>true,
+  runSupervisedInstaller:async()=>{installs++;return {exitCode:0};}});
+ assert.equal(first.status,'supervised-install-required');assert.equal(installs,0);
+ assert.match(first.next,/npx --yes bmad-method@6\.12\.0 install --directory \. --modules bmm --tools claude-code,codex/);
+ assert.equal(readState(root).framework,'bmad');
+ const source=path.join(path.dirname(fileURLToPath(import.meta.url)),'fixtures','bmad-v6.12.0');
+ fs.cpSync(source,root,{recursive:true});
+ const resumed=await bootstrapProject(root,{mode:'Existing',ui:'no',apply:true,confirm:async()=>true,
+  runSupervisedInstaller:async()=>{installs++;return {exitCode:0};}});
+ assert.equal(resumed.status,'ready',JSON.stringify(resumed));assert.equal(resumed.execution.bmad.skipped,true);assert.equal(installs,0);
+ assert.equal(fs.readFileSync(path.join(root,'README.md'),'utf8'),'Existing work stays intact.\n');
+});
+
+test('guided init refuses Spec Kit and BMAD footprints from conflicting setup directions',async t=>{
+ const first=fixture(t);first.put('README.md','Existing project\n');first.put('.specify/memory/constitution.md','# Existing Spec Kit\n');
+ await assert.rejects(()=>bootstrapProject(first.root,{mode:'Existing',framework:'bmad',ui:'no'}),/Existing methodology footprint.*spec-kit/i);
+ assert.equal(fs.existsSync(statePath(first.root,'project.json')),false);
+ const second=fixture(t);second.put('README.md','Existing project\n');
+ second.put('_bmad/_config/manifest.yaml','installation:\n  version: 6.12.0\nmodules:\n  - name: bmm\n');
+ await assert.rejects(()=>bootstrapProject(second.root,{mode:'Existing',framework:'spec-kit',ui:'no'}),/Existing methodology footprint.*bmad/i);
+ assert.equal(fs.existsSync(statePath(second.root,'project.json')),false);
 });
 
 test('preview resumes existing state without persisting a proposed framework selection',async t=>{

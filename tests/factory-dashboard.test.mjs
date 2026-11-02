@@ -143,6 +143,26 @@ test('board helper status reports the local path without creating or changing bo
  assert.equal(fs.readFileSync(boardPath,'utf8'),bytes);
 });
 
+test('board helper registers BMAD story paths and rejects unsafe or missing story sources',t=>{
+ const {root,boardPath}=fixture(t);
+ const story='_bmad-output/implementation-artifacts/1-1-export-report.md';
+ const storyFile=path.join(root,...story.split('/'));
+ fs.mkdirSync(path.dirname(storyFile),{recursive:true});
+ fs.writeFileSync(storyFile,'# Story 1.1: Export report\n\n## Tasks / Subtasks\n- [ ] Task 1\n');
+ const created=helper(root,'init','BMAD export story','--source',`bmad:${story}`);
+ assert.equal(created.status,0,created.stderr||created.stdout);
+ const slug=created.stdout.trim();assert.match(slug,/^001-bmad-export-story$/);
+ let board=JSON.parse(fs.readFileSync(boardPath,'utf8'));
+ assert.equal(board.jobs[0].source,`bmad:${story}`);
+ const before=fs.readFileSync(boardPath,'utf8');
+ const traversal=helper(root,'init','Unsafe story','--source','bmad:../outside.md');
+ assert.notEqual(traversal.status,0);assert.match(traversal.stdout,/project-relative Markdown story path/i);
+ assert.equal(fs.readFileSync(boardPath,'utf8'),before);
+ const missing=helper(root,'init','Missing story','--source','bmad:_bmad-output/implementation-artifacts/missing.md');
+ assert.notEqual(missing.status,0);assert.match(missing.stdout,/does not exist inside this repository/i);
+ assert.equal(fs.readFileSync(boardPath,'utf8'),before);
+});
+
 test('board helper canonicalizes a filesystem alias returned by Git before reporting state',t=>{
  const {root,boardPath}=fixture(t);
  const alias=path.join(path.dirname(root),'checkout-alias');

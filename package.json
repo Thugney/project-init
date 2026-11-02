@@ -12,7 +12,7 @@
   },
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "check": "node --check bin/project-init.mjs && node --check lib/core.mjs && node --check lib/paths.mjs && node --check lib/prepare.mjs && node --check lib/check-discovery.mjs && node --check lib/execution.mjs && node --check lib/visual.mjs && node --check lib/png.mjs && node --check lib/visual-gate.mjs && node --check lib/guard.mjs && node --check lib/skills.mjs && node --check lib/packs.mjs && node --check lib/lean.mjs && node --check lib/factory.mjs && node --check lib/bootstrap.mjs && node --check lib/update.mjs && node --check lib/prerequisites.mjs && npm test",
+    "check": "node --check bin/project-init.mjs && node --check lib/core.mjs && node --check lib/paths.mjs && node --check lib/prepare.mjs && node --check lib/bmad.mjs && node --check lib/check-discovery.mjs && node --check lib/execution.mjs && node --check lib/visual.mjs && node --check lib/png.mjs && node --check lib/visual-gate.mjs && node --check lib/guard.mjs && node --check lib/skills.mjs && node --check lib/packs.mjs && node --check lib/lean.mjs && node --check lib/factory.mjs && node --check lib/bootstrap.mjs && node --check lib/update.mjs && node --check lib/prerequisites.mjs && npm test",
     "test:lean": "node --test vendor/lean-kit/tests/render.test.mjs",
     "test:all": "npm run check && npm run test:lean",
     "smoke": "node ./bin/project-init.mjs help && node ./bin/project-init.mjs version"

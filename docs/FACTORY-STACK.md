@@ -13,11 +13,11 @@ Project Init
   ├─ installs ECC for both coding harnesses
   └─ installs/validates the Factory wiring
 
-Spec Kit (default)
-  └─ owns requirements -> spec -> plan -> tasks in specs/NNN-x/
+Spec Kit (default) OR BMAD v6
+  └─ owns the project's requirements, planning and tasks
 
 Factory
-  ├─ converts approved Spec Kit work into an execution contract
+  ├─ converts approved Spec Kit or BMAD work into an execution contract
   ├─ splits independent work units by dependency/file boundaries
   ├─ runs Codex and Claude concurrently in separate Git worktrees
   ├─ integrates both branches in a third integration worktree
@@ -35,7 +35,7 @@ ECC
 
 The factory already has a native entry point for `specs/NNN-x/`, and current Spec Kit integrations install skills into both `.agents/skills/` for Codex and `.claude/skills/` for Claude. This gives both coding agents the same spec source without creating a second planning system.
 
-BMAD remains supported by Project Init, but it is intentionally **not** installed alongside Spec Kit for the same project workflow. Use BMAD instead when the project needs its broader product discovery, UX and architecture process and you are willing to let BMAD become the one spec owner.
+Choose **Spec Kit** for a compact feature spec, plan and task list in `specs/NNN-x/`; it remains the guided default. Choose **BMAD** when you want its broader product discovery, UX and architecture workflow and accept its native story layout as the sole source of requirements and tasks. Select it with `project-init init --project . --framework bmad`; the default installer pin is `6.12.0`, with other explicit v6 versions allowed. BMAD v7's initiative-store layout is unsupported. Project Init discovers BMAD stories from the installed v6 configuration and Factory cites the story's acceptance criteria and task IDs. Workers may tick completed story task checkboxes; they do not change story status or `sprint-status.yaml`.
 
 ## Bootstrap
 
@@ -51,7 +51,7 @@ project-init init --project .
 project-init init --project . --apply
 ```
 
-Project Init owns the sequence: detect New/Existing → ensure Git when needed → install Spec Kit for both agents → install ECC for both agents → install/update the bundled Factory.
+Project Init owns the sequence: detect New/Existing → ensure Git when needed → install the selected single methodology (Spec Kit by default, BMAD when chosen) → install ECC for both agents → install/update the bundled Factory.
 
 Factory includes the reviewed orchestrator, worktree manager, generic Claude worker/review agents, Codex worker bridge, dashboard/backlog templates, and:
 

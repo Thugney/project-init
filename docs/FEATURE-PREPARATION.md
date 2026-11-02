@@ -34,7 +34,7 @@ project-init prepare --project . --spec docs/existing-feature-contract.md --appl
 
 Repeated preparation preserves an explicitly selected file set. It does not add a plan that was deliberately excluded or drop an additional contract. Spec Kit feature discovery selects `spec.md` and an existing `plan.md`; it reads `tasks.md` for task IDs and progress but does not automatically hash changing task checkboxes into the design baseline. An explicitly supplied `--spec tasks.md` remains an authoritative hashed input and changing it invalidates that baseline.
 
-OpenSpec changes are discovered through their existing proposal/design/spec documents. BMAD and deliberately framework-free projects can select their actual authoritative files with `--spec`. No adapter generates a second PRD or task board.
+OpenSpec changes are discovered through their existing proposal/design/spec documents. BMAD v6 stories are discovered from the installed `_bmad/` configuration: ready or in-progress stories become feature candidates, their story is the task path, and their configured PRD, architecture and epic are supporting spec paths. One eligible story is selected automatically; multiple stories require `--feature` or `--spec`. BMAD v7 is unsupported. Deliberately framework-free projects can select authoritative files with `--spec`. No adapter generates a second PRD or task board.
 
 ## Checks and requirement mappings
 

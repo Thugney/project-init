@@ -40,8 +40,9 @@ Keep orchestrator context small. Workers and agents read files; you consume thei
 
 ## 1. Spec and task assignment
 
-- `slug=$(B init "<title>" --source idea|speckit:<dir>)`
+- `slug=$(B init "<title>" --source idea|speckit:<dir>|bmad:<story-path>)`
 - `CL agent <slug> factory-spec-writer` writes `J/spec.md` and assigns independent tasks to `[CODEX]` and `[CLAUDE]` by parallelism and file boundaries, never by frontend/backend.
+- For `bmad:<story-path>`, the spec writer reads the story and configured planning documents, cites acceptance criteria/task IDs in the execution contract, and keeps the BMAD story as the only requirements source. Factory never changes BMAD status fields or `sprint-status.yaml`; a worker may only tick its completed task checkboxes.
 - Record `B note <slug> has_ui <true|false>`, `B note <slug> base_commit <sha>` and `B note <slug> base_branch <branch>`.
 
 ## 2. Create isolated worktrees
@@ -86,6 +87,6 @@ Once independent reviewers have examined the integrated source, record `project-
 
 - Approval is an explicit human gate. Never infer it from green tests or reviews.
 - One worker = one isolated worktree. Ownership is per work unit, not per technology layer.
-- Spec Kit stays the product source of truth; Factory job files are execution contracts. Exchange work through job files, not chat relays.
+- Spec Kit or BMAD stays the product source of truth; Factory job files are execution contracts. Exchange work through job files, not chat relays.
 - Never force-push, edit CI to pass, hide failing tests or merge unresolved conflicts. Review the integrated result, not worker branches.
 - For already implemented work without a Factory job, use Project Init's `execution existing` path. Do not create a dummy job.

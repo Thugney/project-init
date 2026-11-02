@@ -25,7 +25,7 @@ const usage=`Project Init ${VERSION} — local-first development orchestrator (p
 Commands:
   inspect      --project PATH                                      Read-only source discovery
   recommend    --project PATH [--intent ...] [--complexity ...]   Rank OpenSpec / Spec Kit / BMAD / none
-  init         --project PATH [--mode New|Existing] [--intent ...] [--ui yes|no|auto] [--version X.Y.Z] [--ecc-version X.Y.Z] [--orchestrator claude|codex] [--apply] [--yes]  Guided bootstrap; asks before installing missing prerequisites/components, then user-wide agent rules
+  init         --project PATH [--mode New|Existing] [--framework spec-kit|bmad] [--intent ...] [--ui yes|no|auto] [--version X.Y.Z] [--ecc-version X.Y.Z] [--orchestrator claude|codex] [--apply] [--yes]  Guided bootstrap; BMAD runs as a supervised installer step
   update       [--check] [--force]                                Update the global Project Init CLI from GitHub main; independent of any source clone
   status       --project PATH                                      Actual gate and evidence status; exits 1 when a linked worktree has no state of its own
   prepare      --project PATH [--feature NATIVE_DIR | --spec FILE] [--mapping FILE] [--apply]  Reuse the active native feature; prepare checks/mappings, then baseline; never approve automatically
@@ -99,13 +99,17 @@ async function confirmPrompt(message,assumeYes=false){
 function presentBootstrap(data){
  const state=data.initialization?.state||{};
  const git=data.inspection?.git||{};
- const spec=data.plan?.specKit||{};
+ const framework=data.framework?.id||data.plan?.framework||'spec-kit';
+ const native=data.plan?.[framework]||data.plan?.native||{};
+ const nativeName=framework==='bmad'?'BMAD':'Spec Kit';
  const factory=data.plan?.factory||{};
  console.log(`Project Init ${VERSION} — Factory bootstrap`);
  console.log(`Project: ${data.project}`);
  console.log(`Mode: ${state.mode||'unknown'} · ${data.resumed?'resumed existing Project Init state':'initialized'}`);
  console.log(`Git: ${git.available?'ready':'will initialize on --apply'}${git.available&&git.clean===false?' · dirty working tree allowed':''}`);
- console.log(`Spec owner: Spec Kit ${data.versions?.specKit||''} · ${spec.installed?'already installed':'planned for Codex + Claude'}`);
+ console.log(`Spec owner: ${nativeName} ${data.versions?.[framework==='bmad'?'bmad':'specKit']||''} · ${native.installed?'already installed':'planned for Codex + Claude'}`);
+ const supervised=native.steps?.find(step=>step.supervised);
+ if(supervised)console.log(`Supervised installer: ${supervised.cmd} ${supervised.args.join(' ')}`);
  const eccChannels=data.plan?.ecc?.channels;
  console.log(eccChannels
   ? `ECC: ${data.versions?.ecc||''} · Claude=${eccChannels.claude||'n/a'} · Codex=${eccChannels.codex||'n/a'}`
