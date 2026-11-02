@@ -2,7 +2,7 @@
 """Factory state helper. The orchestrator is the only board.json writer.
 
 Commands print compact lines:
-  board.py init <title> [--source idea|speckit:<dir>]
+  board.py init <title> [--source idea|speckit:<dir>|bmad:<story-path>]
   board.py stage <slug> <stage>
   board.py round <slug>
   board.py collect <slug>
@@ -149,7 +149,28 @@ def cmd_init(args):
     title = args[0]
     source = "idea"
     if "--source" in args:
-        source = args[args.index("--source") + 1]
+        index = args.index("--source")
+        if index + 1 >= len(args) or args[index + 1].startswith("--"):
+            die("--source requires idea, speckit:<dir>, or bmad:<story-path>")
+        source = args[index + 1]
+    if source != "idea" and not source.startswith("speckit:"):
+        if not source.startswith("bmad:"):
+            die("source must be idea, speckit:<dir>, or bmad:<story-path>")
+        story_path = source[5:].replace("\\", "/")
+        parts = story_path.split("/")
+        if (not story_path or story_path.startswith("/") or re.match(r"^[A-Za-z]:", story_path)
+                or any(part in ("", ".", "..") for part in parts)
+                or story_path == ".project-init" or story_path.startswith(".project-init/")
+                or not story_path.lower().endswith(".md")):
+            die("BMAD source must be a project-relative Markdown story path")
+        candidate = os.path.realpath(os.path.join(ROOT, *parts))
+        try:
+            inside = os.path.commonpath([ROOT, candidate]) == ROOT
+        except ValueError:
+            inside = False
+        if not inside or not os.path.isfile(candidate):
+            die(f"BMAD story file does not exist inside this repository: {story_path}")
+        source = "bmad:" + "/".join(parts)
     board = load()
     n = max([int(j["id"].split("-")[0]) for j in board["jobs"]] + [0]) + 1
     slug = f"{n:03d}-{slugify(title)}"

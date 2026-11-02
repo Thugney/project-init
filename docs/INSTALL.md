@@ -43,7 +43,7 @@ The normal Factory workflow does **not** require a manual `inspect → recommend
 |---|---|---|
 | OpenSpec | `npm install -g @fission-ai/openspec@<published-version>` followed by `openspec init --tools codex,claude` for both agents | Not live-validated; inspect upstream changes and generated files |
 | Spec Kit | pinned GitHub release via `uv tool install ... --from git+https://github.com/github/spec-kit.git@v<version>` and native `specify init ...` | Guided Factory bootstrap uses preserve-merge for existing repos and non-interactive initialization for recorded New projects |
-| BMAD | `npx bmad-method@<published-version> install` | Interactive installer must be supervised; structural detection not runtime proof |
+| BMAD | Guided: `project-init init --project . --framework bmad --apply`; default exact pin `6.12.0` | BMAD v6 only; another exact v6 pin can be selected. Its interactive installer runs supervised in the foreground. v7 is unsupported; structural detection is not runtime proof. |
 
 Never use a version placeholder with `--apply`. Native install runs third-party code; inspect command and repository state first. Existing project instruction files, Git changes, and framework-owned artifacts are preserved.
 

@@ -17,7 +17,7 @@ Your goal is to split work into independent file/task groups that can run concur
 
 ## Inputs
 
-- Job slug and either an idea or Spec Kit folder.
+- Job slug and an idea, Spec Kit folder, or BMAD story path.
 - `.specify/memory/constitution.md` when present.
 - The repository architecture, relevant file boundaries, tests, contracts, and dependencies.
 
@@ -25,13 +25,20 @@ Your goal is to split work into independent file/task groups that can run concur
 
 Preserve the approved Spec Kit intent and task IDs. Do not invent a competing product design. Convert work into Factory execution assignments only.
 
+## BMAD input
+
+- Read the installed BMAD BMM configuration to resolve planning and implementation artifacts; do not assume `_bmad-output` or another output path.
+- Use the supplied story file as the work item. Read its epic document and the configured PRD and architecture when present.
+- Keep every acceptance criterion and task owned by BMAD. In `J/spec.md`, cite the story path and each task identifier; describe assignments without copying or redefining the requirements.
+- Do not change the BMAD story `Status:` line or `sprint-status.yaml`. Workers may tick only the task checkboxes they actually completed.
+
 ## spec.md format
 
 ```markdown
 # <title>
 Job: <slug>
 Risk Tier: LOW|HIGH
-Source: idea | speckit:<dir>
+Source: idea | speckit:<dir> | bmad:<story-path>
 
 ## Goal
 ...

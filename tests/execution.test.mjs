@@ -28,6 +28,8 @@ function fixture(t,{factory=false,value=2}={}){
  fs.writeFileSync(path.join(root,'.gitignore'),'.project-init/\n.factory-context/\n');
  fs.writeFileSync(path.join(root,'specs/feature.md'),'# Synthetic fixture only\nFR-1: Return the reviewed value 2.\n');
  fs.writeFileSync(path.join(root,'specs/other-feature.md'),'# A distinct synthetic feature\nFR-2: A different approved scope.\n');
+ fs.mkdirSync(path.join(root,'_bmad-output/implementation-artifacts'),{recursive:true});
+ fs.writeFileSync(path.join(root,'_bmad-output/implementation-artifacts/1-1-synthetic.md'),'# Story 1.1: Synthetic\n\nStatus: ready-for-dev\n\n## Acceptance Criteria\n- AC1: Return value 2.\n\n## Tasks / Subtasks\n- [ ] Task 1: Keep the story contract.\n');
  fs.writeFileSync(path.join(root,'src/feature.mjs'),`export const value = ${value};\n`);
  fs.writeFileSync(path.join(root,'tests/feature.mjs'),"import assert from 'node:assert/strict'; import {value} from '../src/feature.mjs'; assert.equal(value,2);\n");
  fs.writeFileSync(statePath(root,'config.json'),JSON.stringify({schemaVersion:1,checks:[{name:'feature',argv:['node','tests/feature.mjs']}]}));
@@ -52,16 +54,22 @@ function review(root){
  fs.writeFileSync(path.join(root,file),JSON.stringify({schemaVersion:1,findings:[{id:'FR-1',verdict:'pass',evidenceFiles:['src/feature.mjs']}]}));
  importSemanticReview(root,{file,actor:'Fixture independent reviewer',evidence:'Synthetic requirement review'});
 }
-function job(root){
+function job(root,{source='idea'}={}){
+ if(source==='bmad'){
+  const preparation=readJson(statePath(root,'preparation.json'));
+  preparation.framework='bmad';preparation.feature={id:'1-1-synthetic',directory:'_bmad-output/implementation-artifacts/1-1-synthetic.md',taskPath:'_bmad-output/implementation-artifacts/1-1-synthetic.md',specPaths:['specs/feature.md']};
+  preparation.taskPath=preparation.feature.taskPath;fs.writeFileSync(statePath(root,'preparation.json'),JSON.stringify(preparation));
+ }
  const helper=name=>path.join(root,`.claude/skills/factory/scripts/${name}.py`);
- const slug=command(root,py,[helper('board'),'init','Synthetic observed implementation']);
+ const args=[helper('board'),'init','Synthetic observed implementation'];if(source==='bmad')args.push('--source','bmad:_bmad-output/implementation-artifacts/1-1-synthetic.md');
+ const slug=command(root,py,args);
  command(root,py,[helper('board'),'note',slug,'base_commit',command(root,'git',['rev-parse','HEAD'])]);
- fs.writeFileSync(path.join(root,`factory/jobs/${slug}/spec.md`),`# Synthetic Factory fixture\nJob: ${slug}\nSource: idea\n- [ ] T001 [CODEX] Implement FR-1 in src/feature.mjs\n`);
+ fs.writeFileSync(path.join(root,`factory/jobs/${slug}/spec.md`),`# Synthetic Factory fixture\nJob: ${slug}\nSource: ${source==='bmad'?'bmad:_bmad-output/implementation-artifacts/1-1-synthetic.md':'idea'}\n- [ ] T001 [CODEX] Implement FR-1 in src/feature.mjs\n`);
  command(root,py,[helper('worktree'),'init',slug]);
  const integration=command(root,py,[helper('worktree'),'path',slug,'integration']);
  return {slug,integration,helper};
 }
-function fakeWorker(base,{fail=false,blocked=false}={}){
+function fakeWorker(base,{fail=false,blocked=false,bmadStory=false}={}){
  const filename=path.join(base,`synthetic-worker-${fail?'fail':blocked?'blocked':'pass'}.cjs`);
  fs.writeFileSync(filename,`
 const fs=require('fs'),path=require('path');
@@ -69,6 +77,7 @@ const args=process.argv.slice(2),cwd=args[args.indexOf('--cd')+1],last=args[args
 if(${fail}){console.error('synthetic process failure');process.exit(9);}
 fs.writeFileSync(last,${JSON.stringify(blocked?'WORKER: BLOCKED synthetic fixture':'WORKER: DONE\nSynthetic fixture; no authenticated agent was used.\n')});
 if(!${blocked})fs.writeFileSync(path.join(cwd,'src/feature.mjs'),'export const value = 2;\\n');
+if(${bmadStory}){const story=path.join(cwd,'_bmad-output/implementation-artifacts/1-1-synthetic.md');fs.writeFileSync(story,fs.readFileSync(story,'utf8').replace('- [ ] Task 1','- [x] Task 1'));}
 console.log(JSON.stringify({type:'synthetic.fixture.completed'}));process.exit(0);
 `);
  return childEnvironment({NODE_OPTIONS:`--require ${JSON.stringify(filename)}`});
@@ -142,6 +151,20 @@ test('real Git Factory integration and synthetic worker produce evidence for int
  assert.equal(executionEvidence(j.integration).valid,true,'Native task completion does not rewrite the execution contract.');
  fs.writeFileSync(path.join(j.integration,'src/feature.mjs'),'export const value = 3;\n');
  assert.equal(executionEvidence(j.integration).valid,false);assert.equal(status(j.integration).driftGuardCurrent,false);
+});
+
+test('BMAD story source registers and produces valid Factory execution evidence while binding its contract',async t=>{
+ const {base,root}=fixture(t,{factory:true,value:1}),j=job(root,{source:'bmad'});
+ command(root,py,[j.helper('codex_worker'),'build',j.slug],fakeWorker(base,{bmadStory:true}));
+ command(root,py,[j.helper('worktree'),'integrate',j.slug,'codex']);
+ const result=await factoryEvidence(root,{job:j.slug,allowed:['src/','_bmad-output/implementation-artifacts/1-1-synthetic.md'],execute:true});
+ assert.equal(result.passed,true,JSON.stringify(result));
+ assert.equal(readJson(path.join(root,'factory/board.json')).jobs.find(item=>item.id===j.slug).source,'bmad:_bmad-output/implementation-artifacts/1-1-synthetic.md');
+ const integratedStory=path.join(j.integration,'_bmad-output/implementation-artifacts/1-1-synthetic.md');
+ assert.ok(fs.readFileSync(integratedStory,'utf8').includes('- [x] Task 1'));
+ assert.equal(executionEvidence(j.integration).valid,true,'Ticking completed task checkboxes does not rewrite the BMAD contract.');
+ fs.writeFileSync(integratedStory,fs.readFileSync(integratedStory,'utf8').replace('AC1: Return value 2.','AC1: Changed contract.'));
+ assert.equal(executionEvidence(j.integration).valid,false,'Acceptance criteria are bound at dispatch.');
 });
 
 test('Git CRLF checkout preserves the approved native baseline while source evidence remains byte-bound',async t=>{

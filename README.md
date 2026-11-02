@@ -28,6 +28,12 @@ Every artifact has exactly one owner, so agents never produce competing plans:
 | **Project Init** | Setup, handoffs, check configuration, evidence and the verification gate |
 | **You** | Product decisions, baseline approval and the final merge or release |
 
+Spec Kit stays the guided default. Choose BMAD for a project that needs its broader
+product discovery and staged planning: run `project-init init --project . --framework bmad`
+to preview, then add `--apply` to install. Project Init defaults to BMAD `6.12.0`
+(or accepts another explicit v6 pin); BMAD v7 is not supported. Use one methodology
+per project. See [Factory stack](docs/FACTORY-STACK.md) for the tradeoffs.
+
 See the [ownership ADR](docs/adr/0001-single-source-of-truth.md) and [Factory stack](docs/FACTORY-STACK.md).
 
 ## Install

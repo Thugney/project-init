@@ -25,9 +25,18 @@ Project Init skills with reviewed backups where needed, and prepares an
 unambiguous existing native feature. For a new directory, pass its path to
 `--project`; preview does not create it.
 
-Guided bootstrap uses Spec Kit. An existing BMAD/OpenSpec selection is
-preserved and must use its corresponding workflow rather than installing a
-competing methodology.
+Guided bootstrap uses Spec Kit by default. To choose BMAD for this project,
+preview `project-init init --project . --framework bmad` and apply the reviewed
+plan with `--apply`. It installs BMAD `6.12.0` unless you explicitly select
+another v6 release. BMAD's interactive installer runs in the foreground. v7
+is unsupported, and Project Init will refuse to mix BMAD with Spec Kit or
+OpenSpec in one project. See [Factory stack](FACTORY-STACK.md) for guidance.
+
+Pack commands require that setup was **applied**. After `init --apply`,
+`project-init pack list --project .` returns `packs: []` until one is installed.
+Preview the bundled example with `project-init pack add example --project .`,
+then add `--apply` only when you want to install the displayed files. Running
+plain `init` is preview-only and does not create `.project-init/project.json`.
 
 **TOOLING READY** means the installed tools passed their setup checks. The
 separate feature status tells you whether the actual work still needs

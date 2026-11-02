@@ -1,5 +1,18 @@
 # Project Init — Validation and operational evidence
 
+## First-class BMAD automated implementation check — 2026-10-31
+
+On the BMAD feature branch, `npm run test:all` passed: JavaScript syntax checks,
+**215/215 Project Init tests**, one host-dependent symlink fixture skipped because
+the host does not permit creating fixture symlinks, and **8/8 Lean Kit tests**.
+`npm run smoke` passed and printed CLI help plus version `2.1.0-preview.16`.
+The BMAD tests cover the recorded v6.12.0 layout, selection, supervised setup and
+resume, Factory story registration/integration evidence, checkbox-only task
+updates and rejection of changed acceptance criteria. This is synthetic local
+evidence. The maintainer's real BMAD install and live Factory run in a disposable
+project have not been performed; see T015 in
+[`specs/002-first-class-bmad/tasks.md`](../specs/002-first-class-bmad/tasks.md).
+
 ## Maintainer-reported use — 2026-10-26
 
 The maintainer reports that Claude and Codex are consuming task handoffs, continuing with the next tasks, and updating stages on the Factory dashboard during work in Trace. This is operational evidence that the handoff and job-tracking workflow is being used in an existing project.

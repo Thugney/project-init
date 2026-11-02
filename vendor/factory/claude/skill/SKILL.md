@@ -61,11 +61,13 @@ Keep orchestrator context small. Agents read files; you consume their short stat
 
 ## 1. Spec and task assignment
 
-- `slug=$(B init "<title>" --source idea|speckit:<dir>)`
+- `slug=$(B init "<title>" --source idea|speckit:<dir>|bmad:<story-path>)`
 - Spawn `factory-spec-writer` to write `J/spec.md`.
 - It assigns independent tasks to `[CODEX]` and `[CLAUDE]` based on parallelism/file boundaries, never frontend/backend categories.
 - Record its `has_ui` result with `B note <slug> has_ui <true|false>`.
 - Record base facts: `B note <slug> base_commit <sha>` and `B note <slug> base_branch <branch>`.
+
+For `bmad:<story-path>`, use a project-relative BMAD story Markdown path. The spec writer reads that story and its configured epic, PRD and architecture documents. It cites acceptance criteria and task IDs in the execution contract instead of copying them into a competing specification. BMAD owns story status: Factory never changes a story `Status:` field or `sprint-status.yaml`; an assigned worker may only tick checkboxes for tasks it completed.
 
 ## 2. Create isolated worktrees
 
@@ -150,7 +152,7 @@ For PR mode, push only the **integration branch** and create the PR against the 
 
 - One worker = one isolated worktree.
 - Codex/Claude ownership is per work unit, not per technology layer.
-- Spec Kit remains the product/spec source of truth; Factory job files are execution contracts.
+- Spec Kit or BMAD remains the product/spec source of truth; Factory job files are execution contracts.
 - Never force-push, auto-edit CI to pass, hide failing tests, or merge unresolved conflicts.
 - Review the integrated result, not isolated worker branches.
 - Worktree integration is deterministic Git state; chat messages are not synchronization.

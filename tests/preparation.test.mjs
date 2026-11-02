@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {
  initProject,selectFramework,statePath,readJson,recordReview,approve,checkBaseline,
@@ -11,6 +12,7 @@ import {
 import {prepareProject,preparationPlan,featureReadiness,worktreeContext} from '../lib/prepare.mjs';
 import {semanticPlan,verifyGuard} from '../lib/guard.mjs';
 import {sameExistingPath} from '../lib/paths.mjs';
+import {bmadStories} from '../lib/bmad.mjs';
 
 function write(root,file,text){fs.mkdirSync(path.dirname(path.join(root,file)),{recursive:true});fs.writeFileSync(path.join(root,file),typeof text==='string'?text:JSON.stringify(text,null,2));}
 function git(root,...args){const r=spawnSync('git',args,{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr||r.error?.message);return r.stdout.trim();}
@@ -24,6 +26,15 @@ function fixture(t,{feature=true,initialized=true}={}){
  write(root,'.specify/memory/constitution.md','# Synthetic fixture constitution\n');
  if(feature)addFeature(root,'001-example');
  if(initialized){initProject(root,{mode:'Existing',intent:'feature',ui:'no'});selectFramework(root,'spec-kit');}
+ return root;
+}
+function bmadProject(t){
+ const root=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'pinit-bmad-preparation-'));
+ t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+ git(root,'init','-q');git(root,'config','user.name','Synthetic Fixture');git(root,'config','user.email','fixture@example.invalid');git(root,'symbolic-ref','HEAD','refs/heads/main');
+ const bmadFixture=path.join(path.dirname(fileURLToPath(import.meta.url)),'fixtures','bmad-v6.12.0');
+ fs.cpSync(bmadFixture,root,{recursive:true});
+ initProject(root,{mode:'Existing',intent:'feature',ui:'no'});selectFramework(root,'bmad');
  return root;
 }
 function directoryAlias(t,target){
@@ -109,6 +120,40 @@ test('ambiguous native features require selection and cannot mutate configuratio
  const root=fixture(t);addFeature(root,'002-other');const before=stateBytes(root);
  const result=prepareProject(root,{apply:true});assert.equal(result.selection,'ambiguous-native-features');assert.equal(result.applied,false);assert.equal(stateBytes(root),before);
  const selected=prepareProject(root,{feature:'specs/002-other',apply:true});assert.equal(selected.feature.id,'002-other');assert.equal(selected.baseline.current,true);
+});
+
+test('BMAD prepares one active story and retains its native task progress',t=>{
+ const root=bmadProject(t),statusPath=path.join(root,'_bmad-output/implementation-artifacts/sprint-status.yaml');
+ fs.writeFileSync(statusPath,fs.readFileSync(statusPath,'utf8').replace('1-2-validate-fixture-export: in-progress','1-2-validate-fixture-export: backlog'));
+ const plan=preparationPlan(root);
+ assert.equal(plan.feature.id,'1-1-create-fixture-export');
+ assert.equal(plan.selection,'single-active-bmad-story');
+ assert.deepEqual(plan.feature.specPaths,[
+  '_bmad-output/planning-artifacts/prd.md',
+  '_bmad-output/planning-artifacts/architecture.md',
+  '_bmad-output/planning-artifacts/epics.md'
+ ]);
+ assert.equal(plan.feature.taskPath,'_bmad-output/implementation-artifacts/1-1-create-fixture-export.md');
+ assert.deepEqual(plan.tasks.pending,['Task 1','Subtask 1.1','Task 2']);
+});
+
+test('multiple active BMAD stories require an explicit story path or --spec',t=>{
+ const root=bmadProject(t),plan=preparationPlan(root);
+ assert.equal(plan.selection,'ambiguous-native-features');assert.equal(plan.feature,null);
+ assert.equal(plan.candidates.length,2);
+ const story='_bmad-output/implementation-artifacts/1-2-validate-fixture-export.md';
+ const byFeature=preparationPlan(root,{feature:story});
+ assert.equal(byFeature.feature.id,'1-2-validate-fixture-export');
+ const bySpec=preparationPlan(root,{specs:[story]});
+ assert.equal(bySpec.feature.id,'1-2-validate-fixture-export');
+});
+
+test('BMAD with no active story reports candidates and does not guess',t=>{
+ const root=bmadProject(t),file=path.join(root,'_bmad-output/implementation-artifacts/sprint-status.yaml');
+ const text=fs.readFileSync(file,'utf8').replace('1-1-create-fixture-export: ready-for-dev','1-1-create-fixture-export: backlog').replace('1-2-validate-fixture-export: in-progress','1-2-validate-fixture-export: backlog');
+ fs.writeFileSync(file,text);
+ const plan=preparationPlan(root);
+ assert.equal(plan.selection,'no-ready-bmad-story');assert.equal(plan.feature,null);assert.equal(plan.candidates.length,2);
 });
 
 test('ambiguous native environment selector cannot fall back to a previous baseline',t=>{

@@ -89,6 +89,28 @@ def execution_context(slug):
     preparation = optional(".project-init/preparation.json")
     board = optional("factory/board.json")
     job = next((job for job in board.get("jobs", []) if job.get("id") == slug), {})
+    story_path = None
+    story_hash = None
+    source = job.get("source", "")
+    if source.startswith("bmad:"):
+        story_path = source[5:].replace("\\", "/")
+        parts = story_path.split("/")
+        if (not story_path.endswith(".md") or story_path.startswith("/")
+                or any(part in ("", ".", "..") for part in parts)
+                or parts[0] in (".project-init", ".git")):
+            print("ERROR invalid BMAD story source")
+            sys.exit(2)
+        filename = os.path.realpath(os.path.join(ROOT, *parts))
+        if os.path.commonpath([os.path.realpath(ROOT), filename]) != os.path.realpath(ROOT) or not os.path.isfile(filename):
+            print("ERROR BMAD story source is missing or outside the project")
+            sys.exit(2)
+        with open(filename, encoding="utf-8", newline="") as f:
+            story = f.read().replace("\r\n", "\n")
+        story = re.sub(r"^(\s*[-*]\s+)\[[ xX]\](?=\s+(?:Task|Subtask)\s+\d)", r"\1[ ]", story, flags=re.M | re.I)
+        story_hash = hashlib.sha256(story.encode("utf-8")).hexdigest()
+        if preparation.get("framework") != "bmad" or preparation.get("taskPath") != story_path:
+            print("ERROR BMAD Factory source does not match prepared story")
+            sys.exit(2)
     spec = os.path.join(ROOT, "factory", "jobs", slug, "spec.md")
     contract_hash = None
     if os.path.isfile(spec):
@@ -101,7 +123,8 @@ def execution_context(slug):
                 and approval.get("baselineHash") == baseline["hash"])
     return {"baselineHash": baseline.get("hash") if approved else None,
             "specPaths": baseline.get("specPaths", []), "feature": preparation.get("feature"),
-            "jobSource": job.get("source"), "jobContractHash": contract_hash}
+            "jobSource": job.get("source"), "jobContractHash": contract_hash,
+            "storyPath": story_path, "storyHash": story_hash}
 
 
 def ensure_worktree(path, branch, base):
