@@ -24,7 +24,7 @@ test('self-update version comparison handles preview releases',()=>{
 
 test('self-update check never invokes npm when current',async()=>{
  const sha='a'.repeat(40);
- const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.16'}});
+ const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.17'}});
  let calls=0;
  const result=await updateProjectInit({check:true,fetcher,runner:()=>{calls++;throw new Error('runner should not execute');}});
  assert.equal(result.status,'current');assert.equal(result.updated,false);assert.equal(calls,0);assert.equal(result.remoteCommit,sha);
@@ -32,11 +32,11 @@ test('self-update check never invokes npm when current',async()=>{
 
 test('self-update installs pinned GitHub source and verifies replacement CLI',async()=>{
  const sha='b'.repeat(40);
- const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.17'}});
+ const fetcher=async url=>({ok:true,status:200,json:async()=>url.includes('/commits/main')?{sha}:{name:'@thugney/project-init',version:'2.1.0-preview.18'}});
  const calls=[];
- const runner=(command,args)=>{calls.push([command,...args]);if(command==='npm')return {status:0,stdout:'updated',stderr:''};return {status:0,stdout:'2.1.0-preview.17\n',stderr:''};};
+ const runner=(command,args)=>{calls.push([command,...args]);if(command==='npm')return {status:0,stdout:'updated',stderr:''};return {status:0,stdout:'2.1.0-preview.18\n',stderr:''};};
  const result=await updateProjectInit({fetcher,runner});
- assert.equal(result.status,'updated');assert.equal(result.installedVersion,'2.1.0-preview.17');
+ assert.equal(result.status,'updated');assert.equal(result.installedVersion,'2.1.0-preview.18');
  assert.deepEqual(calls[0],['npm','install','--global','--force',`git+https://github.com/Thugney/project-init.git#${sha}`]);
  assert.deepEqual(calls[1],['project-init','version']);
 });

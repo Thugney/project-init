@@ -1,6 +1,6 @@
 # CLI command reference
 
-This documents **the Project Init 2.1.0-preview.16 CLI**. Every command accepts `--json` for structured output. Use `project-init help` for canonical syntax and arguments; new commands require the matching CLI version as well as updated agent skills.
+This documents **the Project Init 2.1.0-preview.17 CLI**. Every command accepts `--json` for structured output. Use `project-init help` for canonical syntax and arguments; new commands require the matching CLI version as well as updated agent skills.
 
 | Command | What it does | Side effect / safety |
 | --- | --- | --- |
