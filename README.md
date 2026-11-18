@@ -1,5 +1,8 @@
 # Project Init
 
+> **This project is archived and replaced by [forge](https://github.com/Thugney/forge),** a native Claude Code plugin that does the same job with hooks instead of a separate CLI. project-init v2 stays available at the [`v2-final`](https://github.com/Thugney/project-init/tree/v2-final) tag. No further changes are made here.
+
+
 **The workflow harness around Claude Code and Codex: approved specs in, verified evidence out, the human decides.**
 
 [![CI](https://github.com/Thugney/project-init/actions/workflows/ci.yml/badge.svg)](https://github.com/Thugney/project-init/actions/workflows/ci.yml)
